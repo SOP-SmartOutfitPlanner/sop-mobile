@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,36 +10,97 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useImagePicker } from "../../hooks/useImagePicker";
+import { PhotoSection } from "./uploadImage/PhotoSection";
+import { ChipSelector } from "./ChipSelector";
+import { ColorChip } from "./ColorChip";
+import { ITEM_TYPES, COLORS, ALERT_MESSAGES } from "../../constants/wardrobe";
+import { NewWardrobeItem } from "../../types";
 
 interface AddItemModalProps {
   visible: boolean;
   onClose: () => void;
+  onSave?: (item: NewWardrobeItem) => void;
 }
 
 export const AddItemModal: React.FC<AddItemModalProps> = ({
   visible,
   onClose,
+  onSave,
 }) => {
+  // Form state
   const [itemName, setItemName] = useState("");
   const [brand, setBrand] = useState("");
   const [price, setPrice] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
 
-  const itemTypes = ["top", "bottom", "dress", "jacket", "shoes", "accessory"];
-  const colors = ["black", "white", "grey", "navy", "blue", "red", "green"];
+  // Image picker hook
+  const { selectedImage, isLoading, showImagePicker, resetImage } =
+    useImagePicker();
 
-  const handleSave = () => {
+  const resetForm = useCallback(() => {
+    setItemName("");
+    setBrand("");
+    setPrice("");
+    setSelectedType("");
+    setSelectedColor("");
+    resetImage();
+  }, [resetImage]);
+
+  const handleClose = useCallback(() => {
+    resetForm();
+    onClose();
+  }, [resetForm, onClose]);
+
+  const validateForm = (): boolean => {
     if (!itemName.trim()) {
-      Alert.alert("Error", "Please enter an item name");
-      return;
+      Alert.alert(
+        ALERT_MESSAGES.ERROR_NAME_REQUIRED.title,
+        ALERT_MESSAGES.ERROR_NAME_REQUIRED.message
+      );
+      return false;
+    }
+    return true;
+  };
+
+  const handleSave = useCallback(() => {
+    if (!validateForm()) return;
+
+    const itemData: NewWardrobeItem = {
+      name: itemName.trim(),
+      brand: brand.trim() || undefined,
+      price: price ? parseFloat(price) : undefined,
+      type: selectedType,
+      color: selectedColor,
+      imageUri: selectedImage,
+    };
+
+    if (onSave) {
+      onSave(itemData);
+    } else {
+      console.log("Saving item:", itemData);
     }
 
-    // Here you would normally save the item
-    Alert.alert("Success", "Item added successfully!", [
-      { text: "OK", onPress: onClose },
-    ]);
-  };
+    Alert.alert(
+      ALERT_MESSAGES.SUCCESS_SAVE.title,
+      ALERT_MESSAGES.SUCCESS_SAVE.message,
+      [{ text: "OK", onPress: handleClose }]
+    );
+  }, [
+    itemName,
+    brand,
+    price,
+    selectedType,
+    selectedColor,
+    selectedImage,
+    onSave,
+    handleClose,
+  ]);
+
+  const renderColorChip = (color: string, isSelected: boolean) => (
+    <ColorChip color={color} isSelected={isSelected} />
+  );
 
   return (
     <Modal
@@ -50,7 +111,7 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
             <Ionicons name="close" size={24} color="#1f2937" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Add New Item</Text>
@@ -61,10 +122,11 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Photo Section */}
-          <TouchableOpacity style={styles.photoSection}>
-            <Ionicons name="camera" size={32} color="#6b7280" />
-            <Text style={styles.photoText}>Add Photo</Text>
-          </TouchableOpacity>
+          <PhotoSection
+            selectedImage={selectedImage}
+            isLoading={isLoading}
+            onPress={showImagePicker}
+          />
 
           {/* Basic Info */}
           <View style={styles.section}>
@@ -106,64 +168,21 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
           </View>
 
           {/* Type Selection */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Type</Text>
-            <View style={styles.chipContainer}>
-              {itemTypes.map((type) => (
-                <TouchableOpacity
-                  key={type}
-                  style={[
-                    styles.chip,
-                    selectedType === type && styles.chipSelected,
-                  ]}
-                  onPress={() => setSelectedType(type)}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      selectedType === type && styles.chipTextSelected,
-                    ]}
-                  >
-                    {type}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
+          <ChipSelector
+            title="Type"
+            options={ITEM_TYPES}
+            selectedValue={selectedType}
+            onSelect={setSelectedType}
+          />
 
           {/* Color Selection */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Color</Text>
-            <View style={styles.chipContainer}>
-              {colors.map((color) => (
-                <TouchableOpacity
-                  key={color}
-                  style={[
-                    styles.chip,
-                    selectedColor === color && styles.chipSelected,
-                  ]}
-                  onPress={() => setSelectedColor(color)}
-                >
-                  <View style={styles.colorChipContent}>
-                    <View
-                      style={[
-                        styles.colorIndicator,
-                        { backgroundColor: color },
-                      ]}
-                    />
-                    <Text
-                      style={[
-                        styles.chipText,
-                        selectedColor === color && styles.chipTextSelected,
-                      ]}
-                    >
-                      {color}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
+          <ChipSelector
+            title="Color"
+            options={COLORS}
+            selectedValue={selectedColor}
+            onSelect={setSelectedColor}
+            renderOption={renderColorChip}
+          />
         </ScrollView>
       </View>
     </Modal>
@@ -205,22 +224,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
   },
-  photoSection: {
-    height: 200,
-    backgroundColor: "#f9fafb",
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    marginVertical: 16,
-    borderWidth: 2,
-    borderColor: "#e5e7eb",
-    borderStyle: "dashed",
-  },
-  photoText: {
-    fontSize: 16,
-    color: "#6b7280",
-    marginTop: 8,
-  },
   section: {
     marginVertical: 16,
   },
@@ -248,43 +251,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#1f2937",
     backgroundColor: "#fff",
-  },
-  chipContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "#f3f4f6",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-  },
-  chipSelected: {
-    backgroundColor: "#3b82f6",
-    borderColor: "#3b82f6",
-  },
-  chipText: {
-    fontSize: 14,
-    color: "#374151",
-    fontWeight: "500",
-    textTransform: "capitalize",
-  },
-  chipTextSelected: {
-    color: "#fff",
-  },
-  colorChipContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  colorIndicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 6,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
   },
 });

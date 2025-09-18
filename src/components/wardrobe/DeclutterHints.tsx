@@ -112,7 +112,7 @@ export const DeclutterHints: React.FC<DeclutterHintsProps> = ({ hints }) => {
 
               <View style={styles.actionSection}>
                 <View style={styles.suggestionContainer}>
-                  <Ionicons name="lightbulb" size={14} color="#f59e0b" />
+                  <Ionicons name="bulb-outline" size={14} color="#f59e0b" />
                   <Text style={styles.suggestionText}>
                     {hint.actionSuggestion}
                   </Text>

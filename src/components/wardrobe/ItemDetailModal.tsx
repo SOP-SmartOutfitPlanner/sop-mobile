@@ -63,7 +63,7 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
             {item.brand && <Text style={styles.brand}>{item.brand}</Text>}
 
             <View style={styles.tagsContainer}>
-              {item.tags.map((tag, index) => (
+              {(item.tags || []).map((tag, index) => (
                 <View key={index} style={styles.tag}>
                   <Text style={styles.tagText}>{tag}</Text>
                 </View>
@@ -113,13 +113,15 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
 
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Seasons:</Text>
-              <Text style={styles.detailValue}>{item.seasons.join(", ")}</Text>
+              <Text style={styles.detailValue}>
+                {(item.seasons || []).join(", ") || "Not specified"}
+              </Text>
             </View>
 
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Occasions:</Text>
               <Text style={styles.detailValue}>
-                {item.occasions.join(", ")}
+                {(item.occasions || []).join(", ") || "Not specified"}
               </Text>
             </View>
 

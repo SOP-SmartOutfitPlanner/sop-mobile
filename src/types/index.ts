@@ -16,6 +16,19 @@ export interface WardrobeItem {
   isFavorite: boolean;
 }
 
+export interface NewWardrobeItem {
+  name: string;
+  brand?: string;
+  price?: number;
+  type: string;
+  color: string;
+  imageUri: string | null;
+  seasons?: Season[];
+  occasions?: Occasion[];
+  tags?: string[];
+  notes?: string;
+}
+
 export type Season = "spring" | "summer" | "fall" | "winter";
 export type Occasion = "casual" | "work" | "formal" | "party" | "gym" | "date" | "weekend" | "travel";
 
