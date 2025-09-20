@@ -4,17 +4,17 @@ import {
   Text,
   Modal,
   TouchableOpacity,
-  TextInput,
-  ScrollView,
   StyleSheet,
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useImagePicker } from "../../hooks/useImagePicker";
-import { PhotoSection } from "./uploadImage/PhotoSection";
-import { ChipSelector } from "./ChipSelector";
-import { ColorChip } from "./ColorChip";
-import { ITEM_TYPES, COLORS, ALERT_MESSAGES } from "../../constants/wardrobe";
+import { StepIndicator } from "./wizard/StepIndicator";
+import { UploadPhotoStep } from "./wizard/UploadPhotoStep";
+import { ItemDetailsStep } from "./wizard/ItemDetailsStep";
+import { CategoriesStep } from "./wizard/CategoriesStep";
+import { ReviewStep } from "./wizard/ReviewStep";
+import { ALERT_MESSAGES } from "../../constants/wardrobe";
 import { NewWardrobeItem } from "../../types";
 
 interface AddItemModalProps {
@@ -23,28 +23,46 @@ interface AddItemModalProps {
   onSave?: (item: NewWardrobeItem) => void;
 }
 
+const STEPS = [
+  { id: 1, title: "Upload", subtitle: "Photo" },
+  { id: 2, title: "Item", subtitle: "Details" },
+  { id: 3, title: "Type", subtitle: "category" },
+  { id: 4, title: "Review ", subtitle: "& Save" },
+];
+
 export const AddItemModal: React.FC<AddItemModalProps> = ({
   visible,
   onClose,
   onSave,
 }) => {
+  // Step navigation
+  const [currentStep, setCurrentStep] = useState(1);
+
   // Form state
   const [itemName, setItemName] = useState("");
   const [brand, setBrand] = useState("");
-  const [price, setPrice] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
+  const [selectedSeasons, setSelectedSeasons] = useState<string[]>([]);
+  const [selectedOccasions, setSelectedOccasions] = useState<string[]>([]);
 
   // Image picker hook
-  const { selectedImage, isLoading, showImagePicker, resetImage } =
-    useImagePicker();
+  const {
+    selectedImage,
+    isLoading,
+    pickImageFromCamera,
+    pickImageFromLibrary,
+    resetImage,
+  } = useImagePicker();
 
   const resetForm = useCallback(() => {
+    setCurrentStep(1);
     setItemName("");
     setBrand("");
-    setPrice("");
     setSelectedType("");
     setSelectedColor("");
+    setSelectedSeasons([]);
+    setSelectedOccasions([]);
     resetImage();
   }, [resetImage]);
 
@@ -53,27 +71,55 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     onClose();
   }, [resetForm, onClose]);
 
-  const validateForm = (): boolean => {
-    if (!itemName.trim()) {
-      Alert.alert(
-        ALERT_MESSAGES.ERROR_NAME_REQUIRED.title,
-        ALERT_MESSAGES.ERROR_NAME_REQUIRED.message
-      );
-      return false;
+  // Step validation
+  const canProceedToStep = (step: number): boolean => {
+    switch (step) {
+      case 2:
+        return !!selectedImage;
+      case 3:
+        return !!itemName.trim() && !!selectedType;
+      case 4:
+        return selectedSeasons.length > 0 && selectedOccasions.length > 0;
+      default:
+        return true;
     }
-    return true;
+  };
+
+  // Validation messages
+  const getValidationMessage = (step: number): string => {
+    const messages = {
+      1: "Please select a photo first",
+      2: "Please fill in item name and type",
+      3: "Please select at least one season and occasion",
+    };
+    return messages[step as keyof typeof messages] || "";
+  };
+
+  const handleNext = () => {
+    if (currentStep < 4) {
+      if (canProceedToStep(currentStep + 1)) {
+        setCurrentStep(currentStep + 1);
+      } else {
+        Alert.alert("Required Fields", getValidationMessage(currentStep));
+      }
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
   };
 
   const handleSave = useCallback(() => {
-    if (!validateForm()) return;
-
     const itemData: NewWardrobeItem = {
       name: itemName.trim(),
       brand: brand.trim() || undefined,
-      price: price ? parseFloat(price) : undefined,
       type: selectedType,
       color: selectedColor,
       imageUri: selectedImage,
+      seasons: selectedSeasons as any,
+      occasions: selectedOccasions as any,
     };
 
     if (onSave) {
@@ -90,17 +136,85 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
   }, [
     itemName,
     brand,
-    price,
     selectedType,
     selectedColor,
     selectedImage,
+    selectedSeasons,
+    selectedOccasions,
     onSave,
     handleClose,
   ]);
 
-  const renderColorChip = (color: string, isSelected: boolean) => (
-    <ColorChip color={color} isSelected={isSelected} />
+  // Toggle handlers for categories
+  const toggleSelection =
+    (items: string[], setItems: (items: string[]) => void) =>
+    (item: string) => {
+      setItems(
+        items.includes(item)
+          ? items.filter((i) => i !== item)
+          : [...items, item]
+      );
+    };
+
+  const handleSeasonToggle = toggleSelection(
+    selectedSeasons,
+    setSelectedSeasons
   );
+  const handleOccasionToggle = toggleSelection(
+    selectedOccasions,
+    setSelectedOccasions
+  );
+
+  // Step renderers
+  const stepComponents = {
+    1: () => (
+      <UploadPhotoStep
+        selectedImage={selectedImage}
+        isLoading={isLoading}
+        onCameraPress={pickImageFromCamera}
+        onGalleryPress={pickImageFromLibrary}
+      />
+    ),
+    2: () => (
+      <ItemDetailsStep
+        itemName={itemName}
+        brand={brand}
+        selectedType={selectedType}
+        selectedColor={selectedColor}
+        onItemNameChange={setItemName}
+        onBrandChange={setBrand}
+        onTypeSelect={setSelectedType}
+        onColorSelect={setSelectedColor}
+      />
+    ),
+    3: () => (
+      <CategoriesStep
+        selectedSeasons={selectedSeasons}
+        selectedOccasions={selectedOccasions}
+        onSeasonToggle={handleSeasonToggle}
+        onOccasionToggle={handleOccasionToggle}
+      />
+    ),
+    4: () => (
+      <ReviewStep
+        data={{
+          name: itemName,
+          brand,
+          type: selectedType,
+          colors: selectedColor ? [selectedColor] : [],
+          seasons: selectedSeasons,
+          occasions: selectedOccasions,
+          imageUri: selectedImage,
+        }}
+      />
+    ),
+  };
+
+  const renderCurrentStep = () => {
+    const StepComponent =
+      stepComponents[currentStep as keyof typeof stepComponents];
+    return StepComponent ? StepComponent() : null;
+  };
 
   return (
     <Modal
@@ -115,75 +229,53 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
             <Ionicons name="close" size={24} color="#1f2937" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Add New Item</Text>
-          <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
-            <Text style={styles.saveButtonText}>Save</Text>
-          </TouchableOpacity>
+          <View style={styles.placeholder} />
         </View>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Photo Section */}
-          <PhotoSection
-            selectedImage={selectedImage}
-            isLoading={isLoading}
-            onPress={showImagePicker}
-          />
+        {/* Step Indicator */}
+        <StepIndicator steps={STEPS} currentStep={currentStep} />
 
-          {/* Basic Info */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Basic Information</Text>
+        {/* Step Content */}
+        <View style={styles.stepContent}>{renderCurrentStep()}</View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Item Name *</Text>
-              <TextInput
-                style={styles.input}
-                value={itemName}
-                onChangeText={setItemName}
-                placeholder="e.g. Blue Denim Jacket"
-                placeholderTextColor="#9ca3af"
-              />
-            </View>
+        {/* Step Footer */}
+        <View style={styles.stepFooter}>
+          <Text style={styles.stepText}>
+            Step {currentStep} of {STEPS.length}
+          </Text>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Brand</Text>
-              <TextInput
-                style={styles.input}
-                value={brand}
-                onChangeText={setBrand}
-                placeholder="e.g. Levi's"
-                placeholderTextColor="#9ca3af"
-              />
-            </View>
+          <View style={styles.buttonContainer}>
+            {currentStep > 1 && (
+              <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+                <Ionicons name="chevron-back" size={20} color="#6b7280" />
+                <Text style={styles.backButtonText}>Back</Text>
+              </TouchableOpacity>
+            )}
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Price</Text>
-              <TextInput
-                style={styles.input}
-                value={price}
-                onChangeText={setPrice}
-                placeholder="0.00"
-                placeholderTextColor="#9ca3af"
-                keyboardType="numeric"
-              />
-            </View>
+            <TouchableOpacity
+              style={[
+                styles.nextButton,
+                !canProceedToStep(currentStep + 1) &&
+                  currentStep < 4 &&
+                  styles.nextButtonDisabled,
+              ]}
+              onPress={currentStep === 4 ? handleSave : handleNext}
+              disabled={!canProceedToStep(currentStep + 1) && currentStep < 4}
+            >
+              {currentStep === 4 ? (
+                <>
+                  <Ionicons name="checkmark" size={20} color="#fff" />
+                  <Text style={styles.nextButtonText}>Save Item</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.nextButtonText}>Next</Text>
+                  <Ionicons name="chevron-forward" size={20} color="#fff" />
+                </>
+              )}
+            </TouchableOpacity>
           </View>
-
-          {/* Type Selection */}
-          <ChipSelector
-            title="Type"
-            options={ITEM_TYPES}
-            selectedValue={selectedType}
-            onSelect={setSelectedType}
-          />
-
-          {/* Color Selection */}
-          <ChipSelector
-            title="Color"
-            options={COLORS}
-            selectedValue={selectedColor}
-            onSelect={setSelectedColor}
-            renderOption={renderColorChip}
-          />
-        </ScrollView>
+        </View>
       </View>
     </Modal>
   );
@@ -198,8 +290,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 60,
+    paddingHorizontal: 10,
+    paddingTop: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#e5e7eb",
@@ -212,44 +304,62 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#1f2937",
   },
-  saveButton: {
-    padding: 8,
+  placeholder: {
+    width: 40,
   },
-  saveButtonText: {
-    fontSize: 16,
-    color: "#3b82f6",
-    fontWeight: "600",
-  },
-  content: {
+  stepContent: {
     flex: 1,
-    paddingHorizontal: 16,
   },
-  section: {
-    marginVertical: 16,
+  stepFooter: {
+    backgroundColor: "#fff",
+    borderTopWidth: 1,
+    borderTopColor: "#e5e7eb",
+    paddingHorizontal: 20,
+    paddingVertical: 25,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1f2937",
-    marginBottom: 12,
-  },
-  inputGroup: {
+  stepText: {
+    fontSize: 14,
+    color: "#6b7280",
+    textAlign: "center",
     marginBottom: 16,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#374151",
-    marginBottom: 8,
+  buttonContainer: {
+    flexDirection: "row",
+    gap: 12,
   },
-  input: {
+  backButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f9fafb",
     borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    borderColor: "#e5e7eb",
+    borderRadius: 12,
+    paddingVertical: 16,
+    gap: 8,
+  },
+  backButtonText: {
     fontSize: 16,
-    color: "#1f2937",
-    backgroundColor: "#fff",
+    fontWeight: "500",
+    color: "#6b7280",
+  },
+  nextButton: {
+    flex: 2,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#3b82f6",
+    borderRadius: 12,
+    paddingVertical: 16,
+    gap: 8,
+  },
+  nextButtonDisabled: {
+    backgroundColor: "#9ca3af",
+  },
+  nextButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#fff",
   },
 });

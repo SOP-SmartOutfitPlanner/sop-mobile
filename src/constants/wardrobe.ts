@@ -17,6 +17,20 @@ export const COLORS = [
   "green"
 ] as const;
 
+export const SEASONS = [
+  "Spring", 
+  "Summer", 
+  "Fall", 
+  "Winter"
+] as const;
+
+export const OCCASIONS = [
+  "Casual", 
+  "Smart", 
+  "Formal", 
+  "Sport"
+] as const;
+
 export const IMAGE_PICKER_OPTIONS = {
   allowsEditing: true,
   aspect: [3, 4] as [number, number],

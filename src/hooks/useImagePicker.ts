@@ -26,10 +26,17 @@ export const useImagePicker = () => {
     }
   };
 
-  const pickImageFromCamera = async (): Promise<void> => {
+  const launchImagePicker = async (
+    source: 'camera' | 'library'
+  ): Promise<void> => {
     try {
       setIsLoading(true);
-      const result = await ImagePicker.launchCameraAsync({
+      
+      const pickerFn = source === 'camera' 
+        ? ImagePicker.launchCameraAsync 
+        : ImagePicker.launchImageLibraryAsync;
+        
+      const result = await pickerFn({
         mediaTypes: 'images',
         allowsEditing: true,
         aspect: [3, 4],
@@ -40,39 +47,19 @@ export const useImagePicker = () => {
         setSelectedImage(result.assets[0].uri);
       }
     } catch (error) {
-      console.error('Error taking photo:', error);
-      Alert.alert(
-        ALERT_MESSAGES.ERROR_TAKE_PHOTO.title,
-        ALERT_MESSAGES.ERROR_TAKE_PHOTO.message
-      );
+      const errorMessage = source === 'camera' 
+        ? ALERT_MESSAGES.ERROR_TAKE_PHOTO
+        : ALERT_MESSAGES.ERROR_SELECT_IMAGE;
+        
+      console.error(`Error ${source === 'camera' ? 'taking photo' : 'selecting image'}:`, error);
+      Alert.alert(errorMessage.title, errorMessage.message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const pickImageFromLibrary = async (): Promise<void> => {
-    try {
-      setIsLoading(true);
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: 'images',
-        allowsEditing: true,
-        aspect: [3, 4],
-        quality: 0.8,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        setSelectedImage(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error('Error selecting image:', error);
-      Alert.alert(
-        ALERT_MESSAGES.ERROR_SELECT_IMAGE.title,
-        ALERT_MESSAGES.ERROR_SELECT_IMAGE.message
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const pickImageFromCamera = (): Promise<void> => launchImagePicker('camera');
+  const pickImageFromLibrary = (): Promise<void> => launchImagePicker('library');
 
   const showImagePicker = async (): Promise<void> => {
     const hasPermissions = await requestPermissions();
@@ -113,6 +100,8 @@ export const useImagePicker = () => {
     selectedImage,
     isLoading,
     showImagePicker,
+    pickImageFromCamera,
+    pickImageFromLibrary,
     resetImage,
   };
 };
