@@ -1,243 +1,432 @@
-import React from "react";
-import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "../hooks/auth";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-const ProfileScreen = () => {
+interface OutfitItem {
+  id: string;
+  title: string;
+  category: string;
+  tags: string[];
+  image: any;
+  status?: string;
+}
+
+const ProfileScreen = ({ navigation }: any) => {
+  const [activeTab, setActiveTab] = useState<
+    "Outfits" | "Challenges" | "About"
+  >("Outfits");
+  const { logout, user } = useAuth();
+
+  const outfits: OutfitItem[] = [
+    {
+      id: "1",
+      title: "Summer Casual",
+      category: "Casual",
+      tags: ["Casual", "Summer", "Sustainable"],
+      image: require("../../assets/adaptive-icon.png"),
+      status: "Winner",
+    },
+    {
+      id: "2",
+      title: "Office Chic",
+      category: "Business",
+      tags: ["Business", "Elegant", "Minimalist"],
+      image: require("../../assets/adaptive-icon.png"),
+      status: "Runner-up",
+    },
+    {
+      id: "3",
+      title: "Street Style",
+      category: "Urban",
+      tags: ["Urban", "Edgy", "Casual"],
+      image: require("../../assets/adaptive-icon.png"),
+    },
+  ];
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigation.navigate("Auth");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
+  const renderOutfitCard = (outfit: OutfitItem) => (
+    <View key={outfit.id} style={styles.outfitCard}>
+      <Image source={outfit.image} style={styles.outfitImage} />
+      <View style={styles.outfitInfo}>
+        <View style={styles.outfitHeader}>
+          <Text style={styles.outfitTitle}>{outfit.title}</Text>
+          {outfit.status && (
+            <View
+              style={[
+                styles.statusBadge,
+                outfit.status === "Winner"
+                  ? styles.winnerBadge
+                  : styles.runnerUpBadge,
+              ]}
+            >
+              <Text style={styles.statusText}>{outfit.status}</Text>
+            </View>
+          )}
+        </View>
+        <View style={styles.tagsContainer}>
+          {outfit.tags.map((tag, index) => (
+            <View key={index} style={styles.tag}>
+              <Text style={styles.tagText}>{tag}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    </View>
+  );
+
   return (
-    <ScrollView style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Hồ Sơ</Text>
-        <Text style={styles.subtitle}>Thông tin cá nhân</Text>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#1E293B" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Profile</Text>
+        <View style={styles.placeholder} />
       </View>
 
-      <View style={styles.content}>
-        <View style={styles.profileCard}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Profile Info */}
+        <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>👤</Text>
+            <Image
+              source={require("../../assets/adaptive-icon.png")}
+              style={styles.avatar}
+            />
+          </View>
+          <Text style={styles.userName}>Minh Nguyen</Text>
+          <Text style={styles.userBio}>
+            Fashion enthusiast & style curator. Passionate about sustainable
+            fashion and timeless pieces.
+          </Text>
+
+          {/* Stats */}
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>1.2K</Text>
+              <Text style={styles.statLabel}>Followers</Text>
             </View>
-          </View>
-          <Text style={styles.userName}>Nguyễn Văn A</Text>
-          <Text style={styles.userEmail}>nguyenvana@example.com</Text>
-          <Text style={styles.userRole}>Thành viên Premium</Text>
-        </View>
-
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>24</Text>
-            <Text style={styles.statLabel}>Bài viết</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>156</Text>
-            <Text style={styles.statLabel}>Theo dõi</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>89</Text>
-            <Text style={styles.statLabel}>Người theo dõi</Text>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Thông Tin Cá Nhân</Text>
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Họ và tên:</Text>
-            <Text style={styles.infoValue}>Nguyễn Văn A</Text>
-          </View>
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Ngày sinh:</Text>
-            <Text style={styles.infoValue}>15/06/1995</Text>
-          </View>
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Số điện thoại:</Text>
-            <Text style={styles.infoValue}>0123 456 789</Text>
-          </View>
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Địa chỉ:</Text>
-            <Text style={styles.infoValue}>Hà Nội, Việt Nam</Text>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>856</Text>
+              <Text style={styles.statLabel}>Likes</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>42</Text>
+              <Text style={styles.statLabel}>Outfits</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>8</Text>
+              <Text style={styles.statLabel}>Challenges</Text>
+            </View>
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Sở Thích</Text>
-          <View style={styles.tagContainer}>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>📚 Đọc sách</Text>
-            </View>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>🎵 Âm nhạc</Text>
-            </View>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>⚽ Thể thao</Text>
-            </View>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>🎬 Phim ảnh</Text>
-            </View>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>🍳 Nấu ăn</Text>
-            </View>
-          </View>
+        {/* Tabs */}
+        <View style={styles.tabsContainer}>
+          {(["Outfits", "Challenges", "About"] as const).map((tab) => (
+            <TouchableOpacity
+              key={tab}
+              style={[styles.tab, activeTab === tab && styles.activeTab]}
+              onPress={() => setActiveTab(tab)}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === tab && styles.activeTabText,
+                ]}
+              >
+                {tab}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
-      </View>
-    </ScrollView>
+
+        {/* Content */}
+        <View style={styles.contentContainer}>
+          {activeTab === "Outfits" && (
+            <View style={styles.outfitsContainer}>
+              {outfits.map(renderOutfitCard)}
+            </View>
+          )}
+
+          {activeTab === "Challenges" && (
+            <View style={styles.challengesContainer}>
+              <Text style={styles.emptyText}>No challenges yet</Text>
+            </View>
+          )}
+
+          {activeTab === "About" && (
+            <View style={styles.aboutContainer}>
+              <Text style={styles.aboutText}>
+                Fashion enthusiast with 5 years of experience in sustainable
+                styling. Loves creating timeless looks that combine comfort with
+                elegance.
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Logout Button */}
+        <View style={styles.logoutContainer}>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+            <Text style={styles.logoutText}>Đăng xuất</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#F8FAFC",
   },
   header: {
-    backgroundColor: "#6f42c1",
-    padding: 20,
-    paddingTop: 60,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "white",
-    textAlign: "center",
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "white",
-    textAlign: "center",
-    marginTop: 8,
-    opacity: 0.9,
-  },
-  content: {
-    padding: 16,
-  },
-  profileCard: {
-    backgroundColor: "white",
-    padding: 24,
-    borderRadius: 16,
+    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#F1F5F9",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#1E293B",
+  },
+  placeholder: {
+    width: 40,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  profileSection: {
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+    alignItems: "center",
   },
   avatarContainer: {
     marginBottom: 16,
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#e9ecef",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarText: {
-    fontSize: 40,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "#E2E8F0",
   },
   userName: {
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 4,
+    fontWeight: "700",
+    color: "#1E293B",
+    marginBottom: 8,
   },
-  userEmail: {
-    fontSize: 16,
-    color: "#666",
-    marginBottom: 4,
-  },
-  userRole: {
+  userBio: {
     fontSize: 14,
-    color: "#6f42c1",
-    fontWeight: "600",
+    color: "#64748B",
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 24,
+    paddingHorizontal: 16,
   },
   statsContainer: {
     flexDirection: "row",
-    backgroundColor: "white",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    justifyContent: "space-around",
+    width: "100%",
   },
   statItem: {
-    flex: 1,
     alignItems: "center",
+    backgroundColor: "#F8FAFC",
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    minWidth: 70,
   },
   statNumber: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1E293B",
+    marginBottom: 4,
   },
   statLabel: {
-    fontSize: 14,
-    color: "#666",
-    marginTop: 4,
+    fontSize: 12,
+    color: "#64748B",
+    fontWeight: "500",
   },
-  section: {
-    backgroundColor: "white",
-    padding: 16,
+  tabsContainer: {
+    flexDirection: "row",
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: "#3B82F6",
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#64748B",
+  },
+  activeTabText: {
+    color: "#3B82F6",
+    fontWeight: "600",
+  },
+  contentContainer: {
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    minHeight: 200,
+  },
+  outfitsContainer: {
+    gap: 16,
+  },
+  outfitCard: {
+    flexDirection: "row",
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
-    marginBottom: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 2,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 12,
+  outfitImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+    marginRight: 16,
+    backgroundColor: "#F1F5F9",
   },
-  infoItem: {
+  outfitInfo: {
+    flex: 1,
+  },
+  outfitHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f1f3f4",
+    marginBottom: 8,
   },
-  infoLabel: {
-    fontSize: 14,
-    color: "#666",
+  outfitTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1E293B",
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  winnerBadge: {
+    backgroundColor: "#3B82F6",
+  },
+  runnerUpBadge: {
+    backgroundColor: "#64748B",
+  },
+  statusText: {
+    fontSize: 12,
+    color: "#FFFFFF",
     fontWeight: "500",
   },
-  infoValue: {
-    fontSize: 14,
-    color: "#333",
-    fontWeight: "600",
-  },
-  tagContainer: {
+  tagsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
   },
   tag: {
-    backgroundColor: "#f8f9fa",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#dee2e6",
+    backgroundColor: "#F1F5F9",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   tagText: {
-    color: "#495057",
-    fontSize: 14,
+    fontSize: 12,
+    color: "#64748B",
     fontWeight: "500",
+  },
+  challengesContainer: {
+    alignItems: "center",
+    paddingVertical: 40,
+  },
+  aboutContainer: {
+    paddingVertical: 16,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: "#94A3B8",
+    fontStyle: "italic",
+  },
+  aboutText: {
+    fontSize: 14,
+    color: "#64748B",
+    lineHeight: 20,
+  },
+  logoutContainer: {
+    backgroundColor: "#FFFFFF",
+    marginHorizontal: 24,
+    marginVertical: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  logoutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    gap: 8,
+  },
+  logoutText: {
+    fontSize: 16,
+    color: "#EF4444",
+    fontWeight: "600",
   },
 });
 

@@ -7,7 +7,7 @@ import HomeScreen from "../screens/HomeScreen";
 import WardrobeScreen from "../screens/WardrobeScreen";
 import PlannerScreen from "../screens/PlannerScreen";
 import CommunityScreen from "../screens/CommunityScreen";
-import CollectionScreen from "../screens/CollectionScreen";
+import ProfileScreen from "../screens/ProfileScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -26,8 +26,8 @@ const BottomTabNavigator = () => {
             iconName = focused ? "calendar" : "calendar-outline";
           } else if (route.name === "Community") {
             iconName = focused ? "people" : "people-outline";
-          } else if (route.name === "Collection") {
-            iconName = focused ? "bookmark" : "bookmark-outline";
+          } else if (route.name === "Profile") {
+            iconName = focused ? "person" : "person-outline";
           } else {
             iconName = "help-outline";
           }
@@ -79,10 +79,10 @@ const BottomTabNavigator = () => {
         }}
       />
       <Tab.Screen
-        name="Collection"
-        component={CollectionScreen}
+        name="Profile"
+        component={ProfileScreen}
         options={{
-          tabBarLabel: "Collection",
+          tabBarLabel: "Profile",
         }}
       />
     </Tab.Navigator>

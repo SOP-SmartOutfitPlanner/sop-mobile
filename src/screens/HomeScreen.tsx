@@ -9,7 +9,7 @@ import {
   QuickNavigation,
 } from "../components/home";
 
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }: any) {
   const handleNotificationPress = () => {
     console.log("Notification pressed");
   };
@@ -19,7 +19,7 @@ export default function HomeScreen() {
   };
 
   const handleProfilePress = () => {
-    console.log("Profile pressed");
+    navigation.navigate("Profile");
   };
 
   return (
