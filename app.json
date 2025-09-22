@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "sop-mobile",
-    "slug": "sop-mobile",
+    "name": "SOP",
+    "slug": "Smart Outfit Planner",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/img/logo_mobile.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/img/logo_mobile.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -17,7 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/img/logo_mobile.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,

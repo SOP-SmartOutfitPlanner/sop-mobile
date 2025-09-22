@@ -9,6 +9,21 @@ interface ItemCardProps {
 }
 
 export const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
+  const getItemTypeTag = (type: string) => {
+    const tagStyles = {
+      shoes: { backgroundColor: "#fef3c7", color: "#92400e", text: "shoes" },
+      top: { backgroundColor: "#dbeafe", color: "#1e40af", text: "top" },
+      accessory: {
+        backgroundColor: "#fecaca",
+        color: "#dc2626",
+        text: "accessory",
+      },
+    };
+    return tagStyles[type as keyof typeof tagStyles] || tagStyles.top;
+  };
+
+  const tag = getItemTypeTag(item.type);
+
   return (
     <TouchableOpacity
       style={styles.container}
@@ -17,18 +32,17 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
     >
       <View style={styles.imageContainer}>
         <Image source={{ uri: item.imageUrl }} style={styles.image} />
-        {item.isFavorite && (
-          <View style={styles.favoriteIcon}>
-            <Ionicons name="heart" size={16} color="#ff4757" />
-          </View>
-        )}
-        <View style={styles.wearCountBadge}>
-          <Text style={styles.wearCountText}>{item.wearCount}</Text>
+        <View
+          style={[styles.typeTag, { backgroundColor: tag.backgroundColor }]}
+        >
+          <Text style={[styles.typeTagText, { color: tag.color }]}>
+            {tag.text}
+          </Text>
         </View>
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.name} numberOfLines={2}>
+        <Text style={styles.name} numberOfLines={1}>
           {item.name}
         </Text>
         {item.brand && (
@@ -36,9 +50,12 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
             {item.brand}
           </Text>
         )}
-        <View style={styles.tagContainer}>
-          <View style={[styles.colorTag, { backgroundColor: item.color }]} />
-          <Text style={styles.type}>{item.type}</Text>
+        <View style={styles.statsContainer}>
+          <View style={styles.wearInfo}>
+            <Ionicons name="eye-outline" size={12} color="#6b7280" />
+            <Text style={styles.wearText}>Worn {item.wearCount || 18}x</Text>
+          </View>
+          <Text style={styles.lastWorn}>{item.lastWorn || "15/1/2024"}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -64,32 +81,18 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
-  favoriteIcon: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  wearCountBadge: {
+  typeTag: {
     position: "absolute",
     top: 8,
     left: 8,
-    backgroundColor: "rgba(0,0,0,0.7)",
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  wearCountText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "bold",
+  typeTagText: {
+    fontSize: 10,
+    fontWeight: "600",
+    textTransform: "lowercase",
   },
   content: {
     padding: 12,
@@ -98,28 +101,29 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#1f2937",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   brand: {
     fontSize: 12,
     color: "#6b7280",
     marginBottom: 8,
   },
-  tagContainer: {
+  statsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  wearInfo: {
     flexDirection: "row",
     alignItems: "center",
   },
-  colorTag: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 6,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-  },
-  type: {
-    fontSize: 12,
+  wearText: {
+    fontSize: 11,
     color: "#6b7280",
-    textTransform: "capitalize",
+    marginLeft: 4,
+  },
+  lastWorn: {
+    fontSize: 11,
+    color: "#6b7280",
   },
 });
