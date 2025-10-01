@@ -14,7 +14,7 @@ export type RootStackParamList = {
 const Stack = createStackNavigator<RootStackParamList>();
 
 export const AppNavigator: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  // const { isAuthenticated, isGuest } = useAuth();
 
   return (
     <Stack.Navigator
@@ -22,14 +22,9 @@ export const AppNavigator: React.FC = () => {
         headerShown: false,
       }}
     >
-      {isAuthenticated ? (
-        <>
-          <Stack.Screen name="Main" component={BottomTabNavigator} />
-          <Stack.Screen name="Profile" component={ProfileScreen} />
-        </>
-      ) : (
-        <Stack.Screen name="Auth" component={AuthNavigator} />
-      )}
+      <Stack.Screen name="Main" component={BottomTabNavigator} />
+      <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="Auth" component={AuthNavigator} />
     </Stack.Navigator>
   );
 };

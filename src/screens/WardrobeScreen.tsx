@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Header } from "../components/common/Header";
+import { GuestPrompt } from "../components/common/GuestPrompt";
 import { WardrobeItem } from "../types";
 import {
   mockWardrobeGoals,
@@ -17,6 +18,7 @@ import {
   mockMostWornItems,
 } from "../hooks/mockData";
 import { useWardrobe } from "../hooks/useWardrobe";
+import { useAuth } from "../hooks/auth";
 import { WardrobeControls } from "../components/wardrobe/WardrobeHeader";
 import { WardrobeItemGrid } from "../components/wardrobe/WardrobeItemGrid";
 import { WardrobeLoadingGrid } from "../components/wardrobe/WardrobeLoadingGrid";
@@ -31,14 +33,16 @@ import { MostWorn } from "../components/wardrobe/MostWorn";
 
 type ViewMode = "grid" | "list";
 
-const WardrobeScreen = () => {
+const WardrobeScreen = ({ navigation }: any) => {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [selectedItem, setSelectedItem] = useState<WardrobeItem | null>(null);
   const [outfitBuilderItem, setOutfitBuilderItem] =
     useState<WardrobeItem | null>(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
+  const [showGuestPrompt, setShowGuestPrompt] = useState(false);
 
+  const { isGuest } = useAuth();
   const {
     items,
     allItems,
@@ -152,7 +156,13 @@ const WardrobeScreen = () => {
       {/* FAB for adding items */}
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => setIsAddItemModalOpen(true)}
+        onPress={() => {
+          if (isGuest) {
+            setShowGuestPrompt(true);
+          } else {
+            setIsAddItemModalOpen(true);
+          }
+        }}
       >
         <Ionicons name="add" size={24} color="#fff" />
       </TouchableOpacity>
@@ -182,6 +192,16 @@ const WardrobeScreen = () => {
       <AddItemModal
         visible={isAddItemModalOpen}
         onClose={() => setIsAddItemModalOpen(false)}
+      />
+
+      <GuestPrompt
+        visible={showGuestPrompt}
+        onClose={() => setShowGuestPrompt(false)}
+        onLogin={() => {
+          setShowGuestPrompt(false);
+          navigation.navigate("Auth", { screen: "Login" });
+        }}
+        feature="thêm item vào tủ đồ"
       />
     </View>
   );

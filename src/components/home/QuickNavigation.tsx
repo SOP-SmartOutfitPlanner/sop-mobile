@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { Shirt, Calendar, Heart, Award } from "lucide-react-native";
+import { Shirt, Calendar, Heart, Award, Trophy } from "lucide-react-native";
 import { NAVIGATION_ITEMS } from "../../constants/homeData";
 import {
   COLORS,
@@ -32,8 +32,8 @@ const NavigationItem: React.FC<NavigationItemProps> = ({ item }) => {
         return <Calendar {...iconProps} />;
       case "favorites":
         return <Heart {...iconProps} />;
-      case "collections":
-        return <Award {...iconProps} />;
+      case "community":
+        return <Trophy {...iconProps} />;
       default:
         return <Shirt {...iconProps} />;
     }

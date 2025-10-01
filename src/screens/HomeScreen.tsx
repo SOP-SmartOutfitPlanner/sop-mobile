@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet, ScrollView, Alert } from "react-native";
 import { Header } from "../components/common";
 import {
   TodayOutfit,
@@ -8,14 +8,42 @@ import {
   TrendingCommunity,
   QuickNavigation,
 } from "../components/home";
+import { useAuth } from "../hooks/auth";
 
 export default function HomeScreen({ navigation }: any) {
+  const { isGuest } = useAuth();
+
+  const showGuestAlert = (feature: string) => {
+    Alert.alert(
+      "Yêu cầu đăng nhập",
+      `Bạn cần đăng nhập để sử dụng tính năng ${feature}`,
+      [
+        {
+          text: "Để sau",
+          style: "cancel",
+        },
+        {
+          text: "Đăng nhập",
+          onPress: () => navigation.navigate("Auth", { screen: "Login" }),
+        },
+      ]
+    );
+  };
+
   const handleNotificationPress = () => {
-    console.log("Notification pressed");
+    if (isGuest) {
+      showGuestAlert("thông báo");
+    } else {
+      console.log("Notification pressed");
+    }
   };
 
   const handleMessagePress = () => {
-    console.log("Message pressed");
+    if (isGuest) {
+      showGuestAlert("tin nhắn");
+    } else {
+      console.log("Message pressed");
+    }
   };
 
   const handleProfilePress = () => {

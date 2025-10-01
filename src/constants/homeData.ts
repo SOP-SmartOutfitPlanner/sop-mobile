@@ -78,5 +78,5 @@ export const NAVIGATION_ITEMS = [
   { id: "wardrobe", icon: "wardrobe", title: "Wardrobe", route: "Wardrobe" },
   { id: "planner", icon: "planner", title: "Planner", route: "Planner" },
   { id: "favorites", icon: "favorites", title: "Favorites", route: "Collection" },
-  { id: "collections", icon: "collections", title: "Collections", route: "Community" },
+  { id: "community", icon: "community", title: "Community", route: "Community" },
 ];

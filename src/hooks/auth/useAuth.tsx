@@ -10,6 +10,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  isGuest: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (
@@ -19,6 +20,8 @@ interface AuthContextType {
   ) => Promise<void>;
   logout: () => void;
   loginWithGoogle: () => Promise<void>;
+  continueAsGuest: () => void;
+  promptLogin: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,6 +40,7 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isGuest, setIsGuest] = useState(true); // Start as guest by default
   const [isLoading, setIsLoading] = useState(false);
 
   const login = async (email: string, password: string) => {
@@ -55,6 +59,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
 
       setUser(mockUser);
+      setIsGuest(false); // Clear guest mode when user logs in
     } catch (error) {
       throw new Error("Đăng nhập thất bại");
     } finally {
@@ -80,6 +85,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
 
       setUser(mockUser);
+      setIsGuest(false); // Clear guest mode when user registers
     } catch (error) {
       throw new Error("Đăng ký thất bại");
     } finally {
@@ -102,6 +108,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
 
       setUser(mockUser);
+      setIsGuest(false); // Clear guest mode when user logs in with Google
     } catch (error) {
       throw new Error("Đăng nhập với Google thất bại");
     } finally {
@@ -111,16 +118,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = () => {
     setUser(null);
+    setIsGuest(true); // Return to guest mode after logout
+  };
+
+  const continueAsGuest = () => {
+    setIsGuest(true);
+  };
+
+  const promptLogin = (): boolean => {
+    // Return false if user is guest, indicating login is required
+    // This function can be used to check if action requires authentication
+    return !isGuest && !user;
   };
 
   const value: AuthContextType = {
     user,
     isAuthenticated: !!user,
+    isGuest,
     isLoading,
     login,
     register,
     logout,
     loginWithGoogle,
+    continueAsGuest,
+    promptLogin,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

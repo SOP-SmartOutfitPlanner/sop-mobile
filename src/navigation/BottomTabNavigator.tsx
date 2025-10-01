@@ -26,8 +26,8 @@ const BottomTabNavigator = () => {
             iconName = focused ? "calendar" : "calendar-outline";
           } else if (route.name === "Community") {
             iconName = focused ? "people" : "people-outline";
-          } else if (route.name === "Profile") {
-            iconName = focused ? "person" : "person-outline";
+          } else if (route.name === "Collection") {
+            iconName = focused ? "ribbon" : "ribbon-outline";
           } else {
             iconName = "help-outline";
           }
@@ -79,10 +79,10 @@ const BottomTabNavigator = () => {
         }}
       />
       <Tab.Screen
-        name="Profile"
+        name="Collection"
         component={ProfileScreen}
         options={{
-          tabBarLabel: "Profile",
+          tabBarLabel: "Collection",
         }}
       />
     </Tab.Navigator>

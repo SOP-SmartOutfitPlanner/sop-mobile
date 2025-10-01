@@ -1,0 +1,115 @@
+import React from "react";
+import { View, Text, StyleSheet, Image } from "react-native";
+
+interface User {
+  id: string;
+  email: string;
+  fullName: string;
+  avatar?: string;
+}
+
+interface StatItemData {
+  value: string;
+  label: string;
+}
+
+interface UserProfileSectionProps {
+  user: User | null;
+  stats?: StatItemData[];
+}
+
+export const UserProfileSection: React.FC<UserProfileSectionProps> = ({
+  user,
+  stats = [
+    { value: "1.2K", label: "Followers" },
+    { value: "856", label: "Likes" },
+    { value: "42", label: "Outfits" },
+    { value: "8", label: "Challenges" },
+  ],
+}) => {
+  return (
+    <View style={styles.profileSection}>
+      <View style={styles.avatarContainer}>
+        <Image
+          source={
+            user?.avatar
+              ? { uri: user.avatar }
+              : require("../../../assets/adaptive-icon.png")
+          }
+          style={styles.avatar}
+        />
+      </View>
+      <Text style={styles.userName}>{user?.fullName || "Minh Nguyen"}</Text>
+      <Text style={styles.userBio}>
+        Fashion enthusiast & style curator. Passionate about sustainable fashion
+        and timeless pieces.
+      </Text>
+
+      {/* Stats */}
+      <View style={styles.statsContainer}>
+        {stats.map((stat, index) => (
+          <View key={index} style={styles.statItem}>
+            <Text style={styles.statNumber}>{stat.value}</Text>
+            <Text style={styles.statLabel}>{stat.label}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  profileSection: {
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+    alignItems: "center",
+  },
+  avatarContainer: {
+    marginBottom: 16,
+  },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "#E2E8F0",
+  },
+  userName: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1E293B",
+    marginBottom: 8,
+  },
+  userBio: {
+    fontSize: 14,
+    color: "#64748B",
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 24,
+    paddingHorizontal: 16,
+  },
+  statsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
+  },
+  statItem: {
+    alignItems: "center",
+    backgroundColor: "#F8FAFC",
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    minWidth: 70,
+  },
+  statNumber: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1E293B",
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: "#64748B",
+    fontWeight: "500",
+  },
+});
