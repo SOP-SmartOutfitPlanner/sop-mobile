@@ -5,9 +5,9 @@ import { Ionicons } from "@expo/vector-icons";
 // Import screens
 import HomeScreen from "../screens/HomeScreen";
 import WardrobeScreen from "../screens/WardrobeScreen";
-import PlannerScreen from "../screens/PlannerScreen";
 import CommunityScreen from "../screens/CommunityScreen";
-import ProfileScreen from "../screens/ProfileScreen";
+import CollectionScreen from "../screens/CollectionScreen";
+import SuggestionScreen from "../screens/SuggestionScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -22,12 +22,12 @@ const BottomTabNavigator = () => {
             iconName = focused ? "home" : "home-outline";
           } else if (route.name === "Wardrobe") {
             iconName = focused ? "shirt" : "shirt-outline";
-          } else if (route.name === "Planner") {
-            iconName = focused ? "calendar" : "calendar-outline";
+          } else if (route.name === "Suggestion") {
+            iconName = focused ? "sparkles" : "sparkles-outline";
           } else if (route.name === "Community") {
             iconName = focused ? "people" : "people-outline";
           } else if (route.name === "Collection") {
-            iconName = focused ? "ribbon" : "ribbon-outline";
+            iconName = focused ? "bookmark" : "bookmark-outline";
           } else {
             iconName = "help-outline";
           }
@@ -65,10 +65,10 @@ const BottomTabNavigator = () => {
         }}
       />
       <Tab.Screen
-        name="Planner"
-        component={PlannerScreen}
+        name="Suggestion"
+        component={SuggestionScreen}
         options={{
-          tabBarLabel: "Planner",
+          tabBarLabel: "Suggestion",
         }}
       />
       <Tab.Screen
@@ -80,7 +80,7 @@ const BottomTabNavigator = () => {
       />
       <Tab.Screen
         name="Collection"
-        component={ProfileScreen}
+        component={CollectionScreen}
         options={{
           tabBarLabel: "Collection",
         }}
