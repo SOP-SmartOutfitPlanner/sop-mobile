@@ -5,9 +5,9 @@ import { Ionicons } from "@expo/vector-icons";
 // Import screens
 import HomeScreen from "../screens/HomeScreen";
 import WardrobeScreen from "../screens/WardrobeScreen";
-import CommunityScreen from "../screens/CommunityScreen";
 import CollectionScreen from "../screens/CollectionScreen";
 import SuggestionScreen from "../screens/SuggestionScreen";
+import FavoriteScreen from "../screens/FavoriteScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -24,8 +24,8 @@ const BottomTabNavigator = () => {
             iconName = focused ? "shirt" : "shirt-outline";
           } else if (route.name === "Suggestion") {
             iconName = focused ? "sparkles" : "sparkles-outline";
-          } else if (route.name === "Community") {
-            iconName = focused ? "people" : "people-outline";
+          } else if (route.name === "Favorite") {
+            iconName = focused ? "heart" : "heart-outline";
           } else if (route.name === "Collection") {
             iconName = focused ? "bookmark" : "bookmark-outline";
           } else {
@@ -72,10 +72,10 @@ const BottomTabNavigator = () => {
         }}
       />
       <Tab.Screen
-        name="Community"
-        component={CommunityScreen}
+        name="Favorite"
+        component={FavoriteScreen}
         options={{
-          tabBarLabel: "Community",
+          tabBarLabel: "Favorite",
         }}
       />
       <Tab.Screen

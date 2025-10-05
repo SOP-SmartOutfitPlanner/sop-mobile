@@ -4,11 +4,13 @@ import { AuthNavigator } from "./AuthNavigator";
 import BottomTabNavigator from "./BottomTabNavigator";
 import { useAuth } from "../hooks/auth";
 import ProfileScreen from "../screens/ProfileScreen";
+import CommunityScreen from "../screens/CommunityScreen";
 
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
   Profile: undefined;
+  Community: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -25,6 +27,7 @@ export const AppNavigator: React.FC = () => {
       <Stack.Screen name="Main" component={BottomTabNavigator} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Auth" component={AuthNavigator} />
+      <Stack.Screen name="Community" component={CommunityScreen} />
     </Stack.Navigator>
   );
 };

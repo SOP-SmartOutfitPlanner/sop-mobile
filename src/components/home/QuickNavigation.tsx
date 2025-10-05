@@ -1,26 +1,28 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { CompositeNavigationProp } from "@react-navigation/native";
+import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { Shirt, Calendar, Heart, Award, Trophy } from "lucide-react-native";
 import { NAVIGATION_ITEMS } from "../../constants/homeData";
-import {
-  COLORS,
-  SPACING,
-  SHADOWS,
-  SIZES,
-  BASE_STYLES,
-} from "../../constants/homeStyles";
+import { COLORS, SPACING, BASE_STYLES } from "../../constants/homeStyles";
 
 interface NavigationItemProps {
   item: (typeof NAVIGATION_ITEMS)[0];
 }
 
 const NavigationItem: React.FC<NavigationItemProps> = ({ item }) => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
 
   const handlePress = () => {
-    // @ts-ignore - Navigation typing can be complex, ignoring for demo
-    navigation.navigate(item.route);
+    // Navigate to Community screen in the parent stack navigator
+    if (item.route === "Community") {
+      navigation.getParent()?.navigate(item.route);
+    } else {
+      // Navigate to tabs within BottomTabNavigator
+      navigation.navigate(item.route);
+    }
   };
 
   const renderIcon = () => {
