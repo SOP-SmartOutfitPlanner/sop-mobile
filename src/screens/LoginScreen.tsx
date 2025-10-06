@@ -14,6 +14,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/auth";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { saveTokens, extractAndSaveUserId } from "../services/api/apiClient";
+import { login } from "../services/endpoint";
 
 interface LoginScreenProps {
   navigation: any;
@@ -24,16 +26,24 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const { login, loginWithGoogle, isLoading } = useAuth();
+  const { loginWithGoogle, isLoading } = useAuth();
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Lỗi", "Vui lòng nhập đầy đủ thông tin");
-      return;
-    }
-
     try {
-      await login(email, password);
+      const response = await login({ email, password });
+      const accessToken = response.data.accessToken;
+      const refreshToken = response.data.refreshToken;
+
+      // Save tokens
+      await saveTokens(accessToken, refreshToken);
+
+      // Decode and save userId from accessToken
+      const userId = await extractAndSaveUserId(accessToken);
+      console.log("✅ Login successful! UserId:", userId);
+
+      if (response.message) {
+        navigation.navigate("Main");
+      }
     } catch (error) {
       Alert.alert(
         "Lỗi",
@@ -182,7 +192,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             </TouchableOpacity>
 
             {/* Demo Account Section */}
-            <View style={styles.demoContainer}>
+            {/* <View style={styles.demoContainer}>
               <Text style={styles.demoTitle}>Tài khoản demo</Text>
               <View style={styles.demoAccount}>
                 <Ionicons name="person-outline" size={16} color="#6B7280" />
@@ -196,7 +206,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                   Stylist: stylist@example.com / stylist123
                 </Text>
               </View>
-            </View>
+            </View> */}
           </View>
 
           {/* Register Link */}

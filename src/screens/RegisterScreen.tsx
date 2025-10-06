@@ -14,6 +14,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/auth";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { register } from "../services/endpoint";
 
 interface RegisterScreenProps {
   navigation: any;
@@ -27,11 +28,24 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const { register, loginWithGoogle, isLoading } = useAuth();
+  const { loginWithGoogle, isLoading } = useAuth();
 
   const handleRegister = async () => {
-    if (!fullName || !email || !password) {
-      Alert.alert("Lỗi", "Vui lòng nhập đầy đủ thông tin");
+    // Validation
+    if (!fullName.trim()) {
+      Alert.alert("Lỗi", "Vui lòng nhập họ và tên");
+      return;
+    }
+
+    if (!email.trim()) {
+      Alert.alert("Lỗi", "Vui lòng nhập email");
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert("Lỗi", "Email không hợp lệ");
       return;
     }
 
@@ -41,12 +55,32 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
     }
 
     try {
-      await register(fullName, email, password);
-    } catch (error) {
-      Alert.alert(
-        "Lỗi",
-        error instanceof Error ? error.message : "Đăng ký thất bại"
-      );
+      const response = await register({
+        email: email.trim(),
+        displayName: fullName.trim(),
+        password: password,
+        confirmPassword: password,
+      });
+
+      if (response.statusCode === 200 || response.statusCode === 201) {
+        Alert.alert(
+          "Thành công",
+          "Đăng ký thành công! Vui lòng kiểm tra email để lấy mã OTP.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                // Navigate to verify screen with email
+                navigation.navigate("Verify", { email: email.trim() });
+              },
+            },
+          ]
+        );
+      }
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || error.message || "Đăng ký thất bại";
+      Alert.alert("Lỗi", errorMessage);
     }
   };
 
