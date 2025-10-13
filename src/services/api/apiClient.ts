@@ -3,8 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { jwtDecode } from "jwt-decode";
 
 // API Configuration
-// const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "https://api.example.com";
-const API_BASE_URL = "https://sop.wizlab.io.vn/api/v1";
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 const API_TIMEOUT = 30000; // 30 seconds
 
 // Storage Keys
@@ -44,12 +43,19 @@ const processQueue = (error: any, token: string | null = null) => {
 // Request Interceptor
 apiClient.interceptors.request.use(
   async (config) => {
-    // Get access token from storage
-    const accessToken = await AsyncStorage.getItem(ACCESS_TOKEN_KEY);
+    // Skip auth endpoints (login, register, etc) - they don't need token
+    const authEndpoints = ["/auth", "/auth/register", "/auth/otp/verify", "/auth/otp/resend"];
+    const isAuthEndpoint = authEndpoints.some(endpoint => config.url?.includes(endpoint));
+    
+    // Only add token for non-auth endpoints
+    if (!isAuthEndpoint) {
+      // Get access token from storage
+      const accessToken = await AsyncStorage.getItem(ACCESS_TOKEN_KEY);
 
-    // Add token to headers if exists
-    if (accessToken && config.headers) {
-      config.headers.Authorization = `${accessToken}`;
+      // Add token to headers if exists
+      if (accessToken && config.headers) {
+        config.headers.Authorization = `${accessToken}`;
+      }
     }
 
     // Log request in development
@@ -58,6 +64,7 @@ apiClient.interceptors.request.use(
         method: config.method?.toUpperCase(),
         url: config.url,
         data: config.data,
+        hasToken: !!config.headers?.Authorization,
       });
     }
 
@@ -97,7 +104,11 @@ apiClient.interceptors.response.use(
     }
 
     // Handle 401 Unauthorized - Token expired
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Skip refresh token logic for auth endpoints (login, register, etc)
+    const authEndpoints = ["/auth", "/auth/register", "/auth/otp/verify", "/auth/otp/resend"];
+    const isAuthEndpoint = authEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
+    
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       if (isRefreshing) {
         // Queue the request while refreshing
         return new Promise((resolve, reject) => {
@@ -105,7 +116,7 @@ apiClient.interceptors.response.use(
         })
           .then((token) => {
             if (originalRequest.headers) {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
+              originalRequest.headers.Authorization = `${token}`;
             }
             return apiClient(originalRequest);
           })
@@ -142,7 +153,7 @@ apiClient.interceptors.response.use(
 
         // Update authorization header
         if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          originalRequest.headers.Authorization = ` ${newAccessToken}`;
         }
 
         // Process queued requests

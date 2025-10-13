@@ -29,9 +29,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const { loginWithGoogle, isLoading } = useAuth();
+  const [isLoginLoading, setIsLoginLoading] = useState(false);
+  const { loginWithGoogle, isLoading: isGoogleLoading } = useAuth();
 
   const handleLogin = async () => {
+    // Validation
+    if (!email.trim() || !password.trim()) {
+      Alert.alert("Lỗi", "Vui lòng nhập email và mật khẩu");
+      return;
+    }
+
+    setIsLoginLoading(true);
     try {
       const response = await login({ email, password });
       const accessToken = response.data.accessToken;
@@ -39,7 +47,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
       // Decode token to check FirstTime
       const decodedToken = decodeJWT(accessToken);
-      console.log("Decoded Token:", decodedToken);
+      // console.log("✅ Decoded Token:", decodedToken);
 
       // Save tokens
       await saveTokens(accessToken, refreshToken);
@@ -52,11 +60,24 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       } else {
         navigation.replace("Main");
       }
-    } catch (error) {
-      Alert.alert(
-        "Lỗi",
-        error instanceof Error ? error.message : "Đăng nhập thất bại"
-      );
+    } catch (error: any) {
+      console.error("❌ Login Error:", error);
+
+      // Parse API error response
+      let errorMessage = "Đăng nhập thất bại";
+
+      if (error.response?.data) {
+        // API responded with error structure: { statusCode, message, data }
+        // console.log("API Error Response:", error.response.data);
+        errorMessage = error.response.data.message || errorMessage;
+      } else {
+        // Something else happened
+        errorMessage = error.message || errorMessage;
+      }
+
+      Alert.alert("Đăng nhập thất bại", errorMessage);
+    } finally {
+      setIsLoginLoading(false);
     }
   };
 
@@ -172,11 +193,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
             {/* Login Button */}
             <TouchableOpacity
-              style={[styles.loginButton, isLoading && styles.disabledButton]}
+              style={[
+                styles.loginButton,
+                isLoginLoading && styles.disabledButton,
+              ]}
               onPress={handleLogin}
-              disabled={isLoading}
+              disabled={isLoginLoading}
             >
-              {isLoading ? (
+              {isLoginLoading ? (
                 <Text style={styles.loginButtonText}>Đang đăng nhập...</Text>
               ) : (
                 <Text style={styles.loginButtonText}>Đăng nhập</Text>
@@ -192,8 +216,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
             {/* Google Login Button */}
             <TouchableOpacity
-              style={styles.googleButton}
+              style={[
+                styles.googleButton,
+                isGoogleLoading && styles.disabledButton,
+              ]}
               onPress={handleGoogleLogin}
+              disabled={isGoogleLoading}
             >
               <Ionicons name="logo-google" size={20} color="#4285F4" />
               <Text style={styles.googleButtonText}>Đăng nhập với Google</Text>
