@@ -14,7 +14,11 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/auth";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { saveTokens, extractAndSaveUserId } from "../services/api/apiClient";
+import {
+  saveTokens,
+  extractAndSaveUserId,
+  decodeJWT,
+} from "../services/api/apiClient";
 import { login } from "../services/endpoint";
 
 interface LoginScreenProps {
@@ -25,7 +29,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
   const { loginWithGoogle, isLoading } = useAuth();
 
   const handleLogin = async () => {
@@ -34,15 +37,20 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       const accessToken = response.data.accessToken;
       const refreshToken = response.data.refreshToken;
 
+      // Decode token to check FirstTime
+      const decodedToken = decodeJWT(accessToken);
+      console.log("Decoded Token:", decodedToken);
+
       // Save tokens
       await saveTokens(accessToken, refreshToken);
-
       // Decode and save userId from accessToken
-      const userId = await extractAndSaveUserId(accessToken);
-      console.log("✅ Login successful! UserId:", userId);
+      await extractAndSaveUserId(accessToken);
 
-      if (response.message) {
-        navigation.navigate("Main");
+      // Check if first time login (string "True" from API)
+      if (decodedToken.FirstTime === "True") {
+        navigation.replace("Onboarding");
+      } else {
+        navigation.replace("Main");
       }
     } catch (error) {
       Alert.alert(

@@ -78,7 +78,7 @@ const WardrobeScreen = ({ navigation }: any) => {
   };
 
   const handleProfilePress = () => {
-    // Handle profile press
+    navigation.navigate("Profile");
   };
 
   if (loading) {

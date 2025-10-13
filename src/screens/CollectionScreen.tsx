@@ -9,7 +9,7 @@ import {
   CollectionHeader,
 } from "../components/collection";
 
-const CollectionScreen = () => {
+const CollectionScreen = ({ navigation }: any) => {
   const [activeFilter, setActiveFilter] = useState("Filters");
 
   // Mock data
@@ -48,7 +48,7 @@ const CollectionScreen = () => {
   };
 
   const handleProfilePress = () => {
-    Alert.alert("Profile", "View your profile");
+    navigation.navigate("Profile");
   };
 
   const handleCollectionPress = (id: string) => {

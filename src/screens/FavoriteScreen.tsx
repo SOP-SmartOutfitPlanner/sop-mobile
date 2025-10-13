@@ -9,7 +9,7 @@ import {
   OutfitFavoritesSection,
 } from "../components/favorite";
 
-const FavoriteScreen = () => {
+const FavoriteScreen = ({ navigation }: any) => {
   const [activeTab, setActiveTab] = useState<"Outfits" | "Items">("Outfits");
 
   // Mock data
@@ -40,7 +40,7 @@ const FavoriteScreen = () => {
   };
 
   const handleProfilePress = () => {
-    Alert.alert("Profile", "View your profile");
+    navigation.navigate("Profile");
   };
 
   const handleFavoritePress = (id: string) => {

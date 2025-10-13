@@ -8,7 +8,7 @@ import {
   WeatherContext,
 } from "../components/suggestion";
 
-const SuggestionScreen = () => {
+const SuggestionScreen = ({ navigation }: any) => {
   const [goal, setGoal] = useState("Casual");
   const [occasion, setOccasion] = useState("Work");
   const [season, setSeason] = useState("Auto (Weather)");
@@ -82,7 +82,7 @@ const SuggestionScreen = () => {
   };
 
   const handleProfilePress = () => {
-    Alert.alert("Profile", "View your profile");
+    navigation.navigate("Profile");
   };
 
   return (
