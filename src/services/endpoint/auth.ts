@@ -15,18 +15,18 @@ import {
 
 /**
  * Auth API Endpoints
- * Base URL: https://sop.wizlab.io.vn/api/v1/auth
+ * Base URL: https://sop.wizlab.io.vn/auth
  */
 
 /**
  * Register a new user
- * POST /api/v1/auth/register
+ * POST /auth/register
  */
 export const register = async (
   data: RegisterRequest
 ): Promise<RegisterResponse> => {
   const response = await apiClient.post<RegisterResponse>(
-    "/api/v1/auth/register",
+    "/auth/register",
     data
   );
   return response.data;
@@ -34,13 +34,13 @@ export const register = async (
 
 /**
  * Verify OTP after registration
- * POST /api/v1/auth/otp/verify
+ * POST /auth/otp/verify
  */
 export const verifyOtp = async (
   data: VerifyOtpRequest
 ): Promise<VerifyOtpResponse> => {
   const response = await apiClient.post<VerifyOtpResponse>(
-    "/api/v1/auth/otp/verify",
+    "/auth/otp/verify",
     data
   );
   return response.data;
@@ -48,7 +48,7 @@ export const verifyOtp = async (
 
 /**
  * Login with email and password
- * POST /api/v1/auth
+ * POST /auth
  * Returns access token and refresh token
  */
 export const login = async (data: LoginRequest): Promise<LoginResponse> => {
@@ -58,13 +58,13 @@ export const login = async (data: LoginRequest): Promise<LoginResponse> => {
 
 /**
  * Resend OTP to email
- * POST /api/v1/auth/otp/resend
+ * POST /auth/otp/resend
  */
 export const resendOtp = async (
   data: ResendOtpRequest
 ): Promise<ResendOtpResponse> => {
   const response = await apiClient.post<ResendOtpResponse>(
-    "/api/v1/auth/otp/resend",
+    "/auth/otp/resend",
     data
   );
   return response.data;
@@ -72,13 +72,13 @@ export const resendOtp = async (
 
 /**
  * Refresh access token using refresh token
- * POST /api/v1/auth/refresh-token
+ * POST /auth/refresh-token
  */
 export const refreshToken = async (
   data: RefreshTokenRequest
 ): Promise<RefreshTokenResponse> => {
   const response = await apiClient.post<RefreshTokenResponse>(
-    "/api/v1/auth/refresh-token",
+    "/auth/refresh-token",
     data
   );
   return response.data;
@@ -86,11 +86,11 @@ export const refreshToken = async (
 
 /**
  * Logout user
- * POST /api/v1/auth/logout
+ * POST /auth/logout
  * Requires authentication (Bearer token in header)
  */
 export const logout = async (): Promise<LogoutResponse> => {
-  const response = await apiClient.post<LogoutResponse>("/api/v1/auth/logout");
+  const response = await apiClient.post<LogoutResponse>("/auth/logout");
   return response.data;
 };
 

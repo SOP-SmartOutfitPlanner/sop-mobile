@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { jwtDecode } from "jwt-decode";
 
 // API Configuration
 // const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "https://api.example.com";
@@ -213,27 +214,10 @@ export const clearTokens = async (): Promise<void> => {
   }
 };
 
-// JWT Decode Function
+// JWT Decode Function 
 export const decodeJWT = (token: string): any => {
   try {
-    // JWT format: header.payload.signature
-    const parts = token.split('.');
-    if (parts.length !== 3) {
-      throw new Error('Invalid JWT token format');
-    }
-
-    // Decode base64 payload (part[1])
-    const payload = parts[1];
-    
-    // Add padding if needed for base64 decoding
-    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
-    const paddedBase64 = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
-    
-    // Decode base64 to string
-    const decodedPayload = atob(paddedBase64);
-    
-    // Parse JSON
-    return JSON.parse(decodedPayload);
+    return jwtDecode(token);
   } catch (error) {
     console.error("❌ Error decoding JWT:", error);
     throw error;
