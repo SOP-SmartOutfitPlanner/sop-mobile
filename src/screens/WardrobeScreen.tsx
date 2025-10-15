@@ -193,6 +193,10 @@ const WardrobeScreen = ({ navigation }: any) => {
       <AddItemModal
         visible={isAddItemModalOpen}
         onClose={() => setIsAddItemModalOpen(false)}
+        onSave={() => {
+          setIsAddItemModalOpen(false);
+          handleRefresh(); // Refresh wardrobe after adding item
+        }}
       />
 
       <GuestPrompt

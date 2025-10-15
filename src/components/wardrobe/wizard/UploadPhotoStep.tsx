@@ -1,22 +1,38 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  ActivityIndicator,
+  ScrollView,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 interface UploadPhotoStepProps {
   selectedImage: string | null;
   isLoading: boolean;
+  isDetecting: boolean;
   onCameraPress: () => void;
   onGalleryPress: () => void;
+  onDetectPress: () => void;
 }
 
 export const UploadPhotoStep: React.FC<UploadPhotoStepProps> = ({
   selectedImage,
   isLoading,
+  isDetecting,
   onCameraPress,
   onGalleryPress,
+  onDetectPress,
 }) => {
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.photoContainer}>
         {selectedImage ? (
           <View style={styles.imageContainer}>
@@ -46,7 +62,7 @@ export const UploadPhotoStep: React.FC<UploadPhotoStepProps> = ({
         <TouchableOpacity
           style={styles.button}
           onPress={onCameraPress}
-          disabled={isLoading}
+          disabled={isLoading || isDetecting}
         >
           <Ionicons name="camera" size={20} color="#374151" />
           <Text style={styles.buttonText}>
@@ -57,7 +73,7 @@ export const UploadPhotoStep: React.FC<UploadPhotoStepProps> = ({
         <TouchableOpacity
           style={styles.button}
           onPress={onGalleryPress}
-          disabled={isLoading}
+          disabled={isLoading || isDetecting}
         >
           <Ionicons name="images" size={20} color="#374151" />
           <Text style={styles.buttonText}>
@@ -65,14 +81,41 @@ export const UploadPhotoStep: React.FC<UploadPhotoStepProps> = ({
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
+
+      {/* Detect Image Button - Show only when image is selected */}
+      {selectedImage && (
+        <TouchableOpacity
+          style={[
+            styles.detectButton,
+            isDetecting && styles.detectButtonDisabled,
+          ]}
+          onPress={onDetectPress}
+          disabled={isDetecting}
+        >
+          {isDetecting ? (
+            <>
+              <ActivityIndicator size="small" color="#fff" />
+              <Text style={styles.detectButtonText}>Analyzing...</Text>
+            </>
+          ) : (
+            <>
+              <Ionicons name="sparkles" size={20} color="#fff" />
+              <Text style={styles.detectButtonText}>Detect Image with AI</Text>
+            </>
+          )}
+        </TouchableOpacity>
+      )}
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollContent: {
     padding: 30,
+    paddingBottom: 50,
   },
   photoContainer: {
     alignItems: "center",
@@ -132,5 +175,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     color: "#374151",
+  },
+  detectButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#8b5cf6",
+    borderRadius: 12,
+    paddingVertical: 16,
+    gap: 8,
+    marginTop: 2,
+  },
+  detectButtonDisabled: {
+    opacity: 0.6,
+  },
+  detectButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#fff",
   },
 });

@@ -24,6 +24,7 @@ interface AuthContextType {
   loginWithGoogle: () => Promise<void>;
   continueAsGuest: () => void;
   promptLogin: () => boolean;
+  refreshAuthState: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -61,15 +62,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       ]);
 
       if (accessToken && userId) {
-        // User has valid token, set as authenticated
-        // TODO: Optionally fetch user profile from API here
         setUser({
           id: userId,
-          email: "", // Will be populated from API in future
-          fullName: "User", // Will be populated from API in future
+          email: "",
+          fullName: "User",
         });
       } else {
-        // No token, user is not authenticated
         setUser(null);
       }
     } catch (error) {
@@ -80,14 +78,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // Expose checkAuthStatus so screens can refresh auth state after login
+  const refreshAuthState = async () => {
+    await checkAuthStatus();
+  };
+
   const loginWithGoogle = async () => {
     setIsLoading(true);
     try {
       // TODO: Implement Google OAuth
-      // 1. Get Google OAuth token
-      // 2. Send to backend API
-      // 3. Save tokens to AsyncStorage
-      // 4. Call checkAuthStatus()
       throw new Error("Google login not implemented yet");
     } catch (error) {
       throw error;
@@ -99,41 +98,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async () => {
     try {
       await logoutAPI();
-
-      // Clear all tokens from AsyncStorage
       await AsyncStorage.multiRemove([
         ACCESS_TOKEN_KEY,
         REFRESH_TOKEN_KEY,
         USER_ID_KEY,
       ]);
-
-      console.log("✅ Logged out successfully");
     } catch (error) {
-      console.error("❌ Error during logout:", error);
+      console.error("❌ Logout error:", error);
     } finally {
       setUser(null);
     }
   };
 
   const continueAsGuest = () => {
-    // User continues without authentication
     setUser(null);
   };
 
   const promptLogin = (): boolean => {
-    // Check if login is required (user is not authenticated)
     return !user;
   };
 
   const value: AuthContextType = {
     user,
-    isAuthenticated: !!user, // Simplified: user exists = authenticated
-    isGuest: !user, // Simplified: no user = guest
+    isAuthenticated: !!user,
+    isGuest: !user,
     isLoading,
     logout,
     loginWithGoogle,
     continueAsGuest,
     promptLogin,
+    refreshAuthState,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

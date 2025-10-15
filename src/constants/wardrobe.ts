@@ -1,3 +1,13 @@
+// Categories mapping for API
+export const CATEGORIES = [
+  { id: 1, name: "Top" },
+  { id: 2, name: "Bottom" },
+  { id: 3, name: "Dress" },
+  { id: 4, name: "Jacket" },
+  { id: 5, name: "Shoes" },
+  { id: 6, name: "Accessory" },
+] as const;
+
 export const ITEM_TYPES = [
   "top",
   "bottom", 

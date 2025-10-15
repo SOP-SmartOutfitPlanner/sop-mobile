@@ -30,7 +30,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoginLoading, setIsLoginLoading] = useState(false);
-  const { loginWithGoogle, isLoading: isGoogleLoading } = useAuth();
+  const {
+    loginWithGoogle,
+    isLoading: isGoogleLoading,
+    refreshAuthState,
+  } = useAuth();
 
   const handleLogin = async () => {
     // Validation
@@ -47,12 +51,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
       // Decode token to check FirstTime
       const decodedToken = decodeJWT(accessToken);
-      // console.log("✅ Decoded Token:", decodedToken);
-
+      console.log("decode token:", decodedToken);
       // Save tokens
       await saveTokens(accessToken, refreshToken);
       // Decode and save userId from accessToken
       await extractAndSaveUserId(accessToken);
+
+      // Refresh auth state in useAuth context
+      await refreshAuthState();
 
       // Check if first time login (string "True" from API)
       if (decodedToken.FirstTime === "True") {
@@ -61,18 +67,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         navigation.replace("Main");
       }
     } catch (error: any) {
-      console.error("❌ Login Error:", error);
-
       // Parse API error response
       let errorMessage = "Đăng nhập thất bại";
 
-      if (error.response?.data) {
-        // API responded with error structure: { statusCode, message, data }
-        // console.log("API Error Response:", error.response.data);
-        errorMessage = error.response.data.message || errorMessage;
-      } else {
-        // Something else happened
-        errorMessage = error.message || errorMessage;
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
       }
 
       Alert.alert("Đăng nhập thất bại", errorMessage);

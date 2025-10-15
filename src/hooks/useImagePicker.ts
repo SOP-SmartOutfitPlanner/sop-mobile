@@ -32,6 +32,13 @@ export const useImagePicker = () => {
     try {
       setIsLoading(true);
       
+      // Request permissions first
+      const hasPermissions = await requestPermissions();
+      if (!hasPermissions) {
+        setIsLoading(false);
+        return;
+      }
+      
       const pickerFn = source === 'camera' 
         ? ImagePicker.launchCameraAsync 
         : ImagePicker.launchImageLibraryAsync;
@@ -40,7 +47,7 @@ export const useImagePicker = () => {
         mediaTypes: 'images',
         allowsEditing: true,
         aspect: [3, 4],
-        quality: 0.8,
+        quality: 0.6, // Reduced quality to prevent 413 errors
       });
 
       if (!result.canceled && result.assets[0]) {

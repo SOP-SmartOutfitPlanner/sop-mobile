@@ -1,13 +1,19 @@
 import React from "react";
 import { View, Text, Image, StyleSheet, ScrollView } from "react-native";
+import { formatDateShort } from "../../../utils/dateUtils";
 
 interface ReviewStepData {
   name: string;
   brand?: string;
   type: string;
-  colors: string[];
-  seasons: string[];
-  occasions: string[];
+  color?: string;
+  aiDescription?: string;
+  weatherSuitable?: string;
+  condition?: string;
+  pattern?: string;
+  fabric?: string;
+  lastWornAt?: string;
+  frequencyWorn?: string;
   imageUri: string | null;
 }
 
@@ -83,26 +89,28 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ data }) => {
       {/* Item Details */}
       <View style={styles.section}>
         {renderInfoRow("ITEM NAME", data.name)}
-        {renderInfoRow("BRAND", data.brand || "")}
-        {renderInfoRow("TYPE", data.type)}
+        {data.brand && renderInfoRow("BRAND", data.brand)}
+        {renderInfoRow("CATEGORY", data.type)}
+        {data.color && renderInfoRow("COLOR", data.color)}
       </View>
 
-      {/* Colors */}
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>COLORS</Text>
-        {renderColorTags(data.colors)}
-      </View>
+      {/* AI Details */}
+      {data.aiDescription && (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>AI DESCRIPTION</Text>
+          <Text style={styles.value}>{data.aiDescription}</Text>
+        </View>
+      )}
 
-      {/* Seasons */}
+      {/* Additional Info */}
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>SEASONS</Text>
-        {renderTags(data.seasons, "#dbeafe")}
-      </View>
-
-      {/* Occasions */}
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>OCCASIONS</Text>
-        {renderTags(data.occasions, "#dbeafe")}
+        {data.weatherSuitable && renderInfoRow("WEATHER", data.weatherSuitable)}
+        {data.condition && renderInfoRow("CONDITION", data.condition)}
+        {data.pattern && renderInfoRow("PATTERN", data.pattern)}
+        {data.fabric && renderInfoRow("FABRIC", data.fabric)}
+        {data.lastWornAt &&
+          renderInfoRow("LAST WORN", formatDateShort(data.lastWornAt))}
+        {data.frequencyWorn && renderInfoRow("FREQUENCY", data.frequencyWorn)}
       </View>
     </ScrollView>
   );

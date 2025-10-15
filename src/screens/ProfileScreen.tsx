@@ -15,7 +15,7 @@ import {
 
 const ProfileScreen = ({ navigation }: any) => {
   const [activeTab, setActiveTab] = useState<ProfileTab>("Outfits");
-  const { logout, user, isGuest } = useAuth();
+  const { user, isGuest, logout } = useAuth();
 
   const outfits: OutfitItem[] = [
     {
@@ -45,7 +45,7 @@ const ProfileScreen = ({ navigation }: any) => {
 
   const handleLogout = async () => {
     try {
-      await logout();
+      logout();
     } catch (error) {
       console.error("Logout error:", error);
     }
