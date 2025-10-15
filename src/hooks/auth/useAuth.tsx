@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { logoutAPI } from "../../services/endpoint";
 
 interface User {
   id: string;
@@ -12,12 +20,6 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isGuest: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (
-    fullName: string,
-    email: string,
-    password: string
-  ) => Promise<void>;
   logout: () => void;
   loginWithGoogle: () => Promise<void>;
   continueAsGuest: () => void;
@@ -38,56 +40,41 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+const ACCESS_TOKEN_KEY = "@sop_access_token";
+const REFRESH_TOKEN_KEY = "@sop_refresh_token";
+const USER_ID_KEY = "@sop_user_id";
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isGuest, setIsGuest] = useState(true); // Start as guest by default
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start with true to check token
 
-  const login = async (email: string, password: string) => {
-    setIsLoading(true);
+  // Check if user has valid token on mount
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = async () => {
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const [accessToken, userId] = await Promise.all([
+        AsyncStorage.getItem(ACCESS_TOKEN_KEY),
+        AsyncStorage.getItem(USER_ID_KEY),
+      ]);
 
-      // Mock successful login
-      const mockUser: User = {
-        id: "1",
-        email,
-        fullName: "User Demo",
-        avatar:
-          "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-      };
-
-      setUser(mockUser);
-      setIsGuest(false); // Clear guest mode when user logs in
+      if (accessToken && userId) {
+        // User has valid token, set as authenticated
+        // TODO: Optionally fetch user profile from API here
+        setUser({
+          id: userId,
+          email: "", // Will be populated from API in future
+          fullName: "User", // Will be populated from API in future
+        });
+      } else {
+        // No token, user is not authenticated
+        setUser(null);
+      }
     } catch (error) {
-      throw new Error("Đăng nhập thất bại");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const register = async (
-    fullName: string,
-    email: string,
-    password: string
-  ) => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Mock successful registration
-      const mockUser: User = {
-        id: "1",
-        email,
-        fullName,
-      };
-
-      setUser(mockUser);
-      setIsGuest(false); // Clear guest mode when user registers
-    } catch (error) {
-      throw new Error("Đăng ký thất bại");
+      console.error("❌ Error checking auth status:", error);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -96,48 +83,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const loginWithGoogle = async () => {
     setIsLoading(true);
     try {
-      // Simulate Google OAuth
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      const mockUser: User = {
-        id: "2",
-        email: "user@gmail.com",
-        fullName: "Google User",
-        avatar:
-          "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-      };
-
-      setUser(mockUser);
-      setIsGuest(false); // Clear guest mode when user logs in with Google
+      // TODO: Implement Google OAuth
+      // 1. Get Google OAuth token
+      // 2. Send to backend API
+      // 3. Save tokens to AsyncStorage
+      // 4. Call checkAuthStatus()
+      throw new Error("Google login not implemented yet");
     } catch (error) {
-      throw new Error("Đăng nhập với Google thất bại");
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setIsGuest(true); // Return to guest mode after logout
+  const logout = async () => {
+    try {
+      await logoutAPI();
+
+      // Clear all tokens from AsyncStorage
+      await AsyncStorage.multiRemove([
+        ACCESS_TOKEN_KEY,
+        REFRESH_TOKEN_KEY,
+        USER_ID_KEY,
+      ]);
+
+      console.log("✅ Logged out successfully");
+    } catch (error) {
+      console.error("❌ Error during logout:", error);
+    } finally {
+      setUser(null);
+    }
   };
 
   const continueAsGuest = () => {
-    setIsGuest(true);
+    // User continues without authentication
+    setUser(null);
   };
 
   const promptLogin = (): boolean => {
-    // Return false if user is guest, indicating login is required
-    // This function can be used to check if action requires authentication
-    return !isGuest && !user;
+    // Check if login is required (user is not authenticated)
+    return !user;
   };
 
   const value: AuthContextType = {
     user,
-    isAuthenticated: !!user,
-    isGuest,
+    isAuthenticated: !!user, // Simplified: user exists = authenticated
+    isGuest: !user, // Simplified: no user = guest
     isLoading,
-    login,
-    register,
     logout,
     loginWithGoogle,
     continueAsGuest,

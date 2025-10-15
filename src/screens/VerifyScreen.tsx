@@ -14,15 +14,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { verifyOtp, resendOtp } from "../services/endpoint";
+import { StackScreenProps } from "@react-navigation/stack";
+import { RootStackParamList } from "../navigation/AppNavigator";
 
-interface VerifyScreenProps {
-  navigation: any;
-  route: {
-    params: {
-      email: string;
-    };
-  };
-}
+type VerifyScreenProps = StackScreenProps<RootStackParamList, "Verify">;
 
 export const VerifyScreen: React.FC<VerifyScreenProps> = ({
   navigation,
@@ -93,7 +88,8 @@ export const VerifyScreen: React.FC<VerifyScreenProps> = ({
             {
               text: "Đăng nhập",
               onPress: () => {
-                navigation.navigate("Login");
+                // Navigate to Auth stack (which contains Login screen)
+                navigation.navigate("Auth");
               },
             },
           ]

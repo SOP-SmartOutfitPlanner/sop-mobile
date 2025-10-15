@@ -42,7 +42,7 @@ const WardrobeScreen = ({ navigation }: any) => {
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [showGuestPrompt, setShowGuestPrompt] = useState(false);
 
-  const { isGuest } = useAuth();
+  const { isGuest, isAuthenticated } = useAuth();
   const {
     items,
     allItems,
@@ -157,7 +157,8 @@ const WardrobeScreen = ({ navigation }: any) => {
       <TouchableOpacity
         style={styles.fab}
         onPress={() => {
-          if (isGuest) {
+          // Check if user is authenticated (has valid token)
+          if (!isAuthenticated) {
             setShowGuestPrompt(true);
           } else {
             setIsAddItemModalOpen(true);

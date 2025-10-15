@@ -222,22 +222,6 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                 <Text style={styles.registerButtonText}>Tạo tài khoản</Text>
               )}
             </TouchableOpacity>
-
-            {/* Divider */}
-            <View style={styles.dividerContainer}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>hoặc</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            {/* Google Register Button */}
-            <TouchableOpacity
-              style={styles.googleButton}
-              onPress={handleGoogleRegister}
-            >
-              <Ionicons name="logo-google" size={20} color="#4285F4" />
-              <Text style={styles.googleButtonText}>Đăng ký với Google</Text>
-            </TouchableOpacity>
           </View>
 
           {/* Terms and Privacy */}
@@ -372,46 +356,6 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
-  },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#E2E8F0",
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    fontSize: 14,
-    color: "#94A3B8",
-  },
-  googleButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    paddingVertical: 16,
-    marginBottom: 32,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  googleButtonText: {
-    marginLeft: 12,
-    fontSize: 16,
-    color: "#1E293B",
-    fontWeight: "500",
   },
   termsContainer: {
     marginBottom: 24,

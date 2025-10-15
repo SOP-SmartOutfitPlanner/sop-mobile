@@ -89,7 +89,7 @@ export const refreshToken = async (
  * POST /auth/logout
  * Requires authentication (Bearer token in header)
  */
-export const logout = async (): Promise<LogoutResponse> => {
+export const logoutAPI = async (): Promise<LogoutResponse> => {
   const response = await apiClient.post<LogoutResponse>("/auth/logout");
   return response.data;
 };
@@ -104,7 +104,7 @@ export const authApi = {
   login,
   resendOtp,
   refreshToken,
-  logout,
+  logoutAPI,
 };
 
 export default authApi;
