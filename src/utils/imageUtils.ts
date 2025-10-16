@@ -17,11 +17,22 @@ export const getFilenameFromUri = (uri: string): string => {
 };
 
 /**
- * Get MIME type from filename
+ * Get MIME type from filename with proper mapping
  */
 export const getMimeTypeFromFilename = (filename: string): string => {
-  const extension = /\.(\w+)$/.exec(filename);
-  return extension ? `image/${extension[1]}` : "image/jpeg";
+  const extension = /\.(\w+)$/i.exec(filename);
+  
+  if (!extension) return "image/jpeg";
+  
+  // Map common extensions to proper MIME types
+  const mimeMap: { [key: string]: string } = {
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+  };
+  
+  const ext = extension[1].toLowerCase();
+  return mimeMap[ext] || "image/jpeg";
 };
 
 /**
@@ -62,16 +73,25 @@ export const compressImage = async (uri: string): Promise<string> => {
  * Prepare file object for multipart upload with compression
  */
 export const prepareFileForUpload = async (uri: string) => {
-  // Compress image first
+  // Compress image first (always converts to JPEG)
   const compressedUri = await compressImage(uri);
   
   const filename = getFilenameFromUri(compressedUri);
-  const mimeType = getMimeTypeFromFilename(filename);
+  
+  // After compression with JPEG format, always use image/jpeg MIME type
+  // This ensures consistency regardless of original file extension
+  const mimeType = "image/jpeg";
+  
+  console.log("📦 Prepared file for upload:", {
+    uri: compressedUri,
+    type: mimeType,
+    name: filename,
+  });
   
   return {
     uri: compressedUri,
     type: mimeType,
-    name: filename,
+    name: filename.replace(/\.\w+$/, '.jpg'), // Ensure .jpg extension
   };
 };
 
