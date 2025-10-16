@@ -20,6 +20,7 @@ import { GetCategory } from "../../services/endpoint/category";
 import { prepareFileForUpload } from "../../utils/imageUtils";
 import type { AddItemRequest } from "../../types/item";
 import type { Category } from "../../types/category";
+import { getUserId } from "../../services/api/apiClient";
 
 interface AddItemModalProps {
   visible: boolean;
@@ -225,7 +226,7 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     setIsSaving(true);
     try {
       // Get userId from AsyncStorage
-      const userId = await AsyncStorage.getItem("@sop_user_id");
+      const userId = await getUserId();
       if (!userId) {
         Alert.alert("Error", "User not authenticated. Please login again.");
         setIsSaving(false);

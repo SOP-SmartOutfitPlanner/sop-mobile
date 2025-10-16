@@ -94,8 +94,11 @@ apiClient.interceptors.response.use(
       _retry?: boolean;
     };
 
-    // Log error in development
-    if (__DEV__) {
+    // Check if this is a logout endpoint with 401 - this is expected behavior
+    const isLogoutWith401 = originalRequest?.url?.includes("/auth/logout") && error.response?.status === 401;
+
+    // Log error in development (skip expected logout 401)
+    if (__DEV__ && !isLogoutWith401) {
       console.error("❌ API Error:", {
         url: originalRequest?.url,
         status: error.response?.status,
@@ -104,8 +107,8 @@ apiClient.interceptors.response.use(
     }
 
     // Handle 401 Unauthorized - Token expired
-    // Skip refresh token logic for auth endpoints (login, register, etc)
-    const authEndpoints = ["/auth", "/auth/register", "/auth/otp/verify", "/auth/otp/resend"];
+    // Skip refresh token logic for auth endpoints (login, register, logout, etc)
+    const authEndpoints = ["/auth", "/auth/register", "/auth/otp/verify", "/auth/otp/resend", "/auth/logout"];
     const isAuthEndpoint = authEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
     
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
@@ -162,12 +165,11 @@ apiClient.interceptors.response.use(
         // Retry original request
         return apiClient(originalRequest);
       } catch (refreshError) {
-        // Refresh failed - logout user
+        // Refresh failed - clear tokens (app will handle navigation)
         processQueue(refreshError, null);
         await clearTokens();
 
-        // Redirect to login (you can emit an event or use navigation)
-        console.log("🔒 Session expired, redirecting to login...");
+        console.log("🔒 Session expired, tokens cleared");
 
         return Promise.reject(refreshError);
       } finally {

@@ -97,15 +97,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
+      // Try to call logout API, but don't fail if token is expired (401)
       await logoutAPI();
-      await AsyncStorage.multiRemove([
-        ACCESS_TOKEN_KEY,
-        REFRESH_TOKEN_KEY,
-        USER_ID_KEY,
-      ]);
-    } catch (error) {
-      console.error("❌ Logout error:", error);
+    } catch (error: any) {
+      // Ignore 401 errors (token already expired)
+      if (error?.response?.status !== 401) {
+        console.error("❌ Logout error:", error);
+      } else {
+        console.log("ℹ️ Token already expired, clearing local data");
+      }
     } finally {
+      // Always clear local storage and reset user state
+      try {
+        await AsyncStorage.multiRemove([
+          ACCESS_TOKEN_KEY,
+          REFRESH_TOKEN_KEY,
+          USER_ID_KEY,
+        ]);
+        console.log("✅ Logged out successfully");
+      } catch (storageError) {
+        console.error("❌ Error clearing storage:", storageError);
+      }
       setUser(null);
     }
   };

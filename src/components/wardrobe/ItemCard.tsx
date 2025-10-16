@@ -1,11 +1,11 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Image, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { WardrobeItem } from "../../types";
+import { Item } from "../../types/item";
 
 interface ItemCardProps {
-  item: WardrobeItem;
-  onItemClick: (item: WardrobeItem) => void;
+  item: Item;
+  onItemClick: (item: Item) => void;
 }
 
 export const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
@@ -22,7 +22,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
     return tagStyles[type as keyof typeof tagStyles] || tagStyles.top;
   };
 
-  const tag = getItemTypeTag(item.type);
+  const tag = getItemTypeTag(item.categoryName || "top");
 
   return (
     <TouchableOpacity
@@ -31,7 +31,10 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
       activeOpacity={0.8}
     >
       <View style={styles.imageContainer}>
-        <Image source={{ uri: item.imageUrl }} style={styles.image} />
+        <Image 
+          source={{ uri: item.imgUrl || "https://via.placeholder.com/300x400" }} 
+          style={styles.image} 
+        />
         <View
           style={[styles.typeTag, { backgroundColor: tag.backgroundColor }]}
         >
@@ -53,9 +56,13 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
         <View style={styles.statsContainer}>
           <View style={styles.wearInfo}>
             <Ionicons name="eye-outline" size={12} color="#6b7280" />
-            <Text style={styles.wearText}>Worn {item.wearCount || 18}x</Text>
+            <Text style={styles.wearText}>
+              Worn {item.frequencyWorn ? parseInt(item.frequencyWorn) : 0}x
+            </Text>
           </View>
-          <Text style={styles.lastWorn}>{item.lastWorn || "15/1/2024"}</Text>
+          <Text style={styles.lastWorn}>
+            {item.lastWornAt ? new Date(item.lastWornAt).toLocaleDateString() : "-"}
+          </Text>
         </View>
       </View>
     </TouchableOpacity>

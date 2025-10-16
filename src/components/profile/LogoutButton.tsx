@@ -1,17 +1,28 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 interface LogoutButtonProps {
   onLogout: () => void;
+  disabled?: boolean;
 }
 
-export const LogoutButton: React.FC<LogoutButtonProps> = ({ onLogout }) => {
+export const LogoutButton: React.FC<LogoutButtonProps> = ({ onLogout, disabled = false }) => {
   return (
     <View style={styles.logoutContainer}>
-      <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
-        <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-        <Text style={styles.logoutText}>Đăng xuất</Text>
+      <TouchableOpacity 
+        style={[styles.logoutButton, disabled && styles.logoutButtonDisabled]} 
+        onPress={onLogout}
+        disabled={disabled}
+      >
+        {disabled ? (
+          <ActivityIndicator size="small" color="#EF4444" />
+        ) : (
+          <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+        )}
+        <Text style={[styles.logoutText, disabled && styles.logoutTextDisabled]}>
+          {disabled ? "Đang đăng xuất..." : "Đăng xuất"}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -33,9 +44,15 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     gap: 8,
   },
+  logoutButtonDisabled: {
+    opacity: 0.5,
+  },
   logoutText: {
     fontSize: 16,
     color: "#EF4444",
     fontWeight: "600",
+  },
+  logoutTextDisabled: {
+    opacity: 0.7,
   },
 });

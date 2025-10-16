@@ -9,7 +9,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Header } from "../components/common/Header";
 import { GuestPrompt } from "../components/common/GuestPrompt";
-import { WardrobeItem } from "../types";
+import { Item } from "../types/item";
 import {
   mockWardrobeGoals,
   mockWardrobeStats,
@@ -35,9 +35,9 @@ type ViewMode = "grid" | "list";
 
 const WardrobeScreen = ({ navigation }: any) => {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [selectedItem, setSelectedItem] = useState<WardrobeItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [outfitBuilderItem, setOutfitBuilderItem] =
-    useState<WardrobeItem | null>(null);
+    useState<Item | null>(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [showGuestPrompt, setShowGuestPrompt] = useState(false);
@@ -54,13 +54,15 @@ const WardrobeScreen = ({ navigation }: any) => {
     loading,
     isRefreshing,
     handleRefresh,
+    error,
+    refetch,
   } = useWardrobe();
 
-  const handleItemClick = (item: WardrobeItem) => {
+  const handleItemClick = (item: Item) => {
     setSelectedItem(item);
   };
 
-  const handleUseInOutfit = (item: WardrobeItem) => {
+  const handleUseInOutfit = (item: Item) => {
     setSelectedItem(null);
     setOutfitBuilderItem(item);
   };
@@ -193,9 +195,9 @@ const WardrobeScreen = ({ navigation }: any) => {
       <AddItemModal
         visible={isAddItemModalOpen}
         onClose={() => setIsAddItemModalOpen(false)}
-        onSave={() => {
+        onSave={async () => {
           setIsAddItemModalOpen(false);
-          handleRefresh(); // Refresh wardrobe after adding item
+          await handleRefresh(); // Refresh wardrobe after adding item
         }}
       />
 

@@ -10,15 +10,15 @@ import {
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { WardrobeItem } from "../../types";
+import { Item } from "../../types/item";
 
 const { width, height } = Dimensions.get("window");
 
 interface ItemDetailModalProps {
   visible: boolean;
   onClose: () => void;
-  item: WardrobeItem | null;
-  onUseInOutfit: (item: WardrobeItem) => void;
+  item: Item | null;
+  onUseInOutfit: (item: Item) => void;
 }
 
 export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
@@ -28,6 +28,11 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
   onUseInOutfit,
 }) => {
   if (!item) return null;
+
+  // Parse tags from comma-separated string
+  const tags = item.tag ? item.tag.split(",").map(t => t.trim()) : [];
+  const wearCount = item.frequencyWorn ? parseInt(item.frequencyWorn) : 0;
+  const lastWornDate = item.lastWornAt ? new Date(item.lastWornAt).toLocaleDateString() : "Never";
 
   return (
     <Modal
@@ -44,9 +49,9 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
           <Text style={styles.headerTitle}>Item Details</Text>
           <TouchableOpacity style={styles.favoriteButton}>
             <Ionicons
-              name={item.isFavorite ? "heart" : "heart-outline"}
+              name="heart-outline"
               size={24}
-              color={item.isFavorite ? "#ff4757" : "#6b7280"}
+              color="#6b7280"
             />
           </TouchableOpacity>
         </View>
@@ -54,7 +59,10 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Image */}
           <View style={styles.imageContainer}>
-            <Image source={{ uri: item.imageUrl }} style={styles.image} />
+            <Image 
+              source={{ uri: item.imgUrl || "https://via.placeholder.com/300x400" }} 
+              style={styles.image} 
+            />
           </View>
 
           {/* Basic Info */}
@@ -63,7 +71,7 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
             {item.brand && <Text style={styles.brand}>{item.brand}</Text>}
 
             <View style={styles.tagsContainer}>
-              {(item.tags || []).map((tag, index) => (
+              {tags.map((tag, index) => (
                 <View key={index} style={styles.tag}>
                   <Text style={styles.tagText}>{tag}</Text>
                 </View>
@@ -75,16 +83,16 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
           <View style={styles.statsSection}>
             <View style={styles.statItem}>
               <Text style={styles.statLabel}>Wear Count</Text>
-              <Text style={styles.statValue}>{item.wearCount}</Text>
+              <Text style={styles.statValue}>{wearCount}</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Price</Text>
-              <Text style={styles.statValue}>${item.price}</Text>
+              <Text style={styles.statLabel}>Condition</Text>
+              <Text style={styles.statValue}>{item.condition || "N/A"}</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statLabel}>Last Worn</Text>
               <Text style={styles.statValue}>
-                {new Date(item.lastWorn).toLocaleDateString()}
+                {lastWornDate}
               </Text>
             </View>
           </View>
@@ -94,8 +102,8 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
             <Text style={styles.sectionTitle}>Details</Text>
 
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Type:</Text>
-              <Text style={styles.detailValue}>{item.type}</Text>
+              <Text style={styles.detailLabel}>Category:</Text>
+              <Text style={styles.detailValue}>{item.categoryName || "N/A"}</Text>
             </View>
 
             <View style={styles.detailRow}>
@@ -104,31 +112,38 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
                 <View
                   style={[
                     styles.colorIndicator,
-                    { backgroundColor: item.color },
+                    { backgroundColor: item.color || "#CCCCCC" },
                   ]}
                 />
-                <Text style={styles.detailValue}>{item.color}</Text>
+                <Text style={styles.detailValue}>{item.color || "N/A"}</Text>
               </View>
             </View>
 
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Seasons:</Text>
+              <Text style={styles.detailLabel}>Weather:</Text>
               <Text style={styles.detailValue}>
-                {(item.seasons || []).join(", ") || "Not specified"}
+                {item.weatherSuitable || "Not specified"}
               </Text>
             </View>
 
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Occasions:</Text>
-              <Text style={styles.detailValue}>
-                {(item.occasions || []).join(", ") || "Not specified"}
-              </Text>
-            </View>
+            {item.fabric && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Fabric:</Text>
+                <Text style={styles.detailValue}>{item.fabric}</Text>
+              </View>
+            )}
 
-            {item.notes && (
+            {item.pattern && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Pattern:</Text>
+                <Text style={styles.detailValue}>{item.pattern}</Text>
+              </View>
+            )}
+
+            {item.aiDescription && (
               <View style={styles.notesContainer}>
-                <Text style={styles.detailLabel}>Notes:</Text>
-                <Text style={styles.notesText}>{item.notes}</Text>
+                <Text style={styles.detailLabel}>AI Description:</Text>
+                <Text style={styles.notesText}>{item.aiDescription}</Text>
               </View>
             )}
           </View>

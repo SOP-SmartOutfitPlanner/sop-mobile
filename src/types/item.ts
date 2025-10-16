@@ -50,15 +50,15 @@ export interface GetItemResponse {
     message: string;
     data: {
         data: Item[];
+        metaData: {
+            totalCount: number;
+            pageSize: number;
+            currentPage: number;
+            totalPages: number;
+            hasNext: boolean;
+            hasPrevious: boolean;
+        }
     };
-    metaData:{
-       totalCount: number;
-        pageSize: number;
-        currentPage: number;
-        totalPages: number;
-        hasNext: boolean;
-        hasPrevious: boolean;
-    }
 }
 
 //============== Item returned from API========================//

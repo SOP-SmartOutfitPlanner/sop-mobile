@@ -15,6 +15,7 @@ import {
 
 const ProfileScreen = ({ navigation }: any) => {
   const [activeTab, setActiveTab] = useState<ProfileTab>("Outfits");
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { user, isGuest, logout } = useAuth();
 
   const outfits: OutfitItem[] = [
@@ -43,11 +44,14 @@ const ProfileScreen = ({ navigation }: any) => {
     },
   ];
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     try {
+      setIsLoggingOut(true);
       logout();
     } catch (error) {
       console.error("Logout error:", error);
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -77,7 +81,12 @@ const ProfileScreen = ({ navigation }: any) => {
 
         <ProfileContent activeTab={activeTab} outfits={outfits} />
 
-        {!isGuest && <LogoutButton onLogout={handleLogout} />}
+        {!isGuest && (
+          <LogoutButton 
+            onLogout={handleLogout} 
+            disabled={isLoggingOut}
+          />
+        )}
       </ScrollView>
     </SafeAreaView>
   );

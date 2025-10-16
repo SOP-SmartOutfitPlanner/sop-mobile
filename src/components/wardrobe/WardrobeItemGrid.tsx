@@ -1,14 +1,14 @@
 import React from "react";
 import { View, StyleSheet, Dimensions } from "react-native";
-import { WardrobeItem } from "../../types";
+import { Item } from "../../types/item";
 import { ItemCard } from "./ItemCard";
 
 const { width } = Dimensions.get("window");
 
 interface WardrobeItemGridProps {
-  items: WardrobeItem[];
+  items: Item[];
   viewMode: "grid" | "list";
-  onItemClick: (item: WardrobeItem) => void;
+  onItemClick: (item: Item) => void;
 }
 
 export const WardrobeItemGrid: React.FC<WardrobeItemGridProps> = ({
