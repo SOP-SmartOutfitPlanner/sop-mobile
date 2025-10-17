@@ -11,6 +11,7 @@ import {
   RefreshTokenRequest,
   RefreshTokenResponse,
   LogoutResponse,
+  LoginGoogleRequest,
 } from "../../types/auth";
 
 /**
@@ -51,7 +52,7 @@ export const verifyOtp = async (
  * POST /auth
  * Returns access token and refresh token
  */
-export const login = async (data: LoginRequest): Promise<LoginResponse> => {
+export const loginAPI = async (data: LoginRequest): Promise<LoginResponse> => {
   const response = await apiClient.post<LoginResponse>("/auth", data);
   return response.data;
 };
@@ -94,6 +95,11 @@ export const logoutAPI = async (): Promise<LogoutResponse> => {
   return response.data;
 };
 
+export const LoginGoogle = async (data: LoginGoogleRequest) => {
+  const response = await apiClient.post<LoginResponse>("/auth/login/google/oauth", data);
+  return response.data;
+};
+
 /**
  * Auth API Service Object
  * Use this for cleaner imports
@@ -101,7 +107,7 @@ export const logoutAPI = async (): Promise<LogoutResponse> => {
 export const authApi = {
   register,
   verifyOtp,
-  login,
+  loginAPI,
   resendOtp,
   refreshToken,
   logoutAPI,

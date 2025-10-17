@@ -4,9 +4,16 @@ import React, {
   useState,
   useEffect,
   ReactNode,
+  use,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { logoutAPI } from "../../services/endpoint";
+import { loginAPI, logoutAPI } from "../../services/endpoint";
+import {
+  decodeJWT,
+  extractAndSaveUserId,
+  saveTokens,
+} from "../../services/api/apiClient";
+import { Alert } from "react-native";
 
 interface User {
   id: string;
@@ -15,12 +22,21 @@ interface User {
   avatar?: string;
 }
 
+interface DecodedToken {
+  FirstTime: string;
+  [key: string]: any;
+}
+
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isGuest: boolean;
   isLoading: boolean;
   logout: () => void;
+  login: (credentials: {
+    email: string;
+    password: string;
+  }) => Promise<DecodedToken>;
   loginWithGoogle: () => Promise<void>;
   continueAsGuest: () => void;
   promptLogin: () => boolean;
@@ -83,6 +99,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     await checkAuthStatus();
   };
 
+  const login = async (credentials: {
+    email: string;
+    password: string;
+  }): Promise<DecodedToken> => {
+    setIsLoading(true);
+    try {
+      const response = await loginAPI(credentials);
+      const accessToken = response.data.accessToken;
+      const refreshToken = response.data.refreshToken;
+
+      const decodedToken = decodeJWT(accessToken);
+      // console.log(" Decode token:", decodedToken);
+
+      await saveTokens(accessToken, refreshToken);
+      await extractAndSaveUserId(accessToken);
+      await refreshAuthState();
+
+      return decodedToken;
+    } catch (error: any) {
+      let errorMessage = "Đăng nhập thất bại";
+
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      Alert.alert("Đăng nhập thất bại", errorMessage);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const loginWithGoogle = async () => {
     setIsLoading(true);
     try {
@@ -136,6 +185,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isGuest: !user,
     isLoading,
     logout,
+    login,
     loginWithGoogle,
     continueAsGuest,
     promptLogin,

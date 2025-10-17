@@ -14,12 +14,6 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/auth";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  saveTokens,
-  extractAndSaveUserId,
-  decodeJWT,
-} from "../services/api/apiClient";
-import { login } from "../services/endpoint";
 
 interface LoginScreenProps {
   navigation: any;
@@ -29,12 +23,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoginLoading, setIsLoginLoading] = useState(false);
-  const {
-    loginWithGoogle,
-    isLoading: isGoogleLoading,
-    refreshAuthState,
-  } = useAuth();
+  const { login, loginWithGoogle, isLoading } = useAuth();
 
   const handleLogin = async () => {
     // Validation
@@ -43,22 +32,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       return;
     }
 
-    setIsLoginLoading(true);
     try {
-      const response = await login({ email, password });
-      const accessToken = response.data.accessToken;
-      const refreshToken = response.data.refreshToken;
-
-      // Decode token to check FirstTime
-      const decodedToken = decodeJWT(accessToken);
-      console.log("decode token:", decodedToken);
-      // Save tokens
-      await saveTokens(accessToken, refreshToken);
-      // Decode and save userId from accessToken
-      await extractAndSaveUserId(accessToken);
-
-      // Refresh auth state in useAuth context
-      await refreshAuthState();
+      const decodedToken = await login({ email, password });
 
       // Check if first time login (string "True" from API)
       if (decodedToken.FirstTime === "True") {
@@ -66,25 +41,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       } else {
         navigation.replace("Main");
       }
-    } catch (error: any) {
-      // Parse API error response
-      let errorMessage = "Đăng nhập thất bại";
-
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      Alert.alert("Đăng nhập thất bại", errorMessage);
-    } finally {
-      setIsLoginLoading(false);
+    } catch (error) {
+      // Error already handled by useAuth with Alert
+      console.log("Login failed:", error);
     }
   };
 
   const handleGoogleLogin = async () => {
     try {
       await loginWithGoogle();
+      // Navigation will be handled by useAuth
     } catch (error) {
       Alert.alert(
         "Lỗi",
@@ -194,14 +160,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
             {/* Login Button */}
             <TouchableOpacity
-              style={[
-                styles.loginButton,
-                isLoginLoading && styles.disabledButton,
-              ]}
+              style={[styles.loginButton, isLoading && styles.disabledButton]}
               onPress={handleLogin}
-              disabled={isLoginLoading}
+              disabled={isLoading}
             >
-              {isLoginLoading ? (
+              {isLoading ? (
                 <Text style={styles.loginButtonText}>Đang đăng nhập...</Text>
               ) : (
                 <Text style={styles.loginButtonText}>Đăng nhập</Text>
@@ -217,12 +180,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
             {/* Google Login Button */}
             <TouchableOpacity
-              style={[
-                styles.googleButton,
-                isGoogleLoading && styles.disabledButton,
-              ]}
+              style={[styles.googleButton, isLoading && styles.disabledButton]}
               onPress={handleGoogleLogin}
-              disabled={isGoogleLoading}
+              disabled={isLoading}
             >
               <Ionicons name="logo-google" size={20} color="#4285F4" />
               <Text style={styles.googleButtonText}>Đăng nhập với Google</Text>

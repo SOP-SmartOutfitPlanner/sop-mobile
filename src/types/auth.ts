@@ -1,3 +1,4 @@
+import { LoginGoogle } from './../services/endpoint/auth';
 // ==================== Request Types ====================
 
 export interface LoginRequest {
@@ -24,7 +25,9 @@ export interface RefreshTokenRequest {
 export interface ResendOtpRequest {
   email: string;
 }
-
+export interface LoginGoogleRequest {
+  idToken: string;
+}
 // ==================== Response Types ====================
 
 export interface RegisterResponse {
