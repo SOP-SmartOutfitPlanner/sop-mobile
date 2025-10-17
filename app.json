@@ -32,7 +32,8 @@
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
         "READ_MEDIA_IMAGES"
-      ]
+      ],
+      "package": "com.minhtr.SmartOutfitPlanner"
     },
     "web": {
       "favicon": "./assets/favicon.png"
