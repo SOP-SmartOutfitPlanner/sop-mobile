@@ -13,7 +13,7 @@ export const GuestPrompt: React.FC<GuestPromptProps> = ({
   visible,
   onClose,
   onLogin,
-  feature = "tính năng này",
+  feature = "this feature",
 }) => {
   return (
     <Modal
@@ -28,10 +28,8 @@ export const GuestPrompt: React.FC<GuestPromptProps> = ({
             <Ionicons name="lock-closed-outline" size={48} color="#3B82F6" />
           </View>
 
-          <Text style={styles.title}>Yêu cầu đăng nhập</Text>
-          <Text style={styles.message}>
-            Bạn cần đăng nhập để sử dụng {feature}
-          </Text>
+          <Text style={styles.title}>Login Required</Text>
+          <Text style={styles.message}>You need to login to use {feature}</Text>
 
           <View style={styles.buttonContainer}>
             <TouchableOpacity
@@ -39,7 +37,7 @@ export const GuestPrompt: React.FC<GuestPromptProps> = ({
               onPress={onLogin}
               activeOpacity={0.8}
             >
-              <Text style={styles.primaryButtonText}>Đăng nhập</Text>
+              <Text style={styles.primaryButtonText}>Login</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -47,7 +45,7 @@ export const GuestPrompt: React.FC<GuestPromptProps> = ({
               onPress={onClose}
               activeOpacity={0.8}
             >
-              <Text style={styles.secondaryButtonText}>Để sau</Text>
+              <Text style={styles.secondaryButtonText}>Later</Text>
             </TouchableOpacity>
           </View>
         </View>

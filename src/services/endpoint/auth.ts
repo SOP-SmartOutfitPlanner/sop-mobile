@@ -12,17 +12,14 @@ import {
   RefreshTokenResponse,
   LogoutResponse,
   LoginGoogleRequest,
+  forgotPasswordRequest,
+  forgotPasswordResponse,
+  verifyOtpResetRequest,
+  verifyOtpResetResponse,
+  resetPasswordRequest,
+  resetPasswordResponse,
 } from "../../types/auth";
 
-/**
- * Auth API Endpoints
- * Base URL: https://sop.wizlab.io.vn/auth
- */
-
-/**
- * Register a new user
- * POST /auth/register
- */
 export const register = async (
   data: RegisterRequest
 ): Promise<RegisterResponse> => {
@@ -33,10 +30,7 @@ export const register = async (
   return response.data;
 };
 
-/**
- * Verify OTP after registration
- * POST /auth/otp/verify
- */
+
 export const verifyOtp = async (
   data: VerifyOtpRequest
 ): Promise<VerifyOtpResponse> => {
@@ -47,20 +41,13 @@ export const verifyOtp = async (
   return response.data;
 };
 
-/**
- * Login with email and password
- * POST /auth
- * Returns access token and refresh token
- */
+
 export const loginAPI = async (data: LoginRequest): Promise<LoginResponse> => {
   const response = await apiClient.post<LoginResponse>("/auth", data);
   return response.data;
 };
 
-/**
- * Resend OTP to email
- * POST /auth/otp/resend
- */
+
 export const resendOtp = async (
   data: ResendOtpRequest
 ): Promise<ResendOtpResponse> => {
@@ -71,10 +58,7 @@ export const resendOtp = async (
   return response.data;
 };
 
-/**
- * Refresh access token using refresh token
- * POST /auth/refresh-token
- */
+
 export const refreshToken = async (
   data: RefreshTokenRequest
 ): Promise<RefreshTokenResponse> => {
@@ -85,11 +69,7 @@ export const refreshToken = async (
   return response.data;
 };
 
-/**
- * Logout user
- * POST /auth/logout
- * Requires authentication (Bearer token in header)
- */
+
 export const logoutAPI = async (): Promise<LogoutResponse> => {
   const response = await apiClient.post<LogoutResponse>("/auth/logout");
   return response.data;
@@ -100,10 +80,18 @@ export const LoginGoogle = async (data: LoginGoogleRequest) => {
   return response.data;
 };
 
-/**
- * Auth API Service Object
- * Use this for cleaner imports
- */
+export const forgotPassword = async (data: forgotPasswordRequest): Promise<forgotPasswordResponse> => {
+  const response = await apiClient.post<forgotPasswordResponse>("/auth/password/forgot", data);
+  return response.data;
+};
+export const verifyOtpReset = async (data: verifyOtpResetRequest): Promise<verifyOtpResetResponse> => {
+  const response = await apiClient.post<verifyOtpResetResponse>("/auth/password/verify-otp", data);
+  return response.data;
+}
+export const resetPassword = async (data:resetPasswordRequest) : Promise<resetPasswordResponse> => {
+  const response = await apiClient.post<resetPasswordResponse>("/auth/password/reset", data);
+  return response.data;
+};
 export const authApi = {
   register,
   verifyOtp,

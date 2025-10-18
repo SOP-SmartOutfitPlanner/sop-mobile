@@ -28,6 +28,20 @@ export interface ResendOtpRequest {
 export interface LoginGoogleRequest {
   idToken: string;
 }
+export interface forgotPasswordRequest {
+  email: string;
+}
+export interface verifyOtpResetRequest {
+  email: string;
+  otp: string;
+}
+export interface resetPasswordRequest {
+  email: string;
+  resetToken: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 // ==================== Response Types ====================
 
 export interface RegisterResponse {
@@ -74,7 +88,24 @@ export interface LogoutResponse {
   message: string;
   data: null;
 }
-
+export interface forgotPasswordResponse {
+  statusCode: number;
+  message: string;
+  data: null;
+}
+export interface verifyOtpResetResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    resetToken: string;
+    expiryMinutes: number;
+  };
+}
+export interface resetPasswordResponse {
+  statusCode: number;
+  message: string;
+  data: null;
+}
 // ==================== Error Types ====================
 
 export interface ApiError {

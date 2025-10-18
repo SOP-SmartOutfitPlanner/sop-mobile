@@ -1,5 +1,11 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 interface LogoutButtonProps {
@@ -7,11 +13,14 @@ interface LogoutButtonProps {
   disabled?: boolean;
 }
 
-export const LogoutButton: React.FC<LogoutButtonProps> = ({ onLogout, disabled = false }) => {
+export const LogoutButton: React.FC<LogoutButtonProps> = ({
+  onLogout,
+  disabled = false,
+}) => {
   return (
     <View style={styles.logoutContainer}>
-      <TouchableOpacity 
-        style={[styles.logoutButton, disabled && styles.logoutButtonDisabled]} 
+      <TouchableOpacity
+        style={[styles.logoutButton, disabled && styles.logoutButtonDisabled]}
         onPress={onLogout}
         disabled={disabled}
       >
@@ -20,8 +29,10 @@ export const LogoutButton: React.FC<LogoutButtonProps> = ({ onLogout, disabled =
         ) : (
           <Ionicons name="log-out-outline" size={20} color="#EF4444" />
         )}
-        <Text style={[styles.logoutText, disabled && styles.logoutTextDisabled]}>
-          {disabled ? "Đang đăng xuất..." : "Đăng xuất"}
+        <Text
+          style={[styles.logoutText, disabled && styles.logoutTextDisabled]}
+        >
+          {disabled ? "Logging out..." : "Logout"}
         </Text>
       </TouchableOpacity>
     </View>

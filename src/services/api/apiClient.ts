@@ -44,7 +44,7 @@ const processQueue = (error: any, token: string | null = null) => {
 apiClient.interceptors.request.use(
   async (config) => {
     // Skip auth endpoints (login, register, etc) - they don't need token
-    const authEndpoints = ["/auth", "/auth/register", "/auth/otp/verify", "/auth/otp/resend"];
+    const authEndpoints = ["/auth", "/auth/register", "/auth/otp/verify", "/auth/otp/resend","/auth/password/forgot","/auth/password/reset", "/auth/password/verify-otp", "/auth/login/google/oauth"];
     const isAuthEndpoint = authEndpoints.some(endpoint => config.url?.includes(endpoint));
     
     // Only add token for non-auth endpoints
@@ -108,7 +108,7 @@ apiClient.interceptors.response.use(
 
     // Handle 401 Unauthorized - Token expired
     // Skip refresh token logic for auth endpoints (login, register, logout, etc)
-    const authEndpoints = ["/auth", "/auth/register", "/auth/otp/verify", "/auth/otp/resend", "/auth/logout"];
+    const authEndpoints = ["/auth", "/auth/register", "/auth/otp/verify", "/auth/otp/resend","/auth/password/forgot","/auth/password/reset", "/auth/password/verify-otp", "/auth/login/google/oauth"];
     const isAuthEndpoint = authEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
     
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {

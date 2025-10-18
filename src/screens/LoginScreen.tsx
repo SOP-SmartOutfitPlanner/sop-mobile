@@ -64,10 +64,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   };
 
   const handleForgotPassword = () => {
-    Alert.alert(
-      "Quên mật khẩu",
-      "Tính năng khôi phục mật khẩu đang được phát triển"
-    );
+    navigation.navigate("ForgotPassword");
   };
 
   return (

@@ -16,13 +16,14 @@ export const GuestProfileSection: React.FC<GuestProfileSectionProps> = ({
           <Ionicons name="person-outline" size={48} color="#94A3B8" />
         </View>
       </View>
-      <Text style={styles.userName}>Khách</Text>
+      <Text style={styles.userName}>Guest</Text>
       <Text style={styles.userBio}>
-        Đăng nhập để lưu tủ đồ, tạo outfit và tham gia cộng đồng thời trang
+        Login to save your wardrobe, create outfits and join the fashion
+        community
       </Text>
 
       <TouchableOpacity style={styles.loginPromptButton} onPress={onLoginPress}>
-        <Text style={styles.loginPromptButtonText}>Đăng nhập / Đăng ký</Text>
+        <Text style={styles.loginPromptButtonText}>Login / Sign Up</Text>
       </TouchableOpacity>
     </View>
   );
