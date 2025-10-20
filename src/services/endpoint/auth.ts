@@ -75,8 +75,8 @@ export const logoutAPI = async (): Promise<LogoutResponse> => {
   return response.data;
 };
 
-export const LoginGoogle = async (data: LoginGoogleRequest) => {
-  const response = await apiClient.post<LoginResponse>("/auth/login/google/oauth", data);
+export const LoginGoogle = async (idToken: String) => {
+  const response = await apiClient.post<LoginResponse>("/auth/login/google/oauth", idToken );
   return response.data;
 };
 

@@ -161,30 +161,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const loginWithGoogle = async (): Promise<DecodedToken> => {
     setIsLoading(true);
     try {
-      console.log("🔄 Starting Google Sign-In...");
+      // console.log("🔄 Starting Google Sign-In...");
 
       // Check if device supports Google Play Services
       await GoogleSignin.hasPlayServices({
         showPlayServicesUpdateDialog: true,
       });
-      console.log("✅ Google Play Services available");
+      // console.log("✅ Google Play Services available");
 
       // Perform Google Sign-In
       const userInfo = await GoogleSignin.signIn();
       console.log("✅ Google userInfo:", userInfo);
 
       // Get the ID token from Google
-      const idToken = userInfo.data?.idToken;
-      console.log("📝 idToken:", idToken ? "Token received" : "Token missing");
+      const idToken = userInfo?.data?.idToken;
+      // console.log("📝 idToken:", idToken ? "Token received" : "Token missing");
 
       if (!idToken) {
         throw new Error("Không thể lấy ID token từ Google");
       }
 
-      console.log("🔄 Sending token to backend...");
+      // console.log("🔄 Sending token to backend...");
 
       // Call backend API with idToken
-      const response = await LoginGoogle({ idToken });
+      const response = await LoginGoogle(idToken);
       const accessToken = response.data.accessToken;
       const refreshToken = response.data.refreshToken;
 
@@ -201,11 +201,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Return decoded token for navigation handling
       return decodedToken;
     } catch (error: any) {
-      console.error("❌ Google login error:", error);
-      console.error("❌ Error details:", JSON.stringify(error, null, 2));
-
       let errorMessage = "Đăng nhập với Google thất bại";
-
       // Handle specific Google Sign-In errors
       if (error.code === "SIGN_IN_CANCELLED") {
         errorMessage = "Đăng nhập bị hủy";
@@ -218,7 +214,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else if (error.message) {
         errorMessage = error.message;
       }
-
       Alert.alert("Lỗi đăng nhập Google", errorMessage);
       throw error;
     } finally {
