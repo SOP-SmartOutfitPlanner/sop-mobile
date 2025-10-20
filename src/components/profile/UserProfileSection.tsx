@@ -1,12 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, Image } from "react-native";
-
-interface User {
-  id: string;
-  email: string;
-  fullName: string;
-  avatar?: string;
-}
+import { User } from "../../types/user";
 
 interface StatItemData {
   value: string;
@@ -32,18 +26,34 @@ export const UserProfileSection: React.FC<UserProfileSectionProps> = ({
       <View style={styles.avatarContainer}>
         <Image
           source={
-            user?.avatar
-              ? { uri: user.avatar }
+            user?.avtUrl
+              ? { uri: user.avtUrl }
               : require("../../../assets/adaptive-icon.png")
           }
           style={styles.avatar}
         />
       </View>
-      <Text style={styles.userName}>{user?.fullName || "Minh Nguyen"}</Text>
+      <Text style={styles.userName}>{user?.displayName || "User"}</Text>
+
+      {user?.location && (
+        <Text style={styles.userLocation}>📍 {user.location}</Text>
+      )}
+
       <Text style={styles.userBio}>
-        Fashion enthusiast & style curator. Passionate about sustainable fashion
-        and timeless pieces.
+        {user?.bio ||
+          "Fashion enthusiast & style curator. Passionate about sustainable fashion and timeless pieces."}
       </Text>
+
+      {/* User Styles Tags */}
+      {user?.userStyles && user.userStyles.length > 0 && (
+        <View style={styles.stylesContainer}>
+          {user.userStyles.map((style, index) => (
+            <View key={index} style={styles.styleTag}>
+              <Text style={styles.styleTagText}>{style}</Text>
+            </View>
+          ))}
+        </View>
+      )}
 
       {/* Stats */}
       <View style={styles.statsContainer}>
@@ -78,6 +88,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "700",
     color: "#1E293B",
+    marginBottom: 4,
+  },
+  userLocation: {
+    fontSize: 13,
+    color: "#64748B",
     marginBottom: 8,
   },
   userBio: {
@@ -85,8 +100,29 @@ const styles = StyleSheet.create({
     color: "#64748B",
     textAlign: "center",
     lineHeight: 20,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+  },
+  stylesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 8,
     marginBottom: 24,
     paddingHorizontal: 16,
+  },
+  styleTag: {
+    backgroundColor: "#EEF2FF",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#C7D2FE",
+  },
+  styleTagText: {
+    fontSize: 12,
+    color: "#4F46E5",
+    fontWeight: "600",
   },
   statsContainer: {
     flexDirection: "row",

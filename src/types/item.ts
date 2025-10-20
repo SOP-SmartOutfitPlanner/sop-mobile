@@ -1,4 +1,3 @@
-import { GetItem } from './../services/endpoint/wardorbe';
 //=====================Request=========================//
 export interface AddItemRequest{
     userId: number;

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
 import { useAuth } from "../hooks/auth";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -16,7 +16,29 @@ import {
 const ProfileScreen = ({ navigation }: any) => {
   const [activeTab, setActiveTab] = useState<ProfileTab>("Outfits");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const { user, isGuest, logout } = useAuth();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { user, isGuest, logout, loadUserProfile } = useAuth();
+
+  // Load user profile when screen is focused
+  useEffect(() => {
+    if (!isGuest) {
+      loadUserProfile();
+    }
+  }, [isGuest]);
+
+  // Pull to refresh handler
+  const onRefresh = async () => {
+    if (!isGuest) {
+      setIsRefreshing(true);
+      try {
+        await loadUserProfile();
+      } catch (error) {
+        console.error("Error refreshing profile:", error);
+      } finally {
+        setIsRefreshing(false);
+      }
+    }
+  };
 
   const outfits: OutfitItem[] = [
     {
@@ -70,6 +92,14 @@ const ProfileScreen = ({ navigation }: any) => {
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            tintColor="#4F46E5"
+            colors={["#4F46E5"]}
+          />
+        }
       >
         {isGuest ? (
           <GuestProfileSection onLoginPress={handleLogin} />
@@ -82,10 +112,7 @@ const ProfileScreen = ({ navigation }: any) => {
         <ProfileContent activeTab={activeTab} outfits={outfits} />
 
         {!isGuest && (
-          <LogoutButton 
-            onLogout={handleLogout} 
-            disabled={isLoggingOut}
-          />
+          <LogoutButton onLogout={handleLogout} disabled={isLoggingOut} />
         )}
       </ScrollView>
     </SafeAreaView>

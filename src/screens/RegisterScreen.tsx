@@ -33,24 +33,24 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
   const handleRegister = async () => {
     // Validation
     if (!fullName.trim()) {
-      Alert.alert("Lỗi", "Vui lòng nhập họ và tên");
+      Alert.alert("Error", "Please enter your full name");
       return;
     }
 
     if (!email.trim()) {
-      Alert.alert("Lỗi", "Vui lòng nhập email");
+      Alert.alert("Error", "Please enter your email");
       return;
     }
 
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert("Lỗi", "Email không hợp lệ");
+      Alert.alert("Error", "Invalid email format");
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert("Lỗi", "Mật khẩu phải có ít nhất 6 ký tự");
+      Alert.alert("Error", "Password must be at least 6 characters");
       return;
     }
 
@@ -64,8 +64,8 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
 
       if (response.statusCode === 200 || response.statusCode === 201) {
         Alert.alert(
-          "Thành công",
-          "Đăng ký thành công! Vui lòng kiểm tra email để lấy mã OTP.",
+          "Success",
+          "Registration successful! Please check your email for the OTP code.",
           [
             {
               text: "OK",
@@ -79,8 +79,8 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
       }
     } catch (error: any) {
       const errorMessage =
-        error.response?.data?.message || error.message || "Đăng ký thất bại";
-      Alert.alert("Lỗi", errorMessage);
+        error.response?.data?.message || error.message || "Registration failed";
+      Alert.alert("Error", errorMessage);
     }
   };
 
@@ -89,8 +89,8 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
       await loginWithGoogle();
     } catch (error) {
       Alert.alert(
-        "Lỗi",
-        error instanceof Error ? error.message : "Đăng ký với Google thất bại"
+        "Error",
+        error instanceof Error ? error.message : "Google registration failed"
       );
     }
   };
@@ -119,12 +119,10 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
               />
             </View>
             <View style={styles.titleContainer}>
-              <Text style={styles.title}>Tạo tài khoản </Text>
+              <Text style={styles.title}>Create Account </Text>
               <Text style={styles.titleEmoji}>🎨</Text>
             </View>
-            <Text style={styles.subtitle}>
-              Bắt đầu hành trình phong cách của bạn
-            </Text>
+            <Text style={styles.subtitle}>Start your style journey</Text>
           </View>
 
           {/* Register Form */}
@@ -139,7 +137,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
               />
               <TextInput
                 style={styles.input}
-                placeholder="Họ và tên"
+                placeholder="Full name"
                 placeholderTextColor="#94A3B8"
                 value={fullName}
                 onChangeText={setFullName}
@@ -178,7 +176,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
               />
               <TextInput
                 style={styles.input}
-                placeholder="Mật khẩu"
+                placeholder="Password"
                 placeholderTextColor="#94A3B8"
                 value={password}
                 onChangeText={setPassword}
@@ -201,7 +199,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
             {/* Password Requirements */}
             <View style={styles.passwordRequirements}>
               <Text style={styles.requirementText}>
-                Mật khẩu phải có ít nhất 6 ký tự
+                Password must be at least 6 characters
               </Text>
             </View>
 
@@ -216,10 +214,10 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
             >
               {isLoading ? (
                 <Text style={styles.registerButtonText}>
-                  Đang tạo tài khoản...
+                  Creating account...
                 </Text>
               ) : (
-                <Text style={styles.registerButtonText}>Tạo tài khoản</Text>
+                <Text style={styles.registerButtonText}>Create Account</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -227,18 +225,17 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
           {/* Terms and Privacy */}
           <View style={styles.termsContainer}>
             <Text style={styles.termsText}>
-              Bằng cách tạo tài khoản, bạn đồng ý với{" "}
-              <Text style={styles.termsLink}>Điều khoản dịch vụ</Text> và{" "}
-              <Text style={styles.termsLink}>Chính sách bảo mật</Text> của chúng
-              tôi.
+              By creating an account, you agree to our{" "}
+              <Text style={styles.termsLink}>Terms of Service</Text> and{" "}
+              <Text style={styles.termsLink}>Privacy Policy</Text>.
             </Text>
           </View>
 
           {/* Login Link */}
           <View style={styles.loginContainer}>
-            <Text style={styles.loginText}>Đã có tài khoản? </Text>
+            <Text style={styles.loginText}>Already have an account? </Text>
             <TouchableOpacity onPress={navigateToLogin}>
-              <Text style={styles.loginLink}>Đăng nhập</Text>
+              <Text style={styles.loginLink}>Sign in</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

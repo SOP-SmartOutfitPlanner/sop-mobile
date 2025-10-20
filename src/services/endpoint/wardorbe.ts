@@ -32,7 +32,7 @@ export const SummaryItem = async (data: SummaryItemRequest): Promise<SummaryItem
   // @ts-ignore - FormData typing issue with React Native
   formData.append('file', data.file);
   
-  const response = await apiClient.post<SummaryItemResponse>("/items/summary", formData, {
+  const response = await apiClient.post<SummaryItemResponse>("/items/analysis", formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },

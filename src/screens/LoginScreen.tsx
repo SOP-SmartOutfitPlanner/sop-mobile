@@ -28,7 +28,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const handleLogin = async () => {
     // Validation
     if (!email.trim() || !password.trim()) {
-      Alert.alert("Lỗi", "Vui lòng nhập email và mật khẩu");
+      Alert.alert("Error", "Please enter email and password");
       return;
     }
 
@@ -94,8 +94,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             </View>
             <Text style={styles.title}>Smart Outfit Planner</Text>
             <Text style={styles.subtitle}>
-              Style trong tầm tay – Khám phá phong cách cá nhân với AI thông
-              minh.
+              Style at your fingertips – Discover your personal style with smart
+              AI.
             </Text>
           </View>
 
@@ -131,7 +131,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               />
               <TextInput
                 style={styles.input}
-                placeholder="Mật khẩu"
+                placeholder="Password"
                 placeholderTextColor="#94A3B8"
                 value={password}
                 onChangeText={setPassword}
@@ -156,7 +156,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               onPress={handleForgotPassword}
               style={styles.forgotContainer}
             >
-              <Text style={styles.forgotText}>Quên mật khẩu?</Text>
+              <Text style={styles.forgotText}>Forgot password?</Text>
             </TouchableOpacity>
 
             {/* Login Button */}
@@ -166,16 +166,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               disabled={isLoading}
             >
               {isLoading ? (
-                <Text style={styles.loginButtonText}>Đang đăng nhập...</Text>
+                <Text style={styles.loginButtonText}>Signing in...</Text>
               ) : (
-                <Text style={styles.loginButtonText}>Đăng nhập</Text>
+                <Text style={styles.loginButtonText}>Sign in</Text>
               )}
             </TouchableOpacity>
 
             {/* Divider */}
             <View style={styles.dividerContainer}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>hoặc</Text>
+              <Text style={styles.dividerText}>or</Text>
               <View style={styles.dividerLine} />
             </View>
 
@@ -186,12 +186,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               disabled={isLoading}
             >
               <Ionicons name="logo-google" size={20} color="#4285F4" />
-              <Text style={styles.googleButtonText}>Đăng nhập với Google</Text>
+              <Text style={styles.googleButtonText}>Sign in with Google</Text>
             </TouchableOpacity>
 
             {/* Demo Account Section */}
             {/* <View style={styles.demoContainer}>
-              <Text style={styles.demoTitle}>Tài khoản demo</Text>
+              <Text style={styles.demoTitle}>Demo account</Text>
               <View style={styles.demoAccount}>
                 <Ionicons name="person-outline" size={16} color="#6B7280" />
                 <Text style={styles.demoText}>
@@ -209,9 +209,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
           {/* Register Link */}
           <View style={styles.registerContainer}>
-            <Text style={styles.registerText}>Chưa có tài khoản? </Text>
+            <Text style={styles.registerText}>Don't have an account? </Text>
             <TouchableOpacity onPress={navigateToRegister}>
-              <Text style={styles.registerLink}>Đăng ký ngay</Text>
+              <Text style={styles.registerLink}>Sign up now</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

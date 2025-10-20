@@ -11,17 +11,13 @@ import { loginAPI, logoutAPI, LoginGoogle } from "../../services/endpoint";
 import {
   decodeJWT,
   extractAndSaveUserId,
+  getUserId,
   saveTokens,
 } from "../../services/api/apiClient";
 import { Alert } from "react-native";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
-
-interface User {
-  id: string;
-  email: string;
-  fullName: string;
-  avatar?: string;
-}
+import { getUserProfile } from "../../services/endpoint/user";
+import { User } from "../../types/user";
 
 interface DecodedToken {
   FirstTime: string;
@@ -42,6 +38,7 @@ interface AuthContextType {
   continueAsGuest: () => void;
   promptLogin: () => boolean;
   refreshAuthState: () => Promise<void>;
+  loadUserProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -66,10 +63,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true); // Start with true to check token
 
-  // Check if user has valid token on mount
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
+  // Load user profile from API
+  const loadUserProfile = async () => {
+    try {
+      const userId = await getUserId();
+
+      if (!userId) {
+        console.log("⚠️ No userId found in storage");
+        return;
+      }
+
+      // console.log("🔄 Loading user profile for userId:", userId);
+      const response = await getUserProfile(Number(userId));
+
+      if (response.statusCode === 200) {
+        setUser(response.data);
+        // console.log(
+        //   "✅ User profile loaded successfully:",
+        //   response.data.displayName
+        // );
+      } else {
+        console.error(
+          "❌ Failed to load profile, status:",
+          response.statusCode
+        );
+      }
+    } catch (error: any) {
+      console.error("❌ Error loading user profile:", error);
+      console.error("❌ Error details:", error.response?.data || error.message);
+    }
+  };
 
   const checkAuthStatus = async () => {
     try {
@@ -79,11 +102,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       ]);
 
       if (accessToken && userId) {
-        setUser({
-          id: userId,
-          email: "",
-          fullName: "User",
-        });
+        // Load full user profile
+        await loadUserProfile();
       } else {
         setUser(null);
       }
@@ -94,6 +114,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(false);
     }
   };
+
+  // Check if user has valid token on mount
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
 
   // Expose checkAuthStatus so screens can refresh auth state after login
   const refreshAuthState = async () => {
@@ -256,6 +281,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     continueAsGuest,
     promptLogin,
     refreshAuthState,
+    loadUserProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
