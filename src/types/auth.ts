@@ -1,4 +1,3 @@
-import { LoginGoogle } from './../services/endpoint/auth';
 // ==================== Request Types ====================
 
 export interface LoginRequest {

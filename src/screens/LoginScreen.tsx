@@ -49,13 +49,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
   const handleGoogleLogin = async () => {
     try {
-      await loginWithGoogle();
-      // Navigation will be handled by useAuth
+      const decodedToken = await loginWithGoogle();
+
+      // Check if first time login (string "True" from API)
+      if (decodedToken.FirstTime === "True") {
+        navigation.replace("Onboarding");
+      } else {
+        navigation.replace("Main");
+      }
     } catch (error) {
-      Alert.alert(
-        "Lỗi",
-        error instanceof Error ? error.message : "Đăng nhập với Google thất bại"
-      );
+      // Error already handled by useAuth with Alert
+      console.log("Google login failed:", error);
     }
   };
 
