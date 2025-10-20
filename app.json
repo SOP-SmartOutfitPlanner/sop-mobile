@@ -21,7 +21,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "scheme": "SOP",
+    "scheme": "sop",
     "platforms": ["ios", "android"],
     "ios": {
       "supportsTablet": true,
