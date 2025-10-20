@@ -7,16 +7,22 @@
     "icon": "./assets/img/logo_mobile.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/804ee409-d775-438a-b50e-5432a9529cbc"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "splash": {
       "image": "./assets/img/logo_mobile.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "scheme": "SOP",
-    "platforms": [
-      "ios",
-      "android"
-    ],
+    "platforms": ["ios", "android"],
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
