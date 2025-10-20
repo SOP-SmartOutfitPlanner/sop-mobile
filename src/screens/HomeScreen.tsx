@@ -9,6 +9,7 @@ import {
   QuickNavigation,
 } from "../components/home";
 import { useAuth } from "../hooks/auth";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
 export default function HomeScreen({ navigation }: any) {
   const { isGuest } = useAuth();

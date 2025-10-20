@@ -113,7 +113,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
           <View style={styles.headerContainer}>
             <View style={styles.logoContainer}>
               <Image
-                source={require("../../assets/img/logo_mobile.png")}
+                source={require("../../../assets/img/logo_mobile.png")}
                 style={styles.logo}
                 resizeMode="contain"
               />

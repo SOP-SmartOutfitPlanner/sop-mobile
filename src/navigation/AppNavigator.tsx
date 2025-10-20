@@ -1,11 +1,11 @@
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
-import { AuthNavigator } from "./AuthNavigator";
 import BottomTabNavigator from "./BottomTabNavigator";
 import CommunityScreen from "../screens/CommunityScreen";
 import { OnboardingScreen } from "../screens/onboarding";
 import ProfileScreen from "../screens/profile/ProfileScreen";
 import { VerifyScreen } from "../screens/auth/VerifyScreen";
+import { AuthNavigator } from "./AuthNavigator";
 
 export type RootStackParamList = {
   Auth: undefined;

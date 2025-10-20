@@ -46,7 +46,7 @@ const ProfileScreen = ({ navigation }: any) => {
       title: "Summer Casual",
       category: "Casual",
       tags: ["Casual", "Summer", "Sustainable"],
-      image: require("../../assets/adaptive-icon.png"),
+      image: require("../../../assets/adaptive-icon.png"),
       status: "Winner",
     },
     {
@@ -54,7 +54,7 @@ const ProfileScreen = ({ navigation }: any) => {
       title: "Office Chic",
       category: "Business",
       tags: ["Business", "Elegant", "Minimalist"],
-      image: require("../../assets/adaptive-icon.png"),
+      image: require("../../../assets/adaptive-icon.png"),
       status: "Runner-up",
     },
     {
@@ -62,7 +62,7 @@ const ProfileScreen = ({ navigation }: any) => {
       title: "Street Style",
       category: "Urban",
       tags: ["Urban", "Edgy", "Casual"],
-      image: require("../../assets/adaptive-icon.png"),
+      image: require("../../../assets/adaptive-icon.png"),
     },
   ];
 
