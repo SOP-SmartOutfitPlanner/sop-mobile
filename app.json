@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "SOP",
-    "slug": "Smart Outfit Planner",
+    "slug": "smart-outfit-planner",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/img/logo_mobile.png",
@@ -12,6 +12,11 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "scheme": "SOP",
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -21,6 +26,7 @@
       }
     },
     "android": {
+      "useNextNotificationsApi": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/img/logo_mobile.png",
         "backgroundColor": "#ffffff"
@@ -33,10 +39,24 @@
         "WRITE_EXTERNAL_STORAGE",
         "READ_MEDIA_IMAGES"
       ],
-      "package": "com.minhtr.SmartOutfitPlanner"
+      "package": "com.minhtr.SmartOutfitPlanner",
+      "googleServicesFile": "./google-services.json",
+      "config": {
+        "manifest": {
+          "meta-data": {
+            "com.google.firebase.messaging.default_notification_color": null,
+            "com.google.firebase.messaging.default_notification_icon": null
+          }
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "804ee409-d775-438a-b50e-5432a9529cbc"
+      }
     }
   }
 }

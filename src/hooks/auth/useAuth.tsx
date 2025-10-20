@@ -7,13 +7,14 @@ import React, {
   use,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { loginAPI, logoutAPI } from "../../services/endpoint";
+import { loginAPI, logoutAPI, LoginGoogle } from "../../services/endpoint";
 import {
   decodeJWT,
   extractAndSaveUserId,
   saveTokens,
 } from "../../services/api/apiClient";
 import { Alert } from "react-native";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 
 interface User {
   id: string;
@@ -37,7 +38,7 @@ interface AuthContextType {
     email: string;
     password: string;
   }) => Promise<DecodedToken>;
-  loginWithGoogle: () => Promise<void>;
+  loginWithGoogle: () => Promise<DecodedToken>;
   continueAsGuest: () => void;
   promptLogin: () => boolean;
   refreshAuthState: () => Promise<void>;
@@ -132,12 +133,68 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(false);
     }
   };
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = async (): Promise<DecodedToken> => {
     setIsLoading(true);
     try {
-      // TODO: Implement Google OAuth
-      throw new Error("Google login not implemented yet");
-    } catch (error) {
+      console.log("🔄 Starting Google Sign-In...");
+
+      // Check if device supports Google Play Services
+      await GoogleSignin.hasPlayServices({
+        showPlayServicesUpdateDialog: true,
+      });
+      console.log("✅ Google Play Services available");
+
+      // Perform Google Sign-In
+      const userInfo = await GoogleSignin.signIn();
+      console.log("✅ Google userInfo:", userInfo);
+
+      // Get the ID token from Google
+      const idToken = userInfo.data?.idToken;
+      console.log("📝 idToken:", idToken ? "Token received" : "Token missing");
+
+      if (!idToken) {
+        throw new Error("Không thể lấy ID token từ Google");
+      }
+
+      console.log("🔄 Sending token to backend...");
+
+      // Call backend API with idToken
+      const response = await LoginGoogle({ idToken });
+      const accessToken = response.data.accessToken;
+      const refreshToken = response.data.refreshToken;
+
+      // Decode token to check FirstTime
+      const decodedToken = decodeJWT(accessToken);
+      console.log("✅ Decode token:", decodedToken);
+
+      // Save tokens and user info
+      await saveTokens(accessToken, refreshToken);
+      await extractAndSaveUserId(accessToken);
+      await refreshAuthState();
+
+      console.log("✅ Google login successful");
+      // Return decoded token for navigation handling
+      return decodedToken;
+    } catch (error: any) {
+      console.error("❌ Google login error:", error);
+      console.error("❌ Error details:", JSON.stringify(error, null, 2));
+
+      let errorMessage = "Đăng nhập với Google thất bại";
+
+      // Handle specific Google Sign-In errors
+      if (error.code === "SIGN_IN_CANCELLED") {
+        errorMessage = "Đăng nhập bị hủy";
+      } else if (error.code === "IN_PROGRESS") {
+        errorMessage = "Đang xử lý đăng nhập...";
+      } else if (error.code === "PLAY_SERVICES_NOT_AVAILABLE") {
+        errorMessage = "Google Play Services không khả dụng";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      Alert.alert("Lỗi đăng nhập Google", errorMessage);
       throw error;
     } finally {
       setIsLoading(false);
@@ -158,6 +215,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       // Always clear local storage and reset user state
       try {
+        // Sign out from Google if user was signed in
+        try {
+          await GoogleSignin.signOut();
+          console.log("✅ Google sign out successful");
+        } catch (googleError) {
+          // Ignore Google sign out errors (user might not be signed in via Google)
+          console.log("ℹ️ Google sign out skipped:", googleError);
+        }
+
         await AsyncStorage.multiRemove([
           ACCESS_TOKEN_KEY,
           REFRESH_TOKEN_KEY,

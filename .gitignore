@@ -39,3 +39,4 @@ package-lock.json
 /ios
 /android
 google-services.json
+eas.json
