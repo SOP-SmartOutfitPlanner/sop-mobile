@@ -2,12 +2,10 @@ import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import { AuthNavigator } from "./AuthNavigator";
 import BottomTabNavigator from "./BottomTabNavigator";
-import { useAuth } from "../hooks/auth";
-import ProfileScreen from "../screens/ProfileScreen";
 import CommunityScreen from "../screens/CommunityScreen";
 import { OnboardingScreen } from "../screens/onboarding";
-import { VerifyScreen } from "../screens/VerifyScreen";
-import { StackScreenProps } from "@react-navigation/stack";
+import ProfileScreen from "../screens/profile/ProfileScreen";
+import { VerifyScreen } from "../screens/auth/VerifyScreen";
 
 export type RootStackParamList = {
   Auth: undefined;
@@ -21,8 +19,6 @@ export type RootStackParamList = {
 const Stack = createStackNavigator<RootStackParamList>();
 
 export const AppNavigator: React.FC = () => {
-  // const { isAuthenticated, isGuest } = useAuth();
-
   return (
     <Stack.Navigator
       screenOptions={{

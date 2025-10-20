@@ -13,9 +13,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { verifyOtp, resendOtp } from "../services/endpoint";
 import { StackScreenProps } from "@react-navigation/stack";
-import { RootStackParamList } from "../navigation/AppNavigator";
+import { RootStackParamList } from "../../navigation/AppNavigator";
+import { resendOtp, verifyOtp } from "../../services/endpoint";
 
 type VerifyScreenProps = StackScreenProps<RootStackParamList, "Verify">;
 

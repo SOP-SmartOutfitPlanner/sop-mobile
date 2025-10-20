@@ -12,8 +12,8 @@ import {
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "../hooks/auth";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "../../hooks/auth";
 
 interface LoginScreenProps {
   navigation: any;

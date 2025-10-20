@@ -1,10 +1,10 @@
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
-import { LoginScreen } from "../screens/LoginScreen";
-import { RegisterScreen } from "../screens/RegisterScreen";
 import { ForgotPasswordScreen } from "../screens/forgotpassword/ForgotPassword";
 import { VerifyOtpResetScreen } from "../screens/forgotpassword/VerifyOtpReset";
 import { ResetPasswordScreen } from "../screens/forgotpassword/ResetPassword";
+import { LoginScreen } from "../screens/auth/LoginScreen";
+import { RegisterScreen } from "../screens/auth/RegisterScreen";
 
 export type AuthStackParamList = {
   Login: undefined;

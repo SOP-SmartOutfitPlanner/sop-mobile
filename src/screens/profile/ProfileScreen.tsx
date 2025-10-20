@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
-import { useAuth } from "../hooks/auth";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ProfileHeader,
@@ -11,7 +10,8 @@ import {
   LogoutButton,
   type ProfileTab,
   type OutfitItem,
-} from "../components/profile";
+} from "../../components/profile";
+import { useAuth } from "../../hooks/auth";
 
 const ProfileScreen = ({ navigation }: any) => {
   const [activeTab, setActiveTab] = useState<ProfileTab>("Outfits");
