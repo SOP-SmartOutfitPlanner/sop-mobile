@@ -67,10 +67,10 @@ export const QuickNavigation: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.xxl,
   },
   header: {
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.xl,
   },
   navigationGrid: {
     flexDirection: "row",

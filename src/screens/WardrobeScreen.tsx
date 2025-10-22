@@ -36,8 +36,7 @@ type ViewMode = "grid" | "list";
 const WardrobeScreen = ({ navigation }: any) => {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
-  const [outfitBuilderItem, setOutfitBuilderItem] =
-    useState<Item | null>(null);
+  const [outfitBuilderItem, setOutfitBuilderItem] = useState<Item | null>(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [showGuestPrompt, setShowGuestPrompt] = useState(false);
@@ -237,7 +236,7 @@ const styles = StyleSheet.create({
   fab: {
     position: "absolute",
     right: 16,
-    bottom: 16,
+    bottom: 100,
     width: 56,
     height: 56,
     borderRadius: 28,

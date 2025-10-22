@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
   View,
   TouchableOpacity,
@@ -17,7 +17,9 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import GradientIcon from "../gradient/GradientIcon";
+import { AddActionSheet } from "../actions/AddActionSheet";
 
 // Animated Tab Component
 const AnimatedTab = ({
@@ -42,10 +44,13 @@ const AnimatedTab = ({
     opacity.value = withTiming(isFocused ? 1 : 0.6, { duration: 200 });
   }, [isFocused]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
+  const animatedStyle = useAnimatedStyle(() => {
+    "worklet";
+    return {
+      transform: [{ scale: scale.value }],
+      opacity: opacity.value,
+    };
+  });
 
   return (
     <Pressable
@@ -84,9 +89,12 @@ const AnimatedMiddleButton = ({ onPress }: { onPress: () => void }) => {
   const scale = useSharedValue(1);
   const rotation = useSharedValue(0);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }, { rotate: `${rotation.value}deg` }],
-  }));
+  const animatedStyle = useAnimatedStyle(() => {
+    "worklet";
+    return {
+      transform: [{ scale: scale.value }, { rotate: `${rotation.value}deg` }],
+    };
+  });
 
   const handlePressIn = () => {
     scale.value = withSpring(0.85);
@@ -131,70 +139,83 @@ const CustomTabBar = ({
   descriptors,
   navigation,
 }: BottomTabBarProps) => {
+  const addSheetRef = useRef<BottomSheetModal>(null);
+
   return (
-    <View style={styles.container}>
-      <View style={styles.tabBar}>
-        {state.routes.map((route, index) => {
-          const { options } = descriptors[route.key];
-          const isFocused = state.index === index;
+    <>
+      <View style={styles.container}>
+        <View style={styles.tabBar}>
+          {state.routes.map((route, index) => {
+            const { options } = descriptors[route.key];
+            const isFocused = state.index === index;
 
-          // Nút giữa (index 2 trong 5 tabs)
-          const isMiddleButton = index === 2;
+            // Nút giữa (index 2 trong 5 tabs)
+            const isMiddleButton = index === 2;
 
-          const onPress = () => {
-            const event = navigation.emit({
-              type: "tabPress",
-              target: route.key,
-              canPreventDefault: true,
-            });
+            const onPress = () => {
+              // Nếu là nút giữa, mở bottom sheet thay vì navigate
+              if (isMiddleButton) {
+                addSheetRef.current?.present();
+                return;
+              }
 
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name);
+              const event = navigation.emit({
+                type: "tabPress",
+                target: route.key,
+                canPreventDefault: true,
+              });
+
+              if (!isFocused && !event.defaultPrevented) {
+                navigation.navigate(route.name);
+              }
+            };
+
+            // Icon mapping
+            let iconName: keyof typeof Ionicons.glyphMap;
+            let label = "";
+
+            if (route.name === "Home") {
+              iconName = isFocused ? "home" : "home-outline";
+              label = "Home";
+            } else if (route.name === "Wardrobe") {
+              iconName = isFocused ? "shirt" : "shirt-outline";
+              label = "Wardrobe";
+            } else if (route.name === "Suggestion") {
+              iconName = "add";
+              label = "";
+            } else if (route.name === "Favorite") {
+              iconName = isFocused ? "heart" : "heart-outline";
+              label = "Favorite";
+            } else if (route.name === "Collection") {
+              iconName = isFocused ? "bookmark" : "bookmark-outline";
+              label = "Collection";
+            } else {
+              iconName = "help-outline";
+              label = "";
             }
-          };
 
-          // Icon mapping
-          let iconName: keyof typeof Ionicons.glyphMap;
-          let label = "";
+            // Render nút giữa với animation
+            if (isMiddleButton) {
+              return <AnimatedMiddleButton key={index} onPress={onPress} />;
+            }
 
-          if (route.name === "Home") {
-            iconName = isFocused ? "home" : "home-outline";
-            label = "Home";
-          } else if (route.name === "Wardrobe") {
-            iconName = isFocused ? "shirt" : "shirt-outline";
-            label = "Wardrobe";
-          } else if (route.name === "Suggestion") {
-            iconName = "add";
-            label = "";
-          } else if (route.name === "Favorite") {
-            iconName = isFocused ? "heart" : "heart-outline";
-            label = "Favorite";
-          } else if (route.name === "Collection") {
-            iconName = isFocused ? "bookmark" : "bookmark-outline";
-            label = "Collection";
-          } else {
-            iconName = "help-outline";
-            label = "";
-          }
-
-          // Render nút giữa với animation
-          if (isMiddleButton) {
-            return <AnimatedMiddleButton key={index} onPress={onPress} />;
-          }
-
-          // Render các tab thường với animation
-          return (
-            <AnimatedTab
-              key={index}
-              isFocused={isFocused}
-              onPress={onPress}
-              iconName={iconName}
-              label={label}
-            />
-          );
-        })}
+            // Render các tab thường với animation
+            return (
+              <AnimatedTab
+                key={index}
+                isFocused={isFocused}
+                onPress={onPress}
+                iconName={iconName}
+                label={label}
+              />
+            );
+          })}
+        </View>
       </View>
-    </View>
+
+      {/* Bottom Sheet Modal */}
+      <AddActionSheet ref={addSheetRef} />
+    </>
   );
 };
 
