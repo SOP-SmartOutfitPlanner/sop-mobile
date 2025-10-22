@@ -7,16 +7,14 @@ const { width } = Dimensions.get("window");
 
 interface WardrobeItemGridProps {
   items: Item[];
-  viewMode: "grid" | "list";
   onItemClick: (item: Item) => void;
 }
 
 export const WardrobeItemGrid: React.FC<WardrobeItemGridProps> = ({
   items,
-  viewMode,
   onItemClick,
 }) => {
-  const itemWidth = viewMode === "grid" ? (width - 48) / 2 - 8 : width - 32;
+  const itemWidth = (width - 48) / 2 - 8;
 
   return (
     <View style={styles.container}>
@@ -27,7 +25,7 @@ export const WardrobeItemGrid: React.FC<WardrobeItemGridProps> = ({
             styles.itemWrapper,
             {
               width: itemWidth,
-              marginRight: viewMode === "grid" && index % 2 === 0 ? 16 : 0,
+              marginRight: index % 2 === 0 ? 16 : 0,
             },
           ]}
         >

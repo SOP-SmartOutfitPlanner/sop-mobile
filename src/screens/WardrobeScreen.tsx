@@ -10,31 +10,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { Header } from "../components/common/Header";
 import { GuestPrompt } from "../components/common/GuestPrompt";
 import { Item } from "../types/item";
-import {
-  mockWardrobeGoals,
-  mockWardrobeStats,
-  mockTypeDistribution,
-  mockPopularColors,
-  mockMostWornItems,
-} from "../hooks/mockData";
 import { useWardrobe } from "../hooks/useWardrobe";
 import { useAuth } from "../hooks/auth";
 import { WardrobeControls } from "../components/wardrobe/WardrobeHeader";
 import { WardrobeItemGrid } from "../components/wardrobe/WardrobeItemGrid";
 import { WardrobeLoadingGrid } from "../components/wardrobe/WardrobeLoadingGrid";
 import { ItemDetailModal } from "../components/wardrobe/ItemDetailModal";
-import { OutfitBuilderModal } from "../components/wardrobe/OutfitBuilderModal";
 import { FilterModal } from "../components/wardrobe/FilterModal";
 import { AddItemModal } from "../components/wardrobe/AddItemModal";
-import { WardrobeGoals } from "../components/wardrobe/WardrobeGoals";
-import { WardrobeStats } from "../components/wardrobe/WardrobeStats";
-import { TypeDistribution } from "../components/wardrobe/TypeDistribution";
-import { MostWorn } from "../components/wardrobe/MostWorn";
-
-type ViewMode = "grid" | "list";
 
 const WardrobeScreen = ({ navigation }: any) => {
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [outfitBuilderItem, setOutfitBuilderItem] = useState<Item | null>(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
@@ -111,20 +96,6 @@ const WardrobeScreen = ({ navigation }: any) => {
         onMessagePress={handleMessagePress}
         onProfilePress={handleProfilePress}
       />
-
-      {/* Wardrobe Controls */}
-      <WardrobeControls
-        itemCount={items.length}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        selectedFilters={selectedFilters}
-        onFilterPress={() => setIsFilterModalOpen(true)}
-        onRefresh={handleRefresh}
-        isRefreshing={isRefreshing}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-      />
-
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -132,23 +103,19 @@ const WardrobeScreen = ({ navigation }: any) => {
           <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
         }
       >
-        {/* Items Grid */}
-        <WardrobeItemGrid
-          items={items}
-          viewMode={viewMode}
-          onItemClick={handleItemClick}
+        {/* Wardrobe Controls */}
+        <WardrobeControls
+          itemCount={items.length}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          selectedFilters={selectedFilters}
+          onFilterPress={() => setIsFilterModalOpen(true)}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
         />
 
-        {/* Wardrobe Sections */}
-        <View style={styles.sectionsContainer}>
-          <WardrobeGoals goals={mockWardrobeGoals} />
-          <WardrobeStats stats={mockWardrobeStats} />
-          <TypeDistribution
-            typeData={mockTypeDistribution}
-            colorData={mockPopularColors}
-          />
-          <MostWorn items={mockMostWornItems} />
-        </View>
+        {/* Items Grid */}
+        <WardrobeItemGrid items={items} onItemClick={handleItemClick} />
 
         {/* Bottom spacing for FAB */}
         <View style={styles.bottomSpacing} />
@@ -175,12 +142,6 @@ const WardrobeScreen = ({ navigation }: any) => {
         onClose={() => setSelectedItem(null)}
         item={selectedItem}
         onUseInOutfit={handleUseInOutfit}
-      />
-
-      <OutfitBuilderModal
-        visible={!!outfitBuilderItem}
-        onClose={() => setOutfitBuilderItem(null)}
-        item={outfitBuilderItem}
       />
 
       <FilterModal

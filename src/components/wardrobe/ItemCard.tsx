@@ -31,9 +31,9 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
       activeOpacity={0.8}
     >
       <View style={styles.imageContainer}>
-        <Image 
-          source={{ uri: item.imgUrl || "https://via.placeholder.com/300x400" }} 
-          style={styles.image} 
+        <Image
+          source={{ uri: item.imgUrl || "https://via.placeholder.com/300x400" }}
+          style={styles.image}
         />
         <View
           style={[styles.typeTag, { backgroundColor: tag.backgroundColor }]}
@@ -56,12 +56,12 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
         <View style={styles.statsContainer}>
           <View style={styles.wearInfo}>
             <Ionicons name="eye-outline" size={12} color="#6b7280" />
-            <Text style={styles.wearText}>
-              Worn {item.frequencyWorn ? parseInt(item.frequencyWorn) : 0}x
-            </Text>
+            <Text style={styles.wearText}>{item.frequencyWorn}</Text>
           </View>
           <Text style={styles.lastWorn}>
-            {item.lastWornAt ? new Date(item.lastWornAt).toLocaleDateString() : "-"}
+            {item.lastWornAt
+              ? new Date(item.lastWornAt).toLocaleDateString()
+              : "-"}
           </Text>
         </View>
       </View>

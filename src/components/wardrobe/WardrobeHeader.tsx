@@ -16,8 +16,6 @@ interface WardrobeControlsProps {
   onFilterPress: () => void;
   onRefresh: () => void;
   isRefreshing: boolean;
-  viewMode: "grid" | "list";
-  onViewModeChange: (mode: "grid" | "list") => void;
 }
 
 export const WardrobeControls: React.FC<WardrobeControlsProps> = ({
@@ -28,8 +26,6 @@ export const WardrobeControls: React.FC<WardrobeControlsProps> = ({
   onFilterPress,
   onRefresh,
   isRefreshing,
-  viewMode,
-  onViewModeChange,
 }) => {
   return (
     <View style={styles.container}>
@@ -86,42 +82,6 @@ export const WardrobeControls: React.FC<WardrobeControlsProps> = ({
             </View>
           )}
         </TouchableOpacity>
-
-        <View style={styles.rightActions}>
-          <TouchableOpacity style={styles.trendingButton}>
-            <Ionicons name="trending-up-outline" size={16} color="#666" />
-            <Text style={styles.trendingText}>Trending items</Text>
-          </TouchableOpacity>
-
-          <View style={styles.viewModeContainer}>
-            <TouchableOpacity
-              style={[
-                styles.viewModeButton,
-                viewMode === "grid" && styles.viewModeButtonActive,
-              ]}
-              onPress={() => onViewModeChange("grid")}
-            >
-              <Ionicons
-                name="grid"
-                size={16}
-                color={viewMode === "grid" ? "#fff" : "#666"}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.viewModeButton,
-                viewMode === "list" && styles.viewModeButtonActive,
-              ]}
-              onPress={() => onViewModeChange("list")}
-            >
-              <Ionicons
-                name="list"
-                size={16}
-                color={viewMode === "list" ? "#fff" : "#666"}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
       </View>
     </View>
   );
@@ -225,35 +185,5 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 12,
     fontWeight: "bold",
-  },
-  rightActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  trendingButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  trendingText: {
-    marginLeft: 4,
-    fontSize: 12,
-    color: "#6b7280",
-  },
-  viewModeContainer: {
-    flexDirection: "row",
-    backgroundColor: "#f9fafb",
-    borderRadius: 12,
-    padding: 4,
-  },
-  viewModeButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  viewModeButtonActive: {
-    backgroundColor: "#3b82f6",
   },
 });
