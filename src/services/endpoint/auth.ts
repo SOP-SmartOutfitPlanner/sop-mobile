@@ -20,7 +20,7 @@ import {
   resetPasswordResponse,
 } from "../../types/auth";
 
-export const register = async (
+export const registerAPI = async (
   data: RegisterRequest
 ): Promise<RegisterResponse> => {
   const response = await apiClient.post<RegisterResponse>(

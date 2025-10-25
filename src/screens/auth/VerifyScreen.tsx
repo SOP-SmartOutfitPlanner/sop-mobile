@@ -8,7 +8,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,6 +15,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { StackScreenProps } from "@react-navigation/stack";
 import { RootStackParamList } from "../../navigation/AppNavigator";
 import { resendOtp, verifyOtp } from "../../services/endpoint";
+import { useNotification } from "../../hooks/useNotification";
+import NotificationModal from "../../components/notification/NotificationModal";
 
 type VerifyScreenProps = StackScreenProps<RootStackParamList, "Verify">;
 
@@ -29,6 +30,9 @@ export const VerifyScreen: React.FC<VerifyScreenProps> = ({
   const [isResending, setIsResending] = useState(false);
   const [countdown, setCountdown] = useState(60);
   const [canResend, setCanResend] = useState(false);
+
+  const { visible, config, showNotification, hideNotification } =
+    useNotification();
 
   // Refs for OTP inputs
   const otpRefs = useRef<(TextInput | null)[]>([]);
@@ -68,7 +72,12 @@ export const VerifyScreen: React.FC<VerifyScreenProps> = ({
     const otpCode = otp.join("");
 
     if (otpCode.length !== 6) {
-      Alert.alert("Lỗi", "Vui lòng nhập đủ 6 số mã OTP");
+      showNotification({
+        type: "error",
+        title: "Validation Error",
+        message: "Please enter all 6 digits of the OTP code",
+        confirmText: "OK",
+      });
       return;
     }
 
@@ -81,24 +90,23 @@ export const VerifyScreen: React.FC<VerifyScreenProps> = ({
       });
 
       if (response.statusCode === 200) {
-        Alert.alert(
-          "Thành công! 🎉",
-          "Xác thực thành công! Bạn có thể đăng nhập ngay bây giờ.",
-          [
-            {
-              text: "Đăng nhập",
-              onPress: () => {
-                // Navigate to Auth stack (which contains Login screen)
-                navigation.navigate("Auth");
-              },
-            },
-          ]
-        );
+        showNotification({
+          type: "success",
+          title: "Verification Successful! 🎉",
+          message: "You can now login to your account.",
+          confirmText: "Login Now",
+          onConfirm: () => {
+            navigation.navigate("Auth");
+          },
+        });
       }
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || error.message || "Xác thực thất bại";
-      Alert.alert("Lỗi", errorMessage);
+      showNotification({
+        type: "error",
+        title: "Verification Failed",
+        message: error?.message || "Invalid OTP code. Please try again.",
+        confirmText: "Try Again",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -115,39 +123,42 @@ export const VerifyScreen: React.FC<VerifyScreenProps> = ({
       });
 
       if (response.statusCode === 200) {
-        Alert.alert("Thành công", "Mã OTP mới đã được gửi đến email của bạn");
+        showNotification({
+          type: "success",
+          title: "OTP Sent",
+          message: "A new OTP code has been sent to your email",
+          confirmText: "OK",
+        });
         setCountdown(60);
         setCanResend(false);
         setOtp(["", "", "", "", "", ""]);
         otpRefs.current[0]?.focus();
       }
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Gửi lại mã OTP thất bại";
-      Alert.alert("Lỗi", errorMessage);
+      showNotification({
+        type: "error",
+        title: "Failed to Resend",
+        message: error?.message || "Could not resend OTP. Please try again.",
+        confirmText: "OK",
+      });
     } finally {
       setIsResending(false);
     }
   };
 
   const handleBack = () => {
-    Alert.alert(
-      "Xác nhận",
-      "Bạn có chắc muốn quay lại? Bạn sẽ cần đăng ký lại.",
-      [
-        {
-          text: "Hủy",
-          style: "cancel",
-        },
-        {
-          text: "Quay lại",
-          onPress: () => navigation.goBack(),
-          style: "destructive",
-        },
-      ]
-    );
+    showNotification({
+      type: "warning",
+      title: "Confirm",
+      message:
+        "Are you sure you want to go back? You'll need to register again.",
+      showCancel: true,
+      confirmText: "Go Back",
+      cancelText: "Stay",
+      onConfirm: () => {
+        navigation.goBack();
+      },
+    });
   };
 
   return (
@@ -250,6 +261,19 @@ export const VerifyScreen: React.FC<VerifyScreenProps> = ({
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Notification Modal */}
+      <NotificationModal
+        isVisible={visible}
+        type={config.type}
+        title={config.title}
+        message={config.message}
+        onClose={hideNotification}
+        confirmText={config.confirmText}
+        cancelText={config.cancelText}
+        onConfirm={config.onConfirm}
+        showCancel={config.showCancel}
+      />
     </SafeAreaView>
   );
 };

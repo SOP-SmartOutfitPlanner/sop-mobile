@@ -8,13 +8,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../hooks/auth";
-import { register } from "../../services/endpoint";
+import { useNotification } from "../../hooks/useNotification";
+import NotificationModal from "../../components/notification/NotificationModal";
 
 interface RegisterScreenProps {
   navigation: any;
@@ -28,29 +28,51 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const { loginWithGoogle, isLoading } = useAuth();
+  const { register, loginWithGoogle, isLoading } = useAuth();
+  const { visible, config, showNotification, hideNotification } =
+    useNotification();
 
   const handleRegister = async () => {
     // Validation
     if (!fullName.trim()) {
-      Alert.alert("Error", "Please enter your full name");
+      showNotification({
+        type: "error",
+        title: "Validation Error",
+        message: "Please enter your full name",
+        confirmText: "OK",
+      });
       return;
     }
 
     if (!email.trim()) {
-      Alert.alert("Error", "Please enter your email");
+      showNotification({
+        type: "error",
+        title: "Validation Error",
+        message: "Please enter your email",
+        confirmText: "OK",
+      });
       return;
     }
 
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert("Error", "Invalid email format");
+      showNotification({
+        type: "error",
+        title: "Validation Error",
+        message: "Invalid email format",
+        confirmText: "OK",
+      });
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert("Error", "Password must be at least 6 characters");
+      showNotification({
+        type: "error",
+        title: "Validation Error",
+        message: "Password must be at least 6 characters",
+        confirmText: "OK",
+      });
       return;
     }
 
@@ -63,35 +85,64 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
       });
 
       if (response.statusCode === 200 || response.statusCode === 201) {
-        Alert.alert(
-          "Success",
-          "Registration successful! Please check your email for the OTP code.",
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                // Navigate to verify screen with email
-                navigation.navigate("Verify", { email: email.trim() });
-              },
-            },
-          ]
-        );
+        showNotification({
+          type: "success",
+          title: "Registration Successful! 🎉",
+          message: "Please check your email for the OTP code.",
+          confirmText: "Verify Now",
+          onConfirm: () => {
+            navigation.navigate("Verify", { email: email.trim() });
+          },
+        });
       }
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || error.message || "Registration failed";
-      Alert.alert("Error", errorMessage);
+      showNotification({
+        type: "error",
+        title: "Registration Failed",
+        message: error?.message || "An error occurred during registration",
+        confirmText: "Try Again",
+      });
     }
   };
 
   const handleGoogleRegister = async () => {
     try {
-      await loginWithGoogle();
-    } catch (error) {
-      Alert.alert(
-        "Error",
-        error instanceof Error ? error.message : "Google registration failed"
-      );
+      const decodedToken = await loginWithGoogle();
+
+      // Check if first time login (string "True" from API)
+      if (decodedToken.FirstTime === "True") {
+        showNotification({
+          type: "success",
+          title: "Registration Successful",
+          message: "Welcome! Let's get you started with onboarding.",
+          confirmText: "OK",
+        });
+        // Auto navigate after showing notification
+        setTimeout(() => {
+          navigation.replace("Onboarding");
+        }, 1500);
+      } else {
+        showNotification({
+          type: "success",
+          title: "Login Successful",
+          message: "Welcome back!",
+          confirmText: "OK",
+        });
+        // Auto navigate after showing notification
+        setTimeout(() => {
+          navigation.replace("Main");
+        }, 1500);
+      }
+    } catch (error: any) {
+      // Only show error notification if it's not a cancellation
+      if (error?.message && !error?.message.includes("cancel")) {
+        showNotification({
+          type: "error",
+          title: "Google Registration Failed",
+          message: error?.message || "Failed to register with Google",
+          confirmText: "Try Again",
+        });
+      }
     }
   };
 
@@ -240,6 +291,19 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Notification Modal */}
+      <NotificationModal
+        isVisible={visible}
+        type={config.type}
+        title={config.title}
+        message={config.message}
+        onClose={hideNotification}
+        confirmText={config.confirmText}
+        cancelText={config.cancelText}
+        onConfirm={config.onConfirm}
+        showCancel={config.showCancel}
+      />
     </SafeAreaView>
   );
 };

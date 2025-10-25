@@ -7,7 +7,12 @@ import React, {
   use,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { loginAPI, logoutAPI, LoginGoogle } from "../../services/endpoint";
+import {
+  loginAPI,
+  logoutAPI,
+  LoginGoogle,
+  registerAPI,
+} from "../../services/endpoint";
 import {
   decodeJWT,
   extractAndSaveUserId,
@@ -34,6 +39,12 @@ interface AuthContextType {
     password: string;
   }) => Promise<DecodedToken>;
   loginWithGoogle: () => Promise<DecodedToken>;
+  register: (data: {
+    email: string;
+    displayName: string;
+    password: string;
+    confirmPassword: string;
+  }) => Promise<any>;
   continueAsGuest: () => void;
   promptLogin: () => boolean;
   refreshAuthState: () => Promise<void>;
@@ -77,10 +88,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (response.statusCode === 200) {
         setUser(response.data);
-        // console.log(
-        //   "✅ User profile loaded successfully:",
-        //   response.data.displayName
-        // );
       } else {
         console.error(
           "❌ Failed to load profile, status:",
@@ -160,55 +167,58 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const loginWithGoogle = async (): Promise<DecodedToken> => {
     setIsLoading(true);
     try {
-      // console.log("🔄 Starting Google Sign-In...");
-
-      // Check if device supports Google Play Services
       await GoogleSignin.hasPlayServices({
         showPlayServicesUpdateDialog: true,
       });
-      // console.log("✅ Google Play Services available");
-
-      // Perform Google Sign-In
       const userInfo = await GoogleSignin.signIn();
-      console.log("✅ Google userInfo:", userInfo);
-
-      // Get the ID token from Google
       const idToken = userInfo?.data?.idToken;
-      // console.log("📝 idToken:", idToken ? "Token received" : "Token missing");
-
       if (!idToken) {
         throw new Error("Không thể lấy ID token từ Google");
       }
-
-      // console.log("🔄 Sending token to backend...");
-
-      // Call backend API with idToken
       const response = await LoginGoogle(idToken);
       const accessToken = response.data.accessToken;
       const refreshToken = response.data.refreshToken;
-
-      // Decode token to check FirstTime
       const decodedToken = decodeJWT(accessToken);
       console.log("✅ Decode token:", decodedToken);
-
       // Save tokens and user info
       await saveTokens(accessToken, refreshToken);
       await extractAndSaveUserId(accessToken);
       await refreshAuthState();
-
-      console.log("✅ Google login successful");
-      // Return decoded token for navigation handling
       return decodedToken;
     } catch (error: any) {
-      let errorMessage = "Đăng nhập với Google thất bại";
+      let errorMessage = "Login with Google failed";
       // Handle specific Google Sign-In errors
       if (error.code === "SIGN_IN_CANCELLED") {
-        errorMessage = "Đăng nhập bị hủy";
+        errorMessage = "Login cancelled";
       } else if (error.code === "IN_PROGRESS") {
-        errorMessage = "Đang xử lý đăng nhập...";
+        errorMessage = "Login in progress...";
       } else if (error.code === "PLAY_SERVICES_NOT_AVAILABLE") {
-        errorMessage = "Google Play Services không khả dụng";
+        errorMessage = "Google Play Services not available";
       } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      throw new Error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const register = async (data: {
+    email: string;
+    displayName: string;
+    password: string;
+    confirmPassword: string;
+  }) => {
+    setIsLoading(true);
+    try {
+      const response = await registerAPI(data);
+      return response;
+    } catch (error: any) {
+      let errorMessage = "Registration failed";
+
+      if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
@@ -233,14 +243,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log("ℹ️ Token already expired, clearing local data");
       }
     } finally {
-      // Always clear local storage and reset user state
       try {
-        // Sign out from Google if user was signed in
         try {
           await GoogleSignin.signOut();
-          // console.log("✅ Google sign out successful");
         } catch (googleError) {
-          // Ignore Google sign out errors (user might not be signed in via Google)
           console.log("ℹ️ Google sign out skipped:", googleError);
         }
 
@@ -273,6 +279,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     login,
     loginWithGoogle,
+    register,
     continueAsGuest,
     promptLogin,
     refreshAuthState,
