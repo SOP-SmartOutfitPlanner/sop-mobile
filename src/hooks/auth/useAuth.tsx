@@ -14,7 +14,6 @@ import {
   getUserId,
   saveTokens,
 } from "../../services/api/apiClient";
-import { Alert } from "react-native";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { getUserProfile } from "../../services/endpoint/user";
 import { User } from "../../types/user";
@@ -144,7 +143,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       return decodedToken;
     } catch (error: any) {
-      let errorMessage = "Đăng nhập thất bại";
+      let errorMessage = "Login failed";
 
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -152,8 +151,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         errorMessage = error.message;
       }
 
-      Alert.alert("Đăng nhập thất bại", errorMessage);
-      throw error;
+      // Don't show Alert here - let the screen handle it with notification
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -214,8 +213,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      Alert.alert("Lỗi đăng nhập Google", errorMessage);
-      throw error;
+
+      // Don't show Alert here - let the screen handle it with notification
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -238,7 +238,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Sign out from Google if user was signed in
         try {
           await GoogleSignin.signOut();
-          console.log("✅ Google sign out successful");
+          // console.log("✅ Google sign out successful");
         } catch (googleError) {
           // Ignore Google sign out errors (user might not be signed in via Google)
           console.log("ℹ️ Google sign out skipped:", googleError);

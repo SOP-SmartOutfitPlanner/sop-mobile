@@ -14,6 +14,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../hooks/auth";
+import { useNotification } from "../../hooks/useNotification";
+import NotificationModal from "../../components/notification/NotificationModal";
 
 interface LoginScreenProps {
   navigation: any;
@@ -24,11 +26,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const { login, loginWithGoogle, isLoading } = useAuth();
+  const { visible, config, showNotification, hideNotification } =
+    useNotification();
 
   const handleLogin = async () => {
     // Validation
     if (!email.trim() || !password.trim()) {
-      Alert.alert("Error", "Please enter email and password");
+      showNotification({
+        type: "error",
+        title: "Validation Error",
+        message: "Please enter email and password",
+        confirmText: "OK",
+      });
       return;
     }
 
@@ -37,13 +46,35 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
       // Check if first time login (string "True" from API)
       if (decodedToken.FirstTime === "True") {
-        navigation.replace("Onboarding");
+        showNotification({
+          type: "success",
+          title: "Login Successful",
+          message: "Welcome! Let's get you started with onboarding.",
+          confirmText: "Ok",
+          onConfirm: () => {
+            navigation.replace("Onboarding");
+          },
+        });
       } else {
-        navigation.replace("Main");
+        showNotification({
+          type: "success",
+          title: "Login Successful",
+          message: "Welcome! Let's get you started with the app.",
+          showCancel: true,
+          confirmText: "Start",
+          cancelText: "Cancel",
+          onConfirm: () => {
+            navigation.replace("Main");
+          },
+        });
       }
-    } catch (error) {
-      // Error already handled by useAuth with Alert
-      console.log("Login failed:", error);
+    } catch (error: any) {
+      showNotification({
+        type: "error",
+        title: "Login Failed",
+        message: error?.message || "An error occurred during login",
+        confirmText: "Try Again",
+      });
     }
   };
 
@@ -53,9 +84,28 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
       // Check if first time login (string "True" from API)
       if (decodedToken.FirstTime === "True") {
-        navigation.replace("Onboarding");
+        showNotification({
+          type: "success",
+          title: "Login Successful",
+          message: "Welcome! Let's get you started with onboarding.",
+          showCancel: true,
+          confirmText: "Start",
+          cancelText: "Cancel",
+          onConfirm: () => {
+            navigation.replace("Onboarding");
+          },
+        });
       } else {
-        navigation.replace("Main");
+        showNotification({
+          type: "success",
+          title: "Login Successful",
+          message: "Welcome back!",
+          showCancel: false,
+          confirmText: "Continue",
+          onConfirm: () => {
+            navigation.replace("Main");
+          },
+        });
       }
     } catch (error) {
       // Error already handled by useAuth with Alert
@@ -216,6 +266,19 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Notification Modal */}
+      <NotificationModal
+        isVisible={visible}
+        type={config.type}
+        title={config.title}
+        message={config.message}
+        onClose={hideNotification}
+        confirmText={config.confirmText}
+        cancelText={config.cancelText}
+        onConfirm={config.onConfirm}
+        showCancel={config.showCancel}
+      />
     </SafeAreaView>
   );
 };
