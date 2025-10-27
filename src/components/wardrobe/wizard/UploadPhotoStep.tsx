@@ -9,6 +9,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 interface UploadPhotoStepProps {
   selectedImage: string | null;
@@ -85,24 +86,31 @@ export const UploadPhotoStep: React.FC<UploadPhotoStepProps> = ({
       {/* Detect Image Button - Show only when image is selected */}
       {selectedImage && (
         <TouchableOpacity
-          style={[
-            styles.detectButton,
-            isDetecting && styles.detectButtonDisabled,
-          ]}
           onPress={onDetectPress}
           disabled={isDetecting}
+          activeOpacity={0.8}
         >
-          {isDetecting ? (
-            <>
-              <ActivityIndicator size="small" color="#fff" />
-              <Text style={styles.detectButtonText}>Analyzing...</Text>
-            </>
-          ) : (
-            <>
-              <Ionicons name="sparkles" size={20} color="#fff" />
-              <Text style={styles.detectButtonText}>Detect Image with AI</Text>
-            </>
-          )}
+          <LinearGradient
+            colors={['#30cfd0', '#330867']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[
+              styles.detectButton,
+              isDetecting && styles.detectButtonDisabled,
+            ]}
+          >
+            {isDetecting ? (
+              <>
+                <ActivityIndicator size="small" color="#fff" />
+                <Text style={styles.detectButtonText}>Analyzing...</Text>
+              </>
+            ) : (
+              <>
+                <Ionicons name="sparkles" size={20} color="#fff" />
+                <Text style={styles.detectButtonText}>Detect Image with AI</Text>
+              </>
+            )}
+          </LinearGradient>
         </TouchableOpacity>
       )}
     </ScrollView>
@@ -180,7 +188,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#8b5cf6",
     borderRadius: 12,
     paddingVertical: 16,
     gap: 8,

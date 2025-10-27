@@ -5,8 +5,8 @@ import {
   Modal,
   TouchableOpacity,
   StyleSheet,
-  Alert,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useImagePicker } from "../../hooks/useImagePicker";
@@ -21,6 +21,9 @@ import { prepareFileForUpload } from "../../utils/imageUtils";
 import type { AddItemRequest } from "../../types/item";
 import type { Category } from "../../types/category";
 import { getUserId } from "../../services/api/apiClient";
+import { AILoadingOutfit } from "../loading/AILoadingOutfit";
+import NotificationModal from "../notification/NotificationModal";
+import { useNotification } from "../../hooks/useNotification";
 
 interface AddItemModalProps {
   visible: boolean;
@@ -64,6 +67,9 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
   // Loading states
   const [isDetecting, setIsDetecting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Notification hook
+  const notification = useNotification();
 
   // Load categories when modal opens
   useEffect(() => {
@@ -132,7 +138,7 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
   // Handle Detect Image with AI
   const handleDetectImage = async () => {
     if (!selectedImage) {
-      Alert.alert("Error", "Please upload an image first");
+      notification.showError("Please upload an image first");
       return;
     }
 
@@ -156,10 +162,9 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
         setFabric(data.fabric || "");
         setImageRemBgURL(data.imageRemBgURL || "");
 
-        Alert.alert(
-          "Success",
+        notification.showSuccess(
           "Image analyzed successfully! Form auto-filled with AI data.",
-          [{ text: "OK" }]
+          "Success"
         );
       }
     } catch (error: any) {
@@ -167,15 +172,15 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
 
       // Check if it's a 413 error
       if (error.response?.status === 413) {
-        Alert.alert(
-          "Image Too Large",
-          "The image is still too large. Please try with a smaller image or different photo."
+        notification.showError(
+          "The image is still too large. Please try with a smaller image or different photo.",
+          "Image Too Large"
         );
       } else {
-        Alert.alert(
-          "Detection Failed",
+        notification.showError(
           error.response?.data?.message ||
-            "Failed to analyze image. Please try again."
+            "Failed to analyze image. Please try again.",
+          "Detection Failed"
         );
       }
     } finally {
@@ -209,7 +214,7 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
       if (canProceedToStep(currentStep + 1)) {
         setCurrentStep(currentStep + 1);
       } else {
-        Alert.alert("Required Fields", getValidationMessage(currentStep));
+        notification.showWarning(getValidationMessage(currentStep), "Required Fields");
       }
     }
   };
@@ -228,28 +233,28 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
       // Get userId from AsyncStorage
       const userId = await getUserId();
       if (!userId) {
-        Alert.alert("Error", "User not authenticated. Please login again.");
+        notification.showError("User not authenticated. Please login again.");
         setIsSaving(false);
         return;
       }
 
       // Validate all required fields
       if (!itemName.trim()) {
-        Alert.alert("Validation Error", "Item name is required");
+        notification.showError("Item name is required", "Validation Error");
         setIsSaving(false);
         return;
       }
 
       if (!categoryId || categoryId === 0) {
-        Alert.alert("Validation Error", "Please select a category");
+        notification.showError("Please select a category", "Validation Error");
         setIsSaving(false);
         return;
       }
 
       if (!imageRemBgURL || !imageRemBgURL.trim()) {
-        Alert.alert(
-          "Validation Error",
-          "Image URL is missing. Please detect image with AI first."
+        notification.showError(
+          "Image URL is missing. Please detect image with AI first.",
+          "Validation Error"
         );
         setIsSaving(false);
         return;
@@ -314,26 +319,21 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
       const response = await AddItem(requestData as AddItemRequest);
 
       if (response.statusCode === 200) {
-        Alert.alert(
-          ALERT_MESSAGES.SUCCESS_SAVE.title,
+        notification.showSuccess(
           ALERT_MESSAGES.SUCCESS_SAVE.message,
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                handleClose();
-                onSave?.(); // Notify parent to refresh
-              },
-            },
-          ]
+          ALERT_MESSAGES.SUCCESS_SAVE.title,
+          () => {
+            handleClose();
+            onSave?.(); // Notify parent to refresh
+          }
         );
       }
     } catch (error: any) {
       console.error("Error saving item:", error);
-      Alert.alert(
-        "Save Failed",
+      notification.showError(
         error.response?.data?.message ||
-          "Failed to save item. Please try again."
+          "Failed to save item. Please try again.",
+        "Save Failed"
       );
     } finally {
       setIsSaving(false);
@@ -431,73 +431,101 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
   };
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-    >
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-            <Ionicons name="close" size={24} color="#1f2937" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Add New Item</Text>
-          <View style={styles.placeholder} />
-        </View>
-
-        {/* Step Indicator */}
-        <StepIndicator steps={STEPS} currentStep={currentStep} />
-
-        {/* Step Content */}
-        <View style={styles.stepContent}>{renderCurrentStep()}</View>
-
-        {/* Step Footer */}
-        <View style={styles.stepFooter}>
-          <Text style={styles.stepText}>
-            Step {currentStep} of {STEPS.length}
-          </Text>
-
-          <View style={styles.buttonContainer}>
-            {currentStep > 1 && (
-              <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-                <Ionicons name="chevron-back" size={20} color="#6b7280" />
-                <Text style={styles.backButtonText}>Back</Text>
-              </TouchableOpacity>
-            )}
-
-            <TouchableOpacity
-              style={[
-                styles.nextButton,
-                (!canProceedToStep(currentStep + 1) && currentStep < 4) ||
-                isSaving
-                  ? styles.nextButtonDisabled
-                  : {},
-              ]}
-              onPress={currentStep === 3 ? handleSave : handleNext}
-              disabled={
-                (!canProceedToStep(currentStep + 1) && currentStep < 4) ||
-                isSaving
-              }
-            >
-              {currentStep === 3 ? (
-                <>
-                  <Ionicons name="checkmark" size={20} color="#fff" />
-                  <Text style={styles.nextButtonText}>
-                    {isSaving ? "Saving..." : "Save Item"}
-                  </Text>
-                </>
-              ) : (
-                <>
-                  <Text style={styles.nextButtonText}>Next</Text>
-                  <Ionicons name="chevron-forward" size={20} color="#fff" />
-                </>
-              )}
+    <>
+      <Modal
+        visible={visible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <View style={styles.container}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+              <Ionicons name="close" size={24} color="#1f2937" />
             </TouchableOpacity>
+            <Text style={styles.headerTitle}>Add New Item</Text>
+            <View style={styles.placeholder} />
           </View>
+
+          {/* Step Indicator */}
+          <StepIndicator steps={STEPS} currentStep={currentStep} />
+
+          {/* Step Content */}
+          <View style={styles.stepContent}>{renderCurrentStep()}</View>
+
+          {/* Step Footer */}
+          <View style={styles.stepFooter}>
+            <Text style={styles.stepText}>
+              Step {currentStep} of {STEPS.length}
+            </Text>
+
+            <View style={styles.buttonContainer}>
+              {currentStep > 1 && (
+                <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+                  <Ionicons name="chevron-back" size={20} color="#6b7280" />
+                  <Text style={styles.backButtonText}>Back</Text>
+                </TouchableOpacity>
+              )}
+              
+              <TouchableOpacity
+                style={styles.nextButtonWrapper}
+                onPress={currentStep === 3 ? handleSave : handleNext}
+                disabled={
+                  (!canProceedToStep(currentStep + 1) && currentStep < 4) ||
+                  isSaving
+                }
+              >
+                <LinearGradient
+                  colors={
+                    (!canProceedToStep(currentStep + 1) && currentStep < 4) ||
+                    isSaving
+                      ? ["#9ca3af", "#9ca3af"]
+                      : ["#30cfd0", "#330867"]
+                  }
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.nextButton}
+                >
+                  {currentStep === 3 ? (
+                    <>
+                    
+                      <Ionicons name="checkmark" size={20} color="#fff" />
+                      <Text style={styles.nextButtonText}>
+                        {isSaving ? "Saving..." : "Save Item"}
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <Text style={styles.nextButtonText}>Next</Text>
+                      <Ionicons name="chevron-forward" size={20} color="#fff" />
+                    </>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* AI Loading Overlay - Inside Modal */}
+          <AILoadingOutfit
+            visible={isDetecting}
+            message="Analyzing your item with AI…"
+          />
         </View>
-      </View>
-    </Modal>
+      </Modal>
+
+      {/* Notification Modal */}
+      <NotificationModal
+        isVisible={notification.visible}
+        type={notification.config.type}
+        title={notification.config.title}
+        message={notification.config.message}
+        onClose={notification.hideNotification}
+        confirmText={notification.config.confirmText}
+        cancelText={notification.config.cancelText}
+        onConfirm={notification.config.onConfirm}
+        showCancel={notification.config.showCancel}
+      />
+    </>
   );
 };
 
@@ -564,18 +592,18 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#6b7280",
   },
-  nextButton: {
+  nextButtonWrapper: {
     flex: 2,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  nextButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#3b82f6",
     borderRadius: 12,
     paddingVertical: 16,
     gap: 8,
-  },
-  nextButtonDisabled: {
-    backgroundColor: "#9ca3af",
   },
   nextButtonText: {
     fontSize: 16,

@@ -93,7 +93,7 @@ export const resetPassword = async (data:resetPasswordRequest) : Promise<resetPa
   return response.data;
 };
 export const authApi = {
-  register,
+  registerAPI,
   verifyOtp,
   loginAPI,
   resendOtp,

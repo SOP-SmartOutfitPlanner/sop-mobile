@@ -40,3 +40,4 @@ package-lock.json
 /android
 google-services.json
 eas.json
+.vscode/
