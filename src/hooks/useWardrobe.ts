@@ -1,6 +1,6 @@
 import { getUserId } from './../services/api/apiClient';
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { EditItemAPI, GetItem } from "../services/endpoint/wardorbe";
+import { EditItemAPI, GetItem, DeleteItemAPI } from "../services/endpoint/wardorbe";
 import { Item, ItemEdit } from "../types/item";
 
 export const useWardrobe = () => {
@@ -121,6 +121,21 @@ export const useWardrobe = () => {
     }
   }, []);
 
+  // Delete item function
+  const deleteItem = useCallback(async (id: number) => {
+    try {
+      await DeleteItemAPI(id);
+      
+      // Remove item from local state
+      setAllItems(prevItems => prevItems.filter(item => item.id !== id));
+      
+      console.log("✅ Item deleted successfully");
+    } catch (error) {
+      console.error("❌ Error deleting item:", error);
+      throw error;
+    }
+  }, []);
+
   return {
     items: filteredItems,
     allItems,
@@ -135,5 +150,6 @@ export const useWardrobe = () => {
     error,
     refetch: fetchItems,
     editItem,
+    deleteItem,
   };
 };

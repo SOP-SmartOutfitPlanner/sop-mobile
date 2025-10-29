@@ -6,14 +6,16 @@ import { LinearGradient } from "expo-linear-gradient";
 interface DetailActionsProps {
   onUseInOutfit?: () => void;
   onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 export const DetailActions: React.FC<DetailActionsProps> = ({
   onUseInOutfit,
   onEdit,
+  onDelete,
 }) => {
   return (
-    <View style={styles.actionButtons}>
+    <View style={styles.container}>
       <TouchableOpacity
         style={styles.actionButton}
         onPress={onUseInOutfit}
@@ -30,23 +32,36 @@ export const DetailActions: React.FC<DetailActionsProps> = ({
         </LinearGradient>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={[styles.actionButton, styles.secondaryButton]}
-        onPress={onEdit}
-      >
-        <Ionicons name="create-outline" size={20} color="#330867" />
-        <Text style={styles.secondaryButtonText}>Edit</Text>
-      </TouchableOpacity>
+      <View style={styles.actionButtons}>
+        <TouchableOpacity
+          style={[styles.actionButton, styles.secondaryButton]}
+          onPress={onEdit}
+        >
+          <Ionicons name="create-outline" size={20} color="#330867" />
+          <Text style={styles.secondaryButtonText}>Edit</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.actionButton, styles.deleteButton]}
+          onPress={onDelete}
+        >
+          <Ionicons name="trash-outline" size={20} color="#dc2626" />
+          <Text style={styles.deleteButtonText}>Delete</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    padding: 16,
+    backgroundColor: "#fff",
+    gap: 12,
+  },
   actionButtons: {
     flexDirection: "row",
-    padding: 16,
     gap: 12,
-    backgroundColor: "#fff",
   },
   actionButton: {
     flex: 1,
@@ -70,6 +85,16 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     gap: 8,
   },
+  deleteButton: {
+    backgroundColor: "#fee2e2",
+    borderWidth: 1,
+    borderColor: "#fecaca",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 14,
+    gap: 8,
+  },
   primaryButtonText: {
     fontSize: 16,
     fontWeight: "600",
@@ -79,5 +104,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#330867",
+  },
+  deleteButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#dc2626",
   },
 });

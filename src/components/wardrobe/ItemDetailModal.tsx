@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Modal, ScrollView, StyleSheet } from "react-native";
 import { Item, ItemEdit } from "../../types/item";
 import {
@@ -10,6 +10,8 @@ import {
   DetailActions,
 } from "./detail";
 import { EditItemModal } from "./modal/EditItemModal";
+import { useNotification } from "../../hooks/useNotification";
+import NotificationModal from "../notification/NotificationModal";
 
 interface ItemDetailModalProps {
   visible: boolean;
@@ -18,6 +20,7 @@ interface ItemDetailModalProps {
   onUseInOutfit: (item: Item) => void;
   onRefresh?: () => void;
   editItem: (id: number, data: Partial<ItemEdit>) => Promise<ItemEdit>;
+  deleteItem: (id: number) => Promise<void>;
 }
 
 export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
@@ -27,8 +30,22 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
   onUseInOutfit,
   onRefresh,
   editItem,
+  deleteItem,
 }) => {
   const [showEditModal, setShowEditModal] = useState(false);
+  const notification = useNotification();
+
+  // Reset notification when modal closes or item changes
+  useEffect(() => {
+    if (!visible) {
+      notification.hideNotification();
+    }
+  }, [visible]);
+
+  useEffect(() => {
+    // Reset notification when switching to a different item
+    notification.hideNotification();
+  }, [item?.id]);
 
   if (!item) return null;
 
@@ -54,6 +71,32 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
   const handleEditSave = () => {
     setShowEditModal(false);
     onRefresh?.();
+  };
+
+  const handleDelete = () => {
+    notification.showConfirm(
+      `Are you sure you want to delete "${item.name}"? This action cannot be undone.`,
+      async () => {
+        try {
+          await deleteItem(item.id);
+          notification.hideNotification();
+          onClose(); // Close modal after successful delete
+          onRefresh?.(); // Refresh the list
+        } catch (error) {
+          notification.hideNotification();
+          // Show error notification after a short delay
+          setTimeout(() => {
+            notification.showError("Failed to delete item. Please try again.");
+          }, 300);
+        }
+      },
+      {
+        title: "Delete Item",
+        confirmText: "Delete",
+        cancelText: "Cancel",
+        type: "error",
+      }
+    );
   };
 
   return (
@@ -93,6 +136,7 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
             <DetailActions
               onUseInOutfit={handleUseInOutfit}
               onEdit={handleEdit}
+              onDelete={handleDelete}
             />
           </ScrollView>
         </View>
@@ -105,6 +149,21 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
         onSave={handleEditSave}
         item={item}
         editItem={editItem}
+      />
+
+      {/* Notification Modal */}
+      <NotificationModal
+        isVisible={notification.visible}
+        type={notification.config.type}
+        title={notification.config.title}
+        message={notification.config.message}
+        confirmText={notification.config.confirmText}
+        cancelText={notification.config.cancelText}
+        showCancel={notification.config.showCancel}
+        onConfirm={() => {
+          notification.config.onConfirm?.();
+        }}
+        onClose={notification.hideNotification}
       />
     </>
   );

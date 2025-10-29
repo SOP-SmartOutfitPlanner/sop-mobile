@@ -32,3 +32,6 @@ export const EditItemAPI = async (id: number, data: Partial<ItemEdit>): Promise<
   const response = await apiClient.put<ItemEdit>(`/items/${id}`, data);
   return response.data;
 }
+export const DeleteItemAPI = async (id: number): Promise<void> => {
+  await apiClient.delete<void>(`/items/${id}`);
+}

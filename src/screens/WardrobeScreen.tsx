@@ -41,6 +41,7 @@ const WardrobeScreen = ({ navigation }: any) => {
     error,
     refetch,
     editItem,
+    deleteItem,
   } = useWardrobe();
 
   const handleItemClick = (item: Item) => {
@@ -145,6 +146,7 @@ const WardrobeScreen = ({ navigation }: any) => {
         onUseInOutfit={handleUseInOutfit}
         onRefresh={handleRefresh}
         editItem={editItem}
+        deleteItem={deleteItem}
       />
 
       <FilterModal
