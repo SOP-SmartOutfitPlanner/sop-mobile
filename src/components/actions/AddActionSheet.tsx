@@ -14,7 +14,7 @@ import {
 } from "@gorhom/bottom-sheet";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { AddItemModal } from "../wardrobe/AddItemModal";
+import { AddItemModal } from "../wardrobe/modal/AddItemModal";
 
 // Chiều cao của bottom tab bar
 const TAB_BAR_HEIGHT = 140;

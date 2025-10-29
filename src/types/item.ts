@@ -59,6 +59,10 @@ export interface GetItemResponse {
         }
     };
 }
+export interface EditItemRequest {
+    id: number;
+    data: Partial<Item>;
+}
 
 //============== Item returned from API========================//
 export interface Item {
@@ -79,4 +83,21 @@ export interface Item {
     pattern?: string;
     fabric?: string;
     tag?: string;
+}
+export interface ItemEdit{
+    userId: number;
+    name: string;
+    categoryId: number;
+    categoryName: string;
+    color: string;
+    aiDescription: string;
+    brand: string;
+    frequencyWorn: string;
+    lastWornAt: string; 
+    imgUrl: string;
+    weatherSuitable: string;
+    condition: string;
+    pattern: string;
+    fabric: string;
+    tag: string;
 }

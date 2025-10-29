@@ -17,7 +17,7 @@ import { WardrobeItemGrid } from "../components/wardrobe/WardrobeItemGrid";
 import { WardrobeLoadingGrid } from "../components/wardrobe/WardrobeLoadingGrid";
 import { ItemDetailModal } from "../components/wardrobe/ItemDetailModal";
 import { FilterModal } from "../components/wardrobe/FilterModal";
-import { AddItemModal } from "../components/wardrobe/AddItemModal";
+import { AddItemModal } from "../components/wardrobe/modal/AddItemModal";
 
 const WardrobeScreen = ({ navigation }: any) => {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
@@ -40,6 +40,7 @@ const WardrobeScreen = ({ navigation }: any) => {
     handleRefresh,
     error,
     refetch,
+    editItem,
   } = useWardrobe();
 
   const handleItemClick = (item: Item) => {
@@ -142,6 +143,8 @@ const WardrobeScreen = ({ navigation }: any) => {
         onClose={() => setSelectedItem(null)}
         item={selectedItem}
         onUseInOutfit={handleUseInOutfit}
+        onRefresh={handleRefresh}
+        editItem={editItem}
       />
 
       <FilterModal

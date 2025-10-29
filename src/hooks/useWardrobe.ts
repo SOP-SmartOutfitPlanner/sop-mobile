@@ -1,8 +1,7 @@
 import { getUserId } from './../services/api/apiClient';
-import { useState, useMemo, useEffect } from "react";
-import { GetItem } from "../services/endpoint/wardorbe";
-import { Item } from "../types/item";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { EditItemAPI, GetItem } from "../services/endpoint/wardorbe";
+import { Item, ItemEdit } from "../types/item";
 
 export const useWardrobe = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -25,7 +24,7 @@ export const useWardrobe = () => {
 
       const response = await GetItem({
         pageIndex: 1,
-        pageSize: 100, // Get all items
+        pageSize: 20, // Get all items
         userId: parseInt(userId),
       });
 
@@ -33,7 +32,7 @@ export const useWardrobe = () => {
         // Access nested data.data array
         setAllItems(response.data.data);
         setError(null);
-        console.log("✅ Fetched items:", response.data.data.length);
+        // console.log("✅ Fetched items:", response.data.data.length);
       }
     } catch (err: any) {
       console.error("❌ Error fetching wardrobe items:", err);
@@ -103,6 +102,25 @@ export const useWardrobe = () => {
     setIsRefreshing(false);
   };
 
+  // Edit item function
+  const editItem = useCallback(async (id: number, data: Partial<ItemEdit>) => {
+    try {
+      const response = await EditItemAPI(id, data);
+      
+      // Update local state with edited item
+      setAllItems(prevItems => 
+        prevItems.map(item => 
+          item.id === id ? { ...item, ...response } : item
+        )
+      );
+      
+      return response;
+    } catch (error) {
+      console.error("❌ Error editing item:", error);
+      throw error;
+    }
+  }, []);
+
   return {
     items: filteredItems,
     allItems,
@@ -116,5 +134,6 @@ export const useWardrobe = () => {
     handleRefresh,
     error,
     refetch: fetchItems,
+    editItem,
   };
 };
