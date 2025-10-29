@@ -5,10 +5,9 @@ import {
   Platform,
   ScrollView,
   Image,
-  TouchableOpacity as RNTouchableOpacity,
   Dimensions,
 } from "react-native";
-import { View, Text, TextField, Button, Colors } from "react-native-ui-lib";
+import { View, Text, TextField, TouchableOpacity } from "react-native-ui-lib";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -269,7 +268,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               <Animated.View style={[styles.logoContainer, logoAnimatedStyle]}>
                 <View style={styles.logoWrapper}>
                   <Image
-                    source={require("../../../assets/img/logo_mobile.png")}
+                    source={require("../../../assets/img/logo_text.png")}
                     style={styles.logo}
                     resizeMode="contain"
                   />
@@ -329,7 +328,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                       style={styles.textInput}
                       containerStyle={{ flex: 1 }}
                     />
-                    <RNTouchableOpacity
+                    <TouchableOpacity
                       onPress={() => setShowPassword(!showPassword)}
                       style={styles.eyeIconButton}
                     >
@@ -338,19 +337,19 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                         size={20}
                         color="#3b5998"
                       />
-                    </RNTouchableOpacity>
+                    </TouchableOpacity>
                   </View>
                 </View>
 
                 {/* Forgot Password */}
                 <View right marginB-24>
-                  <RNTouchableOpacity onPress={handleForgotPassword}>
+                  <TouchableOpacity onPress={handleForgotPassword}>
                     <Text style={styles.forgotText}>Forgot password?</Text>
-                  </RNTouchableOpacity>
+                  </TouchableOpacity>
                 </View>
 
                 {/* Login Button with Gradient */}
-                <RNTouchableOpacity
+                <TouchableOpacity
                   onPress={handleLogin}
                   disabled={isLoading}
                   activeOpacity={0.8}
@@ -366,7 +365,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                       {isLoading ? "Signing in..." : "Sign in"}
                     </Text>
                   </LinearGradient>
-                </RNTouchableOpacity>
+                </TouchableOpacity>
 
                 {/* Divider */}
                 <View row center marginV-24>
@@ -376,7 +375,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                 </View>
 
                 {/* Google Login Button */}
-                <RNTouchableOpacity
+                <TouchableOpacity
                   onPress={handleGoogleLogin}
                   disabled={isLoading}
                   activeOpacity={0.8}
@@ -384,16 +383,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                 >
                   <Ionicons name="logo-google" size={20} color="#DB4437" />
                   <Text style={styles.googleButtonText}>Sign in with Google</Text>
-                </RNTouchableOpacity>
+                </TouchableOpacity>
               </View>
             </Animated.View>
 
             {/* Register Link */}
             <View row center marginT-24>
               <Text style={styles.registerText}>Don't have an account? </Text>
-              <RNTouchableOpacity onPress={navigateToRegister}>
+              <TouchableOpacity onPress={navigateToRegister}>
                 <Text style={styles.registerLink}>Sign up now</Text>
-              </RNTouchableOpacity>
+              </TouchableOpacity>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
