@@ -1,21 +1,33 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
   Image,
+  TouchableOpacity as RNTouchableOpacity,
+  Dimensions,
 } from "react-native";
+import { View, Text, TextField, Button, Colors } from "react-native-ui-lib";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+  withSequence,
+  withDelay,
+  withRepeat,
+  Easing,
+  interpolate,
+} from "react-native-reanimated";
 import { useAuth } from "../../hooks/auth";
 import { useNotification } from "../../hooks/useNotification";
 import NotificationModal from "../../components/notification/NotificationModal";
+
+const { width, height } = Dimensions.get("window");
 
 interface LoginScreenProps {
   navigation: any;
@@ -29,9 +41,115 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const { visible, config, showNotification, hideNotification } =
     useNotification();
 
+  // Animation values
+  const logoScale = useSharedValue(0);
+  const logoRotate = useSharedValue(0);
+  const logoGlow = useSharedValue(0);
+  const headerOpacity = useSharedValue(0);
+  const headerTranslateY = useSharedValue(-20);
+  const formTranslateY = useSharedValue(50);
+  const formOpacity = useSharedValue(0);
+  const buttonScale = useSharedValue(1);
+  const shakeAnimation = useSharedValue(0);
+  const floatingAnimation = useSharedValue(0);
+
+  // Initialize animations on mount
+  useEffect(() => {
+    // Logo animation with glow effect
+    logoScale.value = withSpring(1, {
+      damping: 8,
+      stiffness: 80,
+    });
+    
+    logoRotate.value = withSequence(
+      withTiming(10, { duration: 300, easing: Easing.out(Easing.cubic) }),
+      withTiming(-10, { duration: 300, easing: Easing.out(Easing.cubic) }),
+      withTiming(0, { duration: 300, easing: Easing.out(Easing.cubic) })
+    );
+
+    // Continuous floating animation for logo
+    floatingAnimation.value = withRepeat(
+      withSequence(
+        withTiming(10, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0, { duration: 2000, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      false
+    );
+
+    // Glow pulse effect
+    logoGlow.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      false
+    );
+
+    // Header fade in and slide down
+    headerOpacity.value = withDelay(
+      300,
+      withTiming(1, { duration: 800, easing: Easing.out(Easing.cubic) })
+    );
+    headerTranslateY.value = withDelay(
+      300,
+      withSpring(0, { damping: 12, stiffness: 90 })
+    );
+
+    // Form slide up and fade in
+    formTranslateY.value = withDelay(
+      500,
+      withSpring(0, { damping: 12, stiffness: 90 })
+    );
+    formOpacity.value = withDelay(
+      500,
+      withTiming(1, { duration: 800, easing: Easing.out(Easing.cubic) })
+    );
+  }, []);
+
+  // Animated styles
+  const logoAnimatedStyle = useAnimatedStyle(() => {
+    const glowOpacity = interpolate(logoGlow.value, [0, 1], [0.3, 0.8]);
+    
+    return {
+      transform: [
+        { scale: logoScale.value },
+        { rotate: `${logoRotate.value}deg` },
+        { translateY: floatingAnimation.value }
+      ],
+      shadowOpacity: glowOpacity,
+    };
+  });
+
+  const headerAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: headerOpacity.value,
+    transform: [{ translateY: headerTranslateY.value }],
+  }));
+
+  const formAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: formOpacity.value,
+    transform: [{ translateY: formTranslateY.value }],
+  }));
+
+  const shakeAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shakeAnimation.value }],
+  }));
+
+  const triggerShakeAnimation = () => {
+    shakeAnimation.value = withSequence(
+      withTiming(-10, { duration: 50 }),
+      withTiming(10, { duration: 50 }),
+      withTiming(-10, { duration: 50 }),
+      withTiming(10, { duration: 50 }),
+      withTiming(0, { duration: 50 })
+    );
+  };
+
   const handleLogin = async () => {
     // Validation
     if (!email.trim() || !password.trim()) {
+      triggerShakeAnimation();
       showNotification({
         type: "error",
         title: "Validation Error",
@@ -69,6 +187,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         });
       }
     } catch (error: any) {
+      triggerShakeAnimation();
       showNotification({
         type: "error",
         title: "Login Failed",
@@ -122,150 +241,163 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardContainer}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContainer}
-          showsVerticalScrollIndicator={false}
+    <View style={styles.container}>
+      {/* Gradient Background */}
+      <LinearGradient
+        colors={['#1a2332', '#2c3e50', '#34495e']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFillObject}
+      />
+      
+      {/* Decorative circles */}
+      <View style={styles.circle1} />
+      <View style={styles.circle2} />
+      <View style={styles.circle3} />
+
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardContainer}
         >
-          {/* Logo and Title */}
-          <View style={styles.headerContainer}>
-            <View style={styles.logoContainer}>
-              <View>
-                <Image
-                  source={require("../../../assets/img/logo_mobile.png")}
-                  style={styles.logo}
-                  resizeMode="contain"
-                />
-              </View>
-            </View>
-            <Text style={styles.title}>Smart Outfit Planner</Text>
-            <Text style={styles.subtitle}>
-              Style at your fingertips – Discover your personal style with smart
-              AI.
-            </Text>
-          </View>
+          <ScrollView
+            contentContainerStyle={styles.scrollContainer}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Logo and Title with Animation */}
+            <View center marginB-20>
+              <Animated.View style={[styles.logoContainer, logoAnimatedStyle]}>
+                <View style={styles.logoWrapper}>
+                  <Image
+                    source={require("../../../assets/img/logo_mobile.png")}
+                    style={styles.logo}
+                    resizeMode="contain"
+                  />
+                </View>
+              </Animated.View>
 
-          {/* Login Form */}
-          <View style={styles.formContainer}>
-            {/* Email Input */}
-            <View style={styles.inputContainer}>
-              <Ionicons
-                name="mail-outline"
-                size={20}
-                color="#94A3B8"
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Email address"
-                placeholderTextColor="#94A3B8"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
-
-            {/* Password Input */}
-            <View style={styles.inputContainer}>
-              <Ionicons
-                name="lock-closed-outline"
-                size={20}
-                color="#94A3B8"
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Password"
-                placeholderTextColor="#94A3B8"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeIcon}
-              >
-                <Ionicons
-                  name={showPassword ? "eye-outline" : "eye-off-outline"}
-                  size={20}
-                  color="#94A3B8"
-                />
-              </TouchableOpacity>
-            </View>
-
-            {/* Forgot Password */}
-            <TouchableOpacity
-              onPress={handleForgotPassword}
-              style={styles.forgotContainer}
-            >
-              <Text style={styles.forgotText}>Forgot password?</Text>
-            </TouchableOpacity>
-
-            {/* Login Button */}
-            <TouchableOpacity
-              style={[styles.loginButton, isLoading && styles.disabledButton]}
-              onPress={handleLogin}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <Text style={styles.loginButtonText}>Signing in...</Text>
-              ) : (
-                <Text style={styles.loginButtonText}>Sign in</Text>
-              )}
-            </TouchableOpacity>
-
-            {/* Divider */}
-            <View style={styles.dividerContainer}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            {/* Google Login Button */}
-            <TouchableOpacity
-              style={[styles.googleButton, isLoading && styles.disabledButton]}
-              onPress={handleGoogleLogin}
-              disabled={isLoading}
-            >
-              <Ionicons name="logo-google" size={20} color="#4285F4" />
-              <Text style={styles.googleButtonText}>Sign in with Google</Text>
-            </TouchableOpacity>
-
-            {/* Demo Account Section */}
-            {/* <View style={styles.demoContainer}>
-              <Text style={styles.demoTitle}>Demo account</Text>
-              <View style={styles.demoAccount}>
-                <Ionicons name="person-outline" size={16} color="#6B7280" />
-                <Text style={styles.demoText}>
-                  User: minh@example.com / 123456
+              <Animated.View style={headerAnimatedStyle}>
+                <Text style={styles.title}>Smart Outfit Planner</Text>
+                <Text style={styles.subtitle}>
+                  Style at your fingertips – Discover your personal style with smart AI.
                 </Text>
-              </View>
-              <View style={styles.demoAccount}>
-                <Ionicons name="diamond-outline" size={16} color="#6B7280" />
-                <Text style={styles.demoText}>
-                  Stylist: stylist@example.com / stylist123
-                </Text>
-              </View>
-            </View> */}
-          </View>
+              </Animated.View>
+            </View>
 
-          {/* Register Link */}
-          <View style={styles.registerContainer}>
-            <Text style={styles.registerText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={navigateToRegister}>
-              <Text style={styles.registerLink}>Sign up now</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+            {/* Login Form Card with Glassmorphism */}
+            <Animated.View style={[styles.formCard, formAnimatedStyle, shakeAnimatedStyle]}>
+              <View style={styles.formInner}>
+                <Text style={styles.formTitle}>Welcome Back!</Text>
+                <Text style={styles.formSubtitle}>Sign in to continue</Text>
+
+                {/* Email Input */}
+                <View marginT-24 marginB-16>
+                  <View style={styles.inputWrapper}>
+                    <View style={styles.inputIconContainer}>
+                      <Ionicons name="mail-outline" size={20} color="#3b5998" />
+                    </View>
+                    <TextField
+                      placeholder="Email address"
+                      value={email}
+                      onChangeText={setEmail}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      enableErrors={false}
+                      placeholderTextColor="#94A3B8"
+                      style={styles.textInput}
+                      containerStyle={{ flex: 1 }}
+                    />
+                  </View>
+                </View>
+
+                {/* Password Input */}
+                <View marginB-12>
+                  <View style={styles.inputWrapper}>
+                    <View style={styles.inputIconContainer}>
+                      <Ionicons name="lock-closed-outline" size={20} color="#3b5998" />
+                    </View>
+                    <TextField
+                      placeholder="Password"
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry={!showPassword}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      enableErrors={false}
+                      placeholderTextColor="#94A3B8"
+                      style={styles.textInput}
+                      containerStyle={{ flex: 1 }}
+                    />
+                    <RNTouchableOpacity
+                      onPress={() => setShowPassword(!showPassword)}
+                      style={styles.eyeIconButton}
+                    >
+                      <Ionicons
+                        name={showPassword ? "eye-outline" : "eye-off-outline"}
+                        size={20}
+                        color="#3b5998"
+                      />
+                    </RNTouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Forgot Password */}
+                <View right marginB-24>
+                  <RNTouchableOpacity onPress={handleForgotPassword}>
+                    <Text style={styles.forgotText}>Forgot password?</Text>
+                  </RNTouchableOpacity>
+                </View>
+
+                {/* Login Button with Gradient */}
+                <RNTouchableOpacity
+                  onPress={handleLogin}
+                  disabled={isLoading}
+                  activeOpacity={0.8}
+                  style={styles.loginButtonContainer}
+                >
+                  <LinearGradient
+                    colors={['#2c5282', '#1a365d']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.loginButton}
+                  >
+                    <Text style={styles.loginButtonText}>
+                      {isLoading ? "Signing in..." : "Sign in"}
+                    </Text>
+                  </LinearGradient>
+                </RNTouchableOpacity>
+
+                {/* Divider */}
+                <View row center marginV-24>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>OR</Text>
+                  <View style={styles.dividerLine} />
+                </View>
+
+                {/* Google Login Button */}
+                <RNTouchableOpacity
+                  onPress={handleGoogleLogin}
+                  disabled={isLoading}
+                  activeOpacity={0.8}
+                  style={styles.googleButton}
+                >
+                  <Ionicons name="logo-google" size={20} color="#DB4437" />
+                  <Text style={styles.googleButtonText}>Sign in with Google</Text>
+                </RNTouchableOpacity>
+              </View>
+            </Animated.View>
+
+            {/* Register Link */}
+            <View row center marginT-24>
+              <Text style={styles.registerText}>Don't have an account? </Text>
+              <RNTouchableOpacity onPress={navigateToRegister}>
+                <Text style={styles.registerLink}>Sign up now</Text>
+              </RNTouchableOpacity>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
 
       {/* Notification Modal */}
       <NotificationModal
@@ -279,14 +411,44 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         onConfirm={config.onConfirm}
         showCancel={config.showCancel}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+  },
+  safeArea: {
+    flex: 1,
+  },
+  // Decorative background circles
+  circle1: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    top: -100,
+    right: -50,
+  },
+  circle2: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    bottom: -50,
+    left: -30,
+  },
+  circle3: {
+    position: 'absolute',
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    top: height * 0.4,
+    right: 20,
   },
   keyboardContainer: {
     flex: 1,
@@ -294,175 +456,201 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingVertical: 40,
-  },
-  headerContainer: {
-    alignItems: "center",
-    marginBottom: 40,
+    paddingTop: 40,
+    paddingBottom: 24,
   },
   logoContainer: {
-    marginBottom: 24,
+    marginBottom: 16,
+    shadowColor: '#2c5282',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 10,
   },
-
+  logoWrapper: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    // backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 4,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
   logo: {
-    width: 200,
-    height: 200,
+    width: 120,
+    height: 120,
     borderRadius: 9999,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: "bold",
-    color: "#1E293B",
+    color: "#FFFFFF",
     marginBottom: 8,
+    textAlign: "center",
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   subtitle: {
-    fontSize: 16,
-    color: "#64748B",
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.9)",
     textAlign: "center",
-    lineHeight: 24,
+    lineHeight: 20,
     maxWidth: 280,
-  },
-  formContainer: {
     marginBottom: 32,
+    textShadowColor: 'rgba(0, 0, 0, 0.15)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
+  // Glassmorphism form card
+  formCard: {
+    backgroundColor: 'rgba(30, 41, 59, 0.5)',
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    marginBottom: 16,
-    shadowColor: "#000",
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    overflow: 'hidden',
+    shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 1,
+      height: 10,
     },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 10,
   },
-  inputIcon: {
+  formInner: {
+    padding: 24,
+    backgroundColor: 'rgba(15, 23, 42, 0.3)',
+  },
+  formTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  formSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  inputIconContainer: {
     marginRight: 12,
   },
-  input: {
+  textInput: {
     flex: 1,
     fontSize: 16,
-    color: "#111827",
+    color: "#1E293B",
     padding: 0,
   },
-  eyeIcon: {
+  eyeIconButton: {
     padding: 4,
-  },
-  forgotContainer: {
-    alignItems: "flex-end",
-    marginBottom: 24,
   },
   forgotText: {
     fontSize: 14,
-    color: "#3B82F6",
-    fontWeight: "500",
+    color: "#FFFFFF",
+    fontWeight: "600",
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
-  loginButton: {
-    backgroundColor: "#3B82F6",
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginBottom: 24,
-    shadowColor: "#3B82F6",
+  loginButtonContainer: {
+    borderRadius: 14,
+    overflow: 'hidden',
+    shadowColor: '#2c5282',
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 6,
     },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  disabledButton: {
-    opacity: 0.6,
+  loginButton: {
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   loginButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "600",
-  },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 24,
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
   },
   dividerText: {
     marginHorizontal: 16,
-    fontSize: 14,
-    color: "#94A3B8",
+    fontSize: 13,
+    color: "rgba(255, 255, 255, 0.8)",
+    fontWeight: '600',
   },
   googleButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    paddingVertical: 16,
-    marginBottom: 32,
-    shadowColor: "#000",
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    paddingVertical: 14,
+    shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 1,
+      height: 4,
     },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   googleButtonText: {
-    marginLeft: 12,
-    fontSize: 16,
+    marginLeft: 10,
+    fontSize: 15,
     color: "#1E293B",
-    fontWeight: "500",
-  },
-  demoContainer: {
-    backgroundColor: "#F1F5F9",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-  },
-  demoTitle: {
-    fontSize: 14,
     fontWeight: "600",
-    color: "#1E293B",
-    marginBottom: 12,
-  },
-  demoAccount: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  demoText: {
-    marginLeft: 8,
-    fontSize: 13,
-    color: "#64748B",
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-  },
-  registerContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
   },
   registerText: {
-    fontSize: 16,
-    color: "#64748B",
+    fontSize: 15,
+    color: "rgba(255, 255, 255, 0.9)",
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   registerLink: {
-    fontSize: 16,
-    color: "#3B82F6",
-    fontWeight: "600",
+    fontSize: 15,
+    color: "#FFFFFF",
+    fontWeight: "700",
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
 });

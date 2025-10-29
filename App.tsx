@@ -8,6 +8,7 @@ import { useOTAUpdates } from "./src/hooks/useOTAUpdates";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import "./src/config/google";
+import "./src/config/uiLib";
 
 export default function App() {
   // Initialize OTA updates check
