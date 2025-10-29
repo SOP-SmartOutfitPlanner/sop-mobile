@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useImagePicker } from "../../hooks/useImagePicker";
 import { StepIndicator } from "./wizard/StepIndicator";
 import { UploadPhotoStep } from "./wizard/UploadPhotoStep";
@@ -31,11 +30,88 @@ interface AddItemModalProps {
   onSave?: () => void;
 }
 
+// Constants
 const STEPS = [
   { id: 1, title: "Upload", subtitle: "& Detect" },
   { id: 2, title: "Item", subtitle: "Details" },
   { id: 3, title: "Review", subtitle: "& Save" },
 ];
+
+const GRADIENT_COLORS = {
+  primary: ["#30cfd0", "#330867"],
+  disabled: ["#9ca3af", "#9ca3af"],
+} as const;
+
+const FALLBACK_CATEGORIES: Category[] = [
+  { id: 1, name: "Top" },
+  { id: 2, name: "Bottom" },
+  { id: 3, name: "Dress" },
+  { id: 4, name: "Jacket" },
+  { id: 5, name: "Shoes" },
+  { id: 6, name: "Accessory" },
+];
+
+// Helper functions
+const buildRequestData = (
+  userId: number,
+  formData: {
+    itemName: string;
+    brand: string;
+    categoryId: number;
+    categoryName: string;
+    color: string;
+    aiDescription: string;
+    weatherSuitable: string;
+    condition: string;
+    pattern: string;
+    fabric: string;
+    imageRemBgURL: string;
+    lastWornAt: string;
+    frequencyWorn: string;
+  }
+): Partial<AddItemRequest> => {
+  const {
+    itemName,
+    brand,
+    categoryId,
+    categoryName,
+    color,
+    aiDescription,
+    weatherSuitable,
+    condition,
+    pattern,
+    fabric,
+    imageRemBgURL,
+    lastWornAt,
+    frequencyWorn,
+  } = formData;
+
+  // Build tag from available fields
+  const tagParts = [categoryName, color, weatherSuitable, condition, pattern, fabric].filter(Boolean);
+
+  // Start with required fields
+  const requestData: any = {
+    userId,
+    name: itemName.trim(),
+    categoryId,
+    categoryName,
+    imgUrl: imageRemBgURL,
+  };
+
+  // Add optional fields only if they have actual values
+  if (color?.trim()) requestData.color = color.trim();
+  if (aiDescription?.trim()) requestData.aiDescription = aiDescription.trim();
+  if (brand?.trim()) requestData.brand = brand.trim();
+  if (weatherSuitable?.trim()) requestData.weatherSuitable = weatherSuitable.trim();
+  if (condition?.trim()) requestData.condition = condition.trim();
+  if (pattern?.trim()) requestData.pattern = pattern.trim();
+  if (fabric?.trim()) requestData.fabric = fabric.trim();
+  if (lastWornAt?.trim()) requestData.lastWornAt = lastWornAt.trim();
+  if (frequencyWorn?.trim()) requestData.frequencyWorn = frequencyWorn.trim();
+  if (tagParts.length > 0) requestData.tag = tagParts.join(", ");
+
+  return requestData;
+};
 
 export const AddItemModal: React.FC<AddItemModalProps> = ({
   visible,
@@ -56,9 +132,9 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
   const [condition, setCondition] = useState("");
   const [pattern, setPattern] = useState("");
   const [fabric, setFabric] = useState("");
-  const [imageRemBgURL, setImageRemBgURL] = useState(""); // Store image URL from AI
-  const [lastWornAt, setLastWornAt] = useState(""); // ISO date string
-  const [frequencyWorn, setFrequencyWorn] = useState(""); // How often worn
+  const [imageRemBgURL, setImageRemBgURL] = useState("");
+  const [lastWornAt, setLastWornAt] = useState("");
+  const [frequencyWorn, setFrequencyWorn] = useState("");
 
   // Categories from API
   const [categories, setCategories] = useState<Category[]>([]);
@@ -68,8 +144,15 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
   const [isDetecting, setIsDetecting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Notification hook
+  // Hooks
   const notification = useNotification();
+  const {
+    selectedImage,
+    isLoading,
+    pickImageFromCamera,
+    pickImageFromLibrary,
+    resetImage,
+  } = useImagePicker();
 
   // Load categories when modal opens
   useEffect(() => {
@@ -78,39 +161,26 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     }
   }, [visible]);
 
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     setIsCategoriesLoading(true);
     try {
       const response = await GetCategory({
         pageIndex: 1,
-        pageSize: 100, // Get all categories
+        pageSize: 100,
       });
 
       if (response.statusCode === 200 && response.data?.data) {
         setCategories(response.data.data);
+      } else {
+        setCategories(FALLBACK_CATEGORIES);
       }
     } catch (error) {
       console.error("Error loading categories:", error);
-      // Fallback to hardcoded categories on error
-      setCategories([
-        { id: 1, name: "Top" },
-        { id: 2, name: "Bottom" },
-        { id: 3, name: "Dress" },
-        { id: 4, name: "Jacket" },
-        { id: 5, name: "Shoes" },
-        { id: 6, name: "Accessory" },
-      ]);
+      setCategories(FALLBACK_CATEGORIES);
     } finally {
       setIsCategoriesLoading(false);
     }
-  }; // Image picker hook
-  const {
-    selectedImage,
-    isLoading,
-    pickImageFromCamera,
-    pickImageFromLibrary,
-    resetImage,
-  } = useImagePicker();
+  }, []);
 
   const resetForm = useCallback(() => {
     setCurrentStep(1);
@@ -136,7 +206,7 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
   }, [resetForm, onClose]);
 
   // Handle Detect Image with AI
-  const handleDetectImage = async () => {
+  const handleDetectImage = useCallback(async () => {
     if (!selectedImage) {
       notification.showError("Please upload an image first");
       return;
@@ -145,14 +215,11 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     setIsDetecting(true);
     try {
       const fileObject = await prepareFileForUpload(selectedImage);
-
       console.log("📤 Uploading compressed image...");
 
-      // Call AI Summary API
       const response = await SummaryItem({ file: fileObject });
 
       if (response.statusCode === 200 && response.data) {
-        // Auto-fill form with AI-detected data
         const { data } = response;
         setColor(data.color || "");
         setAiDescription(data.aiDescription || "");
@@ -170,7 +237,6 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     } catch (error: any) {
       console.error("AI Detection Error:", error);
 
-      // Check if it's a 413 error
       if (error.response?.status === 413) {
         notification.showError(
           "The image is still too large. Please try with a smaller image or different photo.",
@@ -178,50 +244,24 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
         );
       } else {
         notification.showError(
-          error.response?.data?.message ||
-            "Failed to analyze image. Please try again.",
+          error.response?.data?.message || "Failed to analyze image. Please try again.",
           "Detection Failed"
         );
       }
     } finally {
       setIsDetecting(false);
     }
-  };
+  }, [selectedImage, notification]);
 
   // Step validation
   const canProceedToStep = (step: number): boolean => {
     switch (step) {
       case 2:
-        return !!selectedImage && !!imageRemBgURL; // Must detect image first
+        return !!selectedImage && !!imageRemBgURL;
       case 3:
         return !!itemName.trim() && categoryId > 0;
       default:
         return true;
-    }
-  };
-
-  // Validation messages
-  const getValidationMessage = (step: number): string => {
-    const messages = {
-      1: "Please detect image with AI first",
-      2: "Please fill in item name and category",
-    };
-    return messages[step as keyof typeof messages] || "";
-  };
-
-  const handleNext = () => {
-    if (currentStep < 3) {
-      if (canProceedToStep(currentStep + 1)) {
-        setCurrentStep(currentStep + 1);
-      } else {
-        notification.showWarning(getValidationMessage(currentStep), "Required Fields");
-      }
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
     }
   };
 
@@ -230,87 +270,48 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
 
     setIsSaving(true);
     try {
-      // Get userId from AsyncStorage
+      // Get userId
       const userId = await getUserId();
       if (!userId) {
         notification.showError("User not authenticated. Please login again.");
-        setIsSaving(false);
         return;
       }
 
-      // Validate all required fields
+      // Validate required fields
       if (!itemName.trim()) {
         notification.showError("Item name is required", "Validation Error");
-        setIsSaving(false);
         return;
       }
 
       if (!categoryId || categoryId === 0) {
         notification.showError("Please select a category", "Validation Error");
-        setIsSaving(false);
         return;
       }
 
-      if (!imageRemBgURL || !imageRemBgURL.trim()) {
+      if (!imageRemBgURL?.trim()) {
         notification.showError(
           "Image URL is missing. Please detect image with AI first.",
           "Validation Error"
         );
-        setIsSaving(false);
         return;
       }
 
-      // Prepare API request
-      // Create tag from available fields
-      const tagParts = [
+      // Build request data
+      const requestData = buildRequestData(parseInt(userId, 10), {
+        itemName,
+        brand,
+        categoryId,
         categoryName,
         color,
+        aiDescription,
         weatherSuitable,
         condition,
         pattern,
         fabric,
-      ].filter(Boolean);
-
-      // Build request - start with required fields only
-      const requestData: any = {
-        userId: parseInt(userId, 10),
-        name: itemName.trim(),
-        categoryId: categoryId,
-        categoryName: categoryName,
-        imgUrl: imageRemBgURL, // Required - from AI
-      };
-
-      // Add optional fields ONLY if they have actual values
-      if (color && color.trim()) {
-        requestData.color = color.trim();
-      }
-      if (aiDescription && aiDescription.trim()) {
-        requestData.aiDescription = aiDescription.trim();
-      }
-      if (brand && brand.trim()) {
-        requestData.brand = brand.trim();
-      }
-      if (weatherSuitable && weatherSuitable.trim()) {
-        requestData.weatherSuitable = weatherSuitable.trim();
-      }
-      if (condition && condition.trim()) {
-        requestData.condition = condition.trim();
-      }
-      if (pattern && pattern.trim()) {
-        requestData.pattern = pattern.trim();
-      }
-      if (fabric && fabric.trim()) {
-        requestData.fabric = fabric.trim();
-      }
-      if (lastWornAt && lastWornAt.trim()) {
-        requestData.lastWornAt = lastWornAt.trim();
-      }
-      if (frequencyWorn && frequencyWorn.trim()) {
-        requestData.frequencyWorn = frequencyWorn.trim();
-      }
-      if (tagParts.length > 0) {
-        requestData.tag = tagParts.join(", ");
-      }
+        imageRemBgURL,
+        lastWornAt,
+        frequencyWorn,
+      });
 
       console.log("=== Final Request Data ===");
       console.log(JSON.stringify(requestData, null, 2));
@@ -324,15 +325,14 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
           ALERT_MESSAGES.SUCCESS_SAVE.title,
           () => {
             handleClose();
-            onSave?.(); // Notify parent to refresh
+            onSave?.();
           }
         );
       }
     } catch (error: any) {
       console.error("Error saving item:", error);
       notification.showError(
-        error.response?.data?.message ||
-          "Failed to save item. Please try again.",
+        error.response?.data?.message || "Failed to save item. Please try again.",
         "Save Failed"
       );
     } finally {
@@ -353,9 +353,9 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     imageRemBgURL,
     lastWornAt,
     frequencyWorn,
-    selectedImage,
-    onSave,
+    notification,
     handleClose,
+    onSave,
   ]);
 
   // Handle category selection
@@ -364,71 +364,142 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     setCategoryName(name);
   }, []);
 
-  // Step renderers
-  const stepComponents = {
-    1: () => (
-      <UploadPhotoStep
-        selectedImage={selectedImage}
-        isLoading={isLoading}
-        isDetecting={isDetecting}
-        onCameraPress={pickImageFromCamera}
-        onGalleryPress={pickImageFromLibrary}
-        onDetectPress={handleDetectImage}
-      />
-    ),
-    2: () => (
-      <ItemDetailsStep
-        itemName={itemName}
-        brand={brand}
-        categoryId={categoryId}
-        color={color}
-        aiDescription={aiDescription}
-        weatherSuitable={weatherSuitable}
-        condition={condition}
-        pattern={pattern}
-        fabric={fabric}
-        lastWornAt={lastWornAt}
-        frequencyWorn={frequencyWorn}
-        categories={categories}
-        isCategoriesLoading={isCategoriesLoading}
-        onItemNameChange={setItemName}
-        onBrandChange={setBrand}
-        onCategorySelect={handleCategorySelect}
-        onColorChange={setColor}
-        onAiDescriptionChange={setAiDescription}
-        onWeatherSuitableChange={setWeatherSuitable}
-        onConditionChange={setCondition}
-        onPatternChange={setPattern}
-        onFabricChange={setFabric}
-        onFrequencyWornChange={setFrequencyWorn}
-        onLastWornAtChange={setLastWornAt}
-      />
-    ),
-    3: () => (
-      <ReviewStep
-        data={{
-          name: itemName,
-          brand,
-          type: categoryName,
-          color: color,
-          aiDescription: aiDescription,
-          weatherSuitable: weatherSuitable,
-          condition: condition,
-          pattern: pattern,
-          fabric: fabric,
-          lastWornAt: lastWornAt,
-          frequencyWorn: frequencyWorn,
-          imageUri: selectedImage,
-        }}
-      />
-    ),
-  };
+  // Step validation - memoized
+  const canProceed = useMemo(() => {
+    switch (currentStep) {
+      case 1:
+        return !!selectedImage && !!imageRemBgURL;
+      case 2:
+        return !!itemName.trim() && categoryId > 0;
+      case 3:
+        return true;
+      default:
+        return false;
+    }
+  }, [currentStep, selectedImage, imageRemBgURL, itemName, categoryId]);
 
-  const renderCurrentStep = () => {
-    const StepComponent =
-      stepComponents[currentStep as keyof typeof stepComponents];
-    return StepComponent ? StepComponent() : null;
-  };
+  // Validation messages
+  const validationMessage = useMemo(() => {
+    const messages: Record<number, string> = {
+      1: "Please detect image with AI first",
+      2: "Please fill in item name and category",
+    };
+    return messages[currentStep] || "";
+  }, [currentStep]);
+
+  // Step navigation handlers
+  const handleNext = useCallback(() => {
+    if (currentStep < 3) {
+      if (canProceed) {
+        setCurrentStep(currentStep + 1);
+      } else {
+        notification.showWarning(validationMessage, "Required Fields");
+      }
+    }
+  }, [currentStep, canProceed, validationMessage, notification]);
+
+  const handleBack = useCallback(() => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  }, [currentStep]);
+
+  // Memoized step components
+  const stepContent = useMemo(() => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <UploadPhotoStep
+            selectedImage={selectedImage}
+            isLoading={isLoading}
+            isDetecting={isDetecting}
+            onCameraPress={pickImageFromCamera}
+            onGalleryPress={pickImageFromLibrary}
+            onDetectPress={handleDetectImage}
+          />
+        );
+      case 2:
+        return (
+          <ItemDetailsStep
+            itemName={itemName}
+            brand={brand}
+            categoryId={categoryId}
+            color={color}
+            aiDescription={aiDescription}
+            weatherSuitable={weatherSuitable}
+            condition={condition}
+            pattern={pattern}
+            fabric={fabric}
+            lastWornAt={lastWornAt}
+            frequencyWorn={frequencyWorn}
+            categories={categories}
+            isCategoriesLoading={isCategoriesLoading}
+            onItemNameChange={setItemName}
+            onBrandChange={setBrand}
+            onCategorySelect={handleCategorySelect}
+            onColorChange={setColor}
+            onAiDescriptionChange={setAiDescription}
+            onWeatherSuitableChange={setWeatherSuitable}
+            onConditionChange={setCondition}
+            onPatternChange={setPattern}
+            onFabricChange={setFabric}
+            onFrequencyWornChange={setFrequencyWorn}
+            onLastWornAtChange={setLastWornAt}
+          />
+        );
+      case 3:
+        return (
+          <ReviewStep
+            data={{
+              name: itemName,
+              brand,
+              type: categoryName,
+              color,
+              aiDescription,
+              weatherSuitable,
+              condition,
+              pattern,
+              fabric,
+              lastWornAt,
+              frequencyWorn,
+              imageUri: selectedImage,
+            }}
+          />
+        );
+      default:
+        return null;
+    }
+  }, [
+    currentStep,
+    selectedImage,
+    isLoading,
+    isDetecting,
+    pickImageFromCamera,
+    pickImageFromLibrary,
+    handleDetectImage,
+    itemName,
+    brand,
+    categoryId,
+    categoryName,
+    color,
+    aiDescription,
+    weatherSuitable,
+    condition,
+    pattern,
+    fabric,
+    lastWornAt,
+    frequencyWorn,
+    categories,
+    isCategoriesLoading,
+    handleCategorySelect,
+  ]);
+
+  // Button colors - memoized
+  const buttonColors = useMemo(() => {
+    return (!canProceed || isSaving)
+      ? GRADIENT_COLORS.disabled
+      : GRADIENT_COLORS.primary;
+  }, [canProceed, isSaving]);
 
   return (
     <>
@@ -451,7 +522,7 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
           <StepIndicator steps={STEPS} currentStep={currentStep} />
 
           {/* Step Content */}
-          <View style={styles.stepContent}>{renderCurrentStep()}</View>
+          <View style={styles.stepContent}>{stepContent}</View>
 
           {/* Step Footer */}
           <View style={styles.stepFooter}>
@@ -470,25 +541,16 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
               <TouchableOpacity
                 style={styles.nextButtonWrapper}
                 onPress={currentStep === 3 ? handleSave : handleNext}
-                disabled={
-                  (!canProceedToStep(currentStep + 1) && currentStep < 4) ||
-                  isSaving
-                }
+                disabled={!canProceed || isSaving}
               >
                 <LinearGradient
-                  colors={
-                    (!canProceedToStep(currentStep + 1) && currentStep < 4) ||
-                    isSaving
-                      ? ["#9ca3af", "#9ca3af"]
-                      : ["#30cfd0", "#330867"]
-                  }
+                  colors={buttonColors}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.nextButton}
                 >
                   {currentStep === 3 ? (
                     <>
-                    
                       <Ionicons name="checkmark" size={20} color="#fff" />
                       <Text style={styles.nextButtonText}>
                         {isSaving ? "Saving..." : "Save Item"}

@@ -22,13 +22,13 @@ export const AILoadingOutfit = ({ visible, onCancel, message }: Props) => {
   if (!visible) return null;
 
   return (
-    <View style={styles.overlay}>
-      <LinearGradient
-        colors={['#5ee7df', '#b490ca']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.card}
-      >
+    <LinearGradient
+      colors={['#30cfd0', '#330867']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.overlay}
+    >
+      <View style={styles.content}>
         {/* Lottie Animation */}
         <LottieView
           ref={lottieRef}
@@ -40,13 +40,15 @@ export const AILoadingOutfit = ({ visible, onCancel, message }: Props) => {
         
         <Text style={styles.title}>{message ?? 'Analyzing your item…'}</Text>
 
-        <View style={styles.row}>
-          <ImageIcon color="#ffffff" size={22} />
-          <Text style={styles.label}>Processing image</Text>
-        </View>
-        <View style={styles.row}>
-          <Sparkles color="#ffffff" size={22} />
-          <Text style={styles.label}>AI detection in progress</Text>
+        <View style={styles.infoContainer}>
+          <View style={styles.row}>
+            <ImageIcon color="#ffffff" size={24} />
+            <Text style={styles.label}>Processing image</Text>
+          </View>
+          <View style={styles.row}>
+            <Sparkles color="#ffffff" size={24} />
+            <Text style={styles.label}>AI detection in progress</Text>
+          </View>
         </View>
 
         {onCancel && (
@@ -54,64 +56,72 @@ export const AILoadingOutfit = ({ visible, onCancel, message }: Props) => {
             <Text style={styles.cancelTxt}>Cancel</Text>
           </Pressable>
         )}
-      </LinearGradient>
-    </View>
+      </View>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 9999,
   },
-  card: {
-    width: 320,
-    borderRadius: 20,
-    padding: 24,
+  content: {
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    justifyContent: 'center',
+    paddingHorizontal: 40,
   },
   lottie: {
-    width: 180,
-    height: 180,
-    marginBottom: 8,
+    width: 240,
+    height: 240,
+    marginBottom: 16,
   },
   title: { 
     color: 'white', 
-    fontSize: 18, 
-    fontWeight: '600',
-    marginBottom: 16,
+    fontSize: 24, 
+    fontWeight: '700',
+    marginBottom: 32,
     textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  infoContainer: {
+    width: '100%',
+    maxWidth: 320,
+    gap: 16,
   },
   row: {
-    marginTop: 8,
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
   },
   label: { 
     color: '#ffffff', 
-    fontSize: 14, 
-    flex: 1 
+    fontSize: 16, 
+    fontWeight: '500',
+    flex: 1,
   },
   cancelBtn: {
-    marginTop: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    marginTop: 32,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
   },
   cancelTxt: { 
     color: 'white', 
-    fontWeight: '600',
-    fontSize: 14,
+    fontWeight: '700',
+    fontSize: 16,
+    textAlign: 'center',
   },
 });
