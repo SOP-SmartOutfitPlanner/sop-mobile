@@ -1,13 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 
 interface ColorOption {
   name: string;
@@ -44,6 +46,26 @@ export const OnboardingStep4: React.FC<OnboardingStep4Props> = ({
   const [preferedColor, setPreferedColor] = useState<string | null>(null);
   const [avoidedColor, setAvoidedColor] = useState<string | null>(null);
 
+  // Animations
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const slideAnim = useState(new Animated.Value(50))[0];
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 20,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   const handleColorSelect = (type: "preferred" | "avoided", color: string) => {
     if (type === "preferred") {
       // Don't allow selecting same color as avoided
@@ -67,27 +89,53 @@ export const OnboardingStep4: React.FC<OnboardingStep4Props> = ({
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Progress Bar */}
-        <View style={styles.progressContainer}>
-          <View style={[styles.progressBar, { width: "80%" }]} />
-        </View>
+    <LinearGradient colors={["#0a1628", "#152238"]} style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Progress Bar */}
+          <View style={styles.progressContainer}>
+            <Animated.View 
+              style={[
+                styles.progressBar, 
+                { 
+                  width: "80%",
+                  opacity: fadeAnim,
+                }
+              ]} 
+            />
+          </View>
 
-        {/* Icon */}
-        <View style={styles.iconContainer}>
-          <Ionicons name="color-palette" size={48} color="#6366F1" />
-        </View>
+          <Animated.View
+            style={{
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            }}
+          >
+            {/* Icon */}
+            <View style={styles.iconContainer}>
+              <View style={styles.iconCircle}>
+                <Ionicons name="color-palette" size={48} color="#FFFFFF" />
+              </View>
+            </View>
 
-        {/* Title */}
-        <Text style={styles.title}>What colors do you love?</Text>
-        <Text style={styles.subtitle}>Help us personalize your style</Text>
+            {/* Title */}
+            <Text style={styles.title}>What colors do you love?</Text>
+            <Text style={styles.subtitle}>Help us personalize your style</Text>
+          </Animated.View>
 
-        {/* Preferred Color Section */}
-        <View style={styles.sectionContainer}>
+          {/* Preferred Color Section */}
+          <Animated.View 
+            style={[
+              styles.sectionContainer,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              }
+            ]}
+          >
           <View style={styles.sectionHeader}>
             <Ionicons name="heart" size={20} color="#10B981" />
             <Text style={styles.sectionTitle}>Preferred Color</Text>
@@ -132,10 +180,18 @@ export const OnboardingStep4: React.FC<OnboardingStep4Props> = ({
               );
             })}
           </View>
-        </View>
+          </Animated.View>
 
-        {/* Avoided Color Section */}
-        <View style={styles.sectionContainer}>
+          {/* Avoided Color Section */}
+          <Animated.View 
+            style={[
+              styles.sectionContainer,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              }
+            ]}
+          >
           <View style={styles.sectionHeader}>
             <Ionicons name="close-circle" size={20} color="#EF4444" />
             <Text style={styles.sectionTitle}>Avoided Color</Text>
@@ -180,36 +236,40 @@ export const OnboardingStep4: React.FC<OnboardingStep4Props> = ({
               );
             })}
           </View>
-        </View>
+          </Animated.View>
 
-        {/* Buttons */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
+          {/* Buttons */}
+          <Animated.View style={[styles.buttonContainer, { opacity: fadeAnim }]}>
+            <TouchableOpacity
             style={[
               styles.continueButton,
               (!preferedColor || !avoidedColor) && styles.disabledButton,
             ]}
-            onPress={handleContinue}
-            disabled={!preferedColor || !avoidedColor}
-          >
-            <Text style={styles.continueButtonText}>Continue</Text>
-            <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.backButton} onPress={onBack}>
-            <Ionicons name="arrow-back" size={20} color="#64748B" />
-            <Text style={styles.backButtonText}>Back</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+              onPress={handleContinue}
+              disabled={!preferedColor || !avoidedColor}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={preferedColor && avoidedColor ? ["#2563eb", "#1e40af"] : ["#1e3a5f", "#152238"]}
+                style={styles.continueButtonGradient}
+              >
+                <Text style={styles.continueButtonText}>Continue</Text>
+                <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+  },
+  safeArea: {
+    flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
@@ -217,30 +277,50 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   progressContainer: {
-    height: 4,
-    backgroundColor: "#E2E8F0",
-    borderRadius: 2,
+    height: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 3,
     marginBottom: 32,
+    overflow: "hidden",
   },
   progressBar: {
     height: "100%",
-    backgroundColor: "#6366F1",
-    borderRadius: 2,
+    backgroundColor: "#2563eb",
+    borderRadius: 3,
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
   },
   iconContainer: {
     alignItems: "center",
     marginBottom: 24,
   },
+  iconCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "#193C9E",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 3,
+    borderColor: "#1e40af",
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
-    color: "#1E293B",
+    color: "#FFFFFF",
     textAlign: "center",
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 14,
-    color: "#64748B",
+    fontSize: 15,
+    color: "rgba(255, 255, 255, 0.7)",
     textAlign: "center",
     marginBottom: 32,
   },
@@ -256,7 +336,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1E293B",
+    color: "#FFFFFF",
   },
   colorGrid: {
     flexDirection: "row",
@@ -266,22 +346,22 @@ const styles = StyleSheet.create({
   colorCard: {
     width: "22%",
     aspectRatio: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(11, 27, 51, 0.8)",
     borderRadius: 12,
     padding: 8,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: "#E2E8F0",
+    borderColor: "#1e3a5f",
     position: "relative",
   },
   colorCardSelected: {
     borderColor: "#10B981",
-    backgroundColor: "#ECFDF5",
+    backgroundColor: "rgba(16, 185, 129, 0.2)",
   },
   colorCardSelectedAvoided: {
     borderColor: "#EF4444",
-    backgroundColor: "#FEF2F2",
+    backgroundColor: "rgba(239, 68, 68, 0.2)",
   },
   colorCardDisabled: {
     opacity: 0.3,
@@ -299,15 +379,15 @@ const styles = StyleSheet.create({
   colorName: {
     fontSize: 11,
     fontWeight: "500",
-    color: "#64748B",
+    color: "rgba(255, 255, 255, 0.7)",
     textAlign: "center",
   },
   colorNameSelected: {
-    color: "#1E293B",
+    color: "#FFFFFF",
     fontWeight: "600",
   },
   colorNameDisabled: {
-    color: "#CBD5E1",
+    color: "rgba(255, 255, 255, 0.3)",
   },
   checkmark: {
     position: "absolute",
@@ -328,44 +408,27 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   continueButton: {
-    flexDirection: "row",
-    backgroundColor: "#6366F1",
     borderRadius: 12,
+    overflow: "hidden",
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  continueButtonGradient: {
+    flexDirection: "row",
     paddingVertical: 16,
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    shadowColor: "#6366F1",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
   },
   disabledButton: {
     opacity: 0.5,
   },
   continueButtonText: {
     color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  backButton: {
-    flexDirection: "row",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  backButtonText: {
-    color: "#64748B",
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 17,
+    fontWeight: "700",
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,9 +8,11 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 
 interface OnboardingStep5Props {
   navigation: any;
@@ -26,6 +28,26 @@ export const OnboardingStep5: React.FC<OnboardingStep5Props> = ({
   const [bio, setBio] = useState("");
   const maxLength = 200;
 
+  // Animations
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const slideAnim = useState(new Animated.Value(50))[0];
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 20,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   const handleContinue = () => {
     onNext(bio.trim());
   };
@@ -35,33 +57,59 @@ export const OnboardingStep5: React.FC<OnboardingStep5Props> = ({
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardContainer}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContainer}
-          showsVerticalScrollIndicator={false}
+    <LinearGradient colors={["#0a1628", "#152238"]} style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardContainer}
         >
-          {/* Progress Bar */}
-          <View style={styles.progressContainer}>
-            <View style={[styles.progressBar, { width: "100%" }]} />
-          </View>
+          <ScrollView
+            contentContainerStyle={styles.scrollContainer}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Progress Bar */}
+            <View style={styles.progressContainer}>
+              <Animated.View 
+                style={[
+                  styles.progressBar, 
+                  { 
+                    width: "100%",
+                    opacity: fadeAnim,
+                  }
+                ]} 
+              />
+            </View>
 
-          {/* Icon */}
-          <View style={styles.iconContainer}>
-            <Ionicons name="person" size={48} color="#6366F1" />
-          </View>
+            <Animated.View
+              style={{
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              }}
+            >
+              {/* Icon */}
+              <View style={styles.iconContainer}>
+                <View style={styles.iconCircle}>
+                  <Ionicons name="person" size={48} color="#FFFFFF" />
+                </View>
+              </View>
 
-          {/* Title */}
-          <Text style={styles.title}>Tell us about yourself</Text>
-          <Text style={styles.subtitle}>
-            Share your fashion story or style preferences (optional)
-          </Text>
+              {/* Title */}
+              <Text style={styles.title}>Tell us about yourself</Text>
+              <Text style={styles.subtitle}>
+                Share your fashion story or style preferences (optional)
+              </Text>
+            </Animated.View>
 
-          {/* Bio Input */}
-          <View style={styles.inputContainer}>
+            {/* Bio Input */}
+            <Animated.View 
+              style={[
+                styles.inputContainer,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                }
+              ]}
+            >
             <View style={styles.inputHeader}>
               <Text style={styles.inputLabel}>Your Bio</Text>
               <Text style={styles.characterCount}>
@@ -83,10 +131,18 @@ export const OnboardingStep5: React.FC<OnboardingStep5Props> = ({
               maxLength={maxLength}
               textAlignVertical="top"
             />
-          </View>
+            </Animated.View>
 
-          {/* Suggestion Chips */}
-          <View style={styles.suggestionsContainer}>
+            {/* Suggestion Chips */}
+            <Animated.View 
+              style={[
+                styles.suggestionsContainer,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                }
+              ]}
+            >
             <Text style={styles.suggestionsTitle}>💡 Quick suggestions:</Text>
             <View style={styles.chipContainer}>
               <TouchableOpacity
@@ -114,35 +170,39 @@ export const OnboardingStep5: React.FC<OnboardingStep5Props> = ({
                 <Text style={styles.chipText}>Eco-conscious</Text>
               </TouchableOpacity>
             </View>
-          </View>
+            </Animated.View>
 
-          {/* Buttons */}
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={styles.continueButton}
-              onPress={handleContinue}
-            >
-              <Text style={styles.continueButtonText}>
-                {bio.trim() ? "Continue" : "Skip for now"}
-              </Text>
-              <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.backButton} onPress={onBack}>
-              <Ionicons name="arrow-back" size={20} color="#64748B" />
-              <Text style={styles.backButtonText}>Back</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+            {/* Buttons */}
+            <Animated.View style={[styles.buttonContainer, { opacity: fadeAnim }]}>
+              <TouchableOpacity
+                style={styles.continueButton}
+                onPress={handleContinue}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={["#2563eb", "#1e40af"]}
+                  style={styles.continueButtonGradient}
+                >
+                  <Text style={styles.continueButtonText}>
+                    {bio.trim() ? "Continue" : "Skip for now"}
+                  </Text>
+                  <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+                </LinearGradient>
+              </TouchableOpacity>
+            </Animated.View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+  },
+  safeArea: {
+    flex: 1,
   },
   keyboardContainer: {
     flex: 1,
@@ -153,33 +213,53 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   progressContainer: {
-    height: 4,
-    backgroundColor: "#E2E8F0",
-    borderRadius: 2,
+    height: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 3,
     marginBottom: 32,
+    overflow: "hidden",
   },
   progressBar: {
     height: "100%",
-    backgroundColor: "#6366F1",
-    borderRadius: 2,
+    backgroundColor: "#2563eb",
+    borderRadius: 3,
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
   },
   iconContainer: {
     alignItems: "center",
     marginBottom: 24,
   },
+  iconCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "#193C9E",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 3,
+    borderColor: "#1e40af",
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
-    color: "#1E293B",
+    color: "#FFFFFF",
     textAlign: "center",
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 14,
-    color: "#64748B",
+    fontSize: 15,
+    color: "rgba(255, 255, 255, 0.7)",
     textAlign: "center",
     marginBottom: 32,
-    lineHeight: 20,
+    lineHeight: 22,
   },
   inputContainer: {
     marginBottom: 24,
@@ -193,29 +273,21 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#1E293B",
+    color: "#FFFFFF",
   },
   characterCount: {
     fontSize: 12,
-    color: "#64748B",
+    color: "rgba(255, 255, 255, 0.6)",
   },
   textInput: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.2)",
     padding: 16,
     fontSize: 15,
-    color: "#1E293B",
+    color: "#FFFFFF",
     minHeight: 140,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
   suggestionsContainer: {
     marginBottom: 32,
@@ -223,7 +295,7 @@ const styles = StyleSheet.create({
   suggestionsTitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#64748B",
+    color: "rgba(255, 255, 255, 0.9)",
     marginBottom: 12,
   },
   chipContainer: {
@@ -232,16 +304,16 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chip: {
-    backgroundColor: "#EEF2FF",
+    backgroundColor: "rgba(37, 99, 235, 0.3)",
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#C7D2FE",
+    borderColor: "rgba(37, 99, 235, 0.5)",
   },
   chipText: {
     fontSize: 13,
-    color: "#4F46E5",
+    color: "#FFFFFF",
     fontWeight: "500",
   },
   buttonContainer: {
@@ -249,41 +321,24 @@ const styles = StyleSheet.create({
     marginTop: "auto",
   },
   continueButton: {
-    flexDirection: "row",
-    backgroundColor: "#6366F1",
     borderRadius: 12,
+    overflow: "hidden",
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  continueButtonGradient: {
+    flexDirection: "row",
     paddingVertical: 16,
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    shadowColor: "#6366F1",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
   },
   continueButtonText: {
     color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  backButton: {
-    flexDirection: "row",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  backButtonText: {
-    color: "#64748B",
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 17,
+    fontWeight: "700",
   },
 });

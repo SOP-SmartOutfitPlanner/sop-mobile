@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,11 +6,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Platform,
+  Animated,
+  KeyboardAvoidingView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { LinearGradient } from "expo-linear-gradient";
 
 interface OnboardingStep1Props {
   navigation: any;
@@ -26,6 +28,26 @@ export const OnboardingStep1: React.FC<OnboardingStep1Props> = ({
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [location, setLocation] = useState<string>("");
 
+  // Animations
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const slideAnim = useState(new Animated.Value(50))[0];
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 20,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   const handleNext = () => {
     if (!gender || !location) {
       return;
@@ -36,7 +58,7 @@ export const OnboardingStep1: React.FC<OnboardingStep1Props> = ({
   };
 
   const onDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(Platform.OS === 'ios');
+    setShowDatePicker(false);
     if (selectedDate) {
       setDob(selectedDate);
     }
@@ -45,148 +67,173 @@ export const OnboardingStep1: React.FC<OnboardingStep1Props> = ({
   const isFormValid = gender && location;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Progress Bar */}
-        <View style={styles.progressContainer}>
-          <View style={[styles.progressBar, { width: "20%" }]} />
-        </View>
-
-        {/* Icon */}
-        <View style={styles.iconContainer}>
-          <View style={styles.iconCircle}>
-            <Ionicons name="person" size={48} color="#6366F1" />
-          </View>
-        </View>
-
-        {/* Title */}
-        <Text style={styles.title}>Tell us about yourself</Text>
-        <Text style={styles.subtitle}>Help us personalize your experience</Text>
-
-        {/* Form */}
-        <View style={styles.formContainer}>
-          {/* Gender */}
-          <Text style={styles.label}>Gender</Text>
-          <View style={styles.buttonGroup}>
-            <TouchableOpacity
-              style={[
-                styles.optionButton,
-                gender === "Male" && styles.optionButtonActive,
-              ]}
-              onPress={() => setGender("Male")}
-            >
-              <Text
-                style={[
-                  styles.optionText,
-                  gender === "Male" && styles.optionTextActive,
-                ]}
-              >
-                Male
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.optionButton,
-                gender === "Female" && styles.optionButtonActive,
-              ]}
-              onPress={() => setGender("Female")}
-            >
-              <Text
-                style={[
-                  styles.optionText,
-                  gender === "Female" && styles.optionTextActive,
-                ]}
-              >
-                Female
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.optionButton,
-                gender === "Other" && styles.optionButtonActive,
-              ]}
-              onPress={() => setGender("Other")}
-            >
-              <Text
-                style={[
-                  styles.optionText,
-                  gender === "Other" && styles.optionTextActive,
-                ]}
-              >
-                Other
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Date of Birth */}
-          <Text style={styles.label}>Date of Birth</Text>
-          <TouchableOpacity
-            style={styles.datePickerButton}
-            onPress={() => setShowDatePicker(true)}
+    <LinearGradient colors={["#0a1628", "#152238"]} style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
+          behavior="height"
+          style={styles.keyboardContainer}
+        >
+          <ScrollView
+            contentContainerStyle={styles.scrollContainer}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
-            <Ionicons name="calendar-outline" size={20} color="#64748B" />
-            <Text style={styles.dateText}>
-              {dob.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </Text>
-          </TouchableOpacity>
+          {/* Progress Bar */}
+          <View style={styles.progressContainer}>
+            <Animated.View 
+              style={[
+                styles.progressBar, 
+                { 
+                  width: "17%",
+                  opacity: fadeAnim,
+                }
+              ]} 
+            />
+          </View>
+
+          <Animated.View
+            style={{
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            }}
+          >
+            {/* Icon */}
+            <View style={styles.iconContainer}>
+              <View style={styles.iconCircle}>
+                <Ionicons name="person" size={48} color="#FFFFFF" />
+              </View>
+            </View>
+
+            {/* Title */}
+            <Text style={styles.title}>Tell us about yourself</Text>
+            <Text style={styles.subtitle}>Help us personalize your experience</Text>
+          </Animated.View>
+
+          {/* Form */}
+          <Animated.View 
+            style={[
+              styles.formContainer,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              }
+            ]}
+          >
+            {/* Gender */}
+            <Text style={styles.label}>Gender</Text>
+            <View style={styles.buttonGroup}>
+              {["Male", "Female", "Other"].map((option) => (
+                <TouchableOpacity
+                  key={option}
+                  style={[
+                    styles.optionButton,
+                    gender === option && styles.optionButtonActive,
+                  ]}
+                  onPress={() => setGender(option)}
+                  activeOpacity={0.7}
+                >
+                  {gender === option && (
+                    <LinearGradient
+                      colors={["#2563eb", "#1e40af"]}
+                      style={StyleSheet.absoluteFill}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                    />
+                  )}
+                  <Text
+                    style={[
+                      styles.optionText,
+                      gender === option && styles.optionTextActive,
+                    ]}
+                  >
+                    {option}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Date of Birth */}
+            <Text style={styles.label}>Date of Birth</Text>
+            <TouchableOpacity
+              style={styles.datePickerButton}
+              onPress={() => setShowDatePicker(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="calendar-outline" size={20} color="#FFFFFF" />
+              <Text style={styles.dateText}>
+                {dob.toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </Text>
+            </TouchableOpacity>
           
           {showDatePicker && (
             <DateTimePicker
               value={dob}
               mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              display="default"
               onChange={onDateChange}
               maximumDate={new Date()} // Can't select future dates
               minimumDate={new Date(1900, 0, 1)} // Minimum year 1900
             />
           )}
 
-          {/* Location */}
-          <Text style={styles.label}>Location</Text>
-          <View style={styles.inputContainer}>
-            <Ionicons
-              name="location-outline"
-              size={20}
-              color="#94A3B8"
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={styles.inputWithIcon}
-              placeholder="City, Country"
-              placeholderTextColor="#94A3B8"
-              value={location}
-              onChangeText={setLocation}
-            />
-          </View>
-        </View>
+            {/* Location */}
+            <Text style={styles.label}>Location</Text>
+            <View style={styles.inputContainer}>
+              <Ionicons
+                name="location-outline"
+                size={20}
+                color="#FFFFFF"
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={styles.inputWithIcon}
+                placeholder="City, Country"
+                placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                value={location}
+                onChangeText={setLocation}
+              />
+            </View>
+          </Animated.View>
 
-        {/* Next Button */}
-        <TouchableOpacity
-          style={[styles.nextButton, !isFormValid && styles.disabledButton]}
-          onPress={handleNext}
-          disabled={!isFormValid}
-        >
-          <Text style={styles.nextButtonText}>Next</Text>
-          <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+          {/* Next Button */}
+          <Animated.View style={{ opacity: fadeAnim }}>
+            <TouchableOpacity
+              style={[styles.nextButton, !isFormValid && styles.disabledButton]}
+              onPress={handleNext}
+              disabled={!isFormValid}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={isFormValid ? ["#193C9E", "#1e40af"] : ["#1e3a5f", "#152238"]}
+                style={styles.nextButtonGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={styles.nextButtonText}>Next</Text>
+                <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+  },
+  safeArea: {
+    flex: 1,
+  },
+  keyboardContainer: {
+    flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
@@ -194,38 +241,50 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   progressContainer: {
-    height: 4,
-    backgroundColor: "#E2E8F0",
-    borderRadius: 2,
+    height: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 3,
     marginBottom: 32,
+    overflow: "hidden",
   },
   progressBar: {
     height: "100%",
-    backgroundColor: "#6366F1",
-    borderRadius: 2,
+    backgroundColor: "#2563eb",
+    borderRadius: 3,
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
   },
   iconContainer: {
     alignItems: "center",
     marginBottom: 24,
   },
   iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#EEF2FF",
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "#193C9E",
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 3,
+    borderColor: "#1e40af",
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
-    color: "#1E293B",
+    color: "#FFFFFF",
     textAlign: "center",
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 14,
-    color: "#64748B",
+    fontSize: 15,
+    color: "rgba(255, 255, 255, 0.7)",
     textAlign: "center",
     marginBottom: 32,
   },
@@ -235,7 +294,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1E293B",
+    color: "#FFFFFF",
     marginBottom: 12,
   },
   buttonGroup: {
@@ -245,89 +304,78 @@ const styles = StyleSheet.create({
   },
   optionButton: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#FFFFFF",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     alignItems: "center",
+    overflow: "hidden",
   },
   optionButtonActive: {
-    backgroundColor: "#6366F1",
-    borderColor: "#6366F1",
+    borderColor: "#193C9E",
   },
   optionText: {
     fontSize: 14,
-    fontWeight: "500",
-    color: "#64748B",
+    fontWeight: "600",
+    color: "rgba(255, 255, 255, 0.7)",
   },
   optionTextActive: {
     color: "#FFFFFF",
   },
-  input: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: "#1E293B",
-    marginBottom: 24,
-  },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.2)",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     marginBottom: 24,
   },
   inputIcon: {
-    marginRight: 8,
+    marginRight: 12,
   },
   inputWithIcon: {
     flex: 1,
     fontSize: 16,
-    color: "#1E293B",
+    color: "#FFFFFF",
     padding: 0,
   },
   nextButton: {
-    flexDirection: "row",
-    backgroundColor: "#6366F1",
     borderRadius: 12,
+    overflow: "hidden",
+    marginTop: 16,
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  nextButtonGradient: {
+    flexDirection: "row",
     paddingVertical: 16,
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    shadowColor: "#6366F1",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
   },
   disabledButton: {
     opacity: 0.5,
   },
   nextButtonText: {
     color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 17,
+    fontWeight: "700",
   },
   datePickerButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.2)",
     paddingHorizontal: 16,
     paddingVertical: 14,
     marginBottom: 24,
@@ -335,7 +383,7 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 16,
-    color: "#1E293B",
+    color: "#FFFFFF",
     flex: 1,
   },
 });

@@ -6,9 +6,11 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { useOnboarding } from "../../hooks/onboarding";
 
 // Icon mapping for different job types
@@ -69,48 +71,100 @@ export const OnboardingStep3: React.FC<OnboardingStep3Props> = ({
     return icon as any;
   };
 
+  // Animations
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const slideAnim = useState(new Animated.Value(50))[0];
+
+  useEffect(() => {
+    loadJobs();
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 20,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Progress Bar */}
-        <View style={styles.progressContainer}>
-          <View style={[styles.progressBar, { width: "50%" }]} />
-        </View>
-
-        {/* Icon */}
-        <View style={styles.iconContainer}>
-          <Ionicons name="briefcase" size={48} color="#6366F1" />
-        </View>
-
-        {/* Title */}
-        <Text style={styles.title}>What's your profession?</Text>
-        <Text style={styles.subtitle}>Select your job or field</Text>
-
-        {/* Loading State */}
-        {isLoading && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#6366F1" />
-            <Text style={styles.loadingText}>Loading jobs...</Text>
+    <LinearGradient colors={["#0a1628", "#152238"]} style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Progress Bar */}
+          <View style={styles.progressContainer}>
+            <Animated.View 
+              style={[
+                styles.progressBar, 
+                { 
+                  width: "50%",
+                  opacity: fadeAnim,
+                }
+              ]} 
+            />
           </View>
-        )}
 
-        {/* Error State */}
-        {error && !isLoading && (
-          <View style={styles.errorContainer}>
-            <Ionicons name="alert-circle" size={48} color="#EF4444" />
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity style={styles.retryButton} onPress={loadJobs}>
-              <Text style={styles.retryButtonText}>Retry</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+          <Animated.View
+            style={{
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            }}
+          >
+            {/* Icon */}
+            <View style={styles.iconContainer}>
+              <View style={styles.iconCircle}>
+                <Ionicons name="briefcase" size={48} color="#FFFFFF" />
+              </View>
+            </View>
 
-        {/* Jobs List */}
-        {!isLoading && !error && (
-          <View style={styles.goalsContainer}>
+            {/* Title */}
+            <Text style={styles.title}>What's your profession?</Text>
+            <Text style={styles.subtitle}>Select your job or field</Text>
+          </Animated.View>
+
+            {/* Loading State */}
+          {isLoading && (
+            <Animated.View style={[styles.loadingContainer, { opacity: fadeAnim }]}>
+              <ActivityIndicator size="large" color="#2563eb" />
+              <Text style={styles.loadingText}>Loading jobs...</Text>
+            </Animated.View>
+          )}
+
+          {/* Error State */}
+          {error && !isLoading && (
+            <Animated.View style={[styles.errorContainer, { opacity: fadeAnim }]}>
+              <Ionicons name="alert-circle" size={48} color="#EF4444" />
+              <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity style={styles.retryButton} onPress={loadJobs} activeOpacity={0.8}>
+                <LinearGradient
+                  colors={["#2563eb", "#1e40af"]}
+                  style={styles.retryButtonGradient}
+                >
+                  <Text style={styles.retryButtonText}>Retry</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </Animated.View>
+          )}
+
+          {/* Jobs List */}
+          {!isLoading && !error && (
+            <Animated.View 
+              style={[
+                styles.goalsContainer,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                }
+              ]}
+            >
             {jobs.map((job) => {
               const isSelected = selectedJob === String(job.id);
               const iconName = getJobIcon(job.name);
@@ -123,14 +177,14 @@ export const OnboardingStep3: React.FC<OnboardingStep3Props> = ({
                   <View style={styles.goalContent}>
                     <View
                       style={[
-                        styles.iconCircle,
+                        styles.unselectedIconCircle,
                         isSelected && styles.iconCircleActive,
                       ]}
                     >
                       <Ionicons
                         name={getIconName(iconName)}
                         size={24}
-                        color={isSelected ? "#FFFFFF" : "#6366F1"}
+                        color="#FFFFFF"
                       />
                     </View>
                     <Text
@@ -145,37 +199,48 @@ export const OnboardingStep3: React.FC<OnboardingStep3Props> = ({
                   <Ionicons
                     name={isSelected ? "checkmark-circle" : "ellipse-outline"}
                     size={24}
-                    color={isSelected ? "#6366F1" : "#CBD5E1"}
+                    color={isSelected ? "#2563eb" : "rgba(255, 255, 255, 0.3)"}
                   />
                 </TouchableOpacity>
               );
             })}
-          </View>
-        )}
+            </Animated.View>
+          )}
 
-        {/* Continue Button */}
-        <TouchableOpacity
+          {/* Continue Button */}
+          <Animated.View style={{ opacity: fadeAnim }}>
+            <TouchableOpacity
           style={[
             styles.continueButton,
             (!selectedJob || isLoading) && styles.disabledButton,
           ]}
-          onPress={handleContinue}
-          disabled={!selectedJob || isLoading}
-        >
-          <Text style={styles.continueButtonText}>
-            Continue {selectedJob ? "(1 selected)" : ""}
-          </Text>
-          <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+            onPress={handleContinue}
+            disabled={!selectedJob || isLoading}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={selectedJob && !isLoading ? ["#2563eb", "#1e40af"] : ["#1e3a5f", "#152238"]}
+              style={styles.continueButtonGradient}
+            >
+              <Text style={styles.continueButtonText}>
+                Continue {selectedJob ? "(1 selected)" : ""}
+              </Text>
+              <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+            </LinearGradient>
+          </TouchableOpacity>
+        </Animated.View>
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+  },
+  safeArea: {
+    flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
@@ -183,30 +248,58 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   progressContainer: {
-    height: 4,
-    backgroundColor: "#E2E8F0",
-    borderRadius: 2,
+    height: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 3,
     marginBottom: 32,
+    overflow: "hidden",
   },
   progressBar: {
     height: "100%",
-    backgroundColor: "#6366F1",
-    borderRadius: 2,
+    backgroundColor: "#2563eb",
+    borderRadius: 3,
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
   },
   iconContainer: {
     alignItems: "center",
     marginBottom: 24,
   },
+  unselectedIconCircle:{
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#88898bff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "#193C9E",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 3,
+    borderColor: "#1e40af",
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
-    color: "#1E293B",
+    color: "#FFFFFF",
     textAlign: "center",
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 14,
-    color: "#64748B",
+    fontSize: 15,
+    color: "rgba(255, 255, 255, 0.7)",
     textAlign: "center",
     marginBottom: 32,
   },
@@ -217,7 +310,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: "#64748B",
+    color: "rgba(255, 255, 255, 0.7)",
     marginTop: 16,
   },
   errorContainer: {
@@ -234,15 +327,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   retryButton: {
-    backgroundColor: "#6366F1",
+    borderRadius: 12,
+    overflow: "hidden",
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  retryButtonGradient: {
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 8,
   },
   retryButtonText: {
     color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   goalsContainer: {
     gap: 12,
@@ -252,15 +352,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(11, 27, 51, 0.8)",
     borderRadius: 12,
     padding: 16,
     borderWidth: 2,
-    borderColor: "#E2E8F0",
+    borderColor: "#1e3a5f",
   },
   goalCardActive: {
-    borderColor: "#6366F1",
-    backgroundColor: "#EEF2FF",
+    backgroundColor: "#1e4d8b",
+    borderColor: "#2563eb",
   },
   goalContent: {
     flexDirection: "row",
@@ -268,51 +368,43 @@ const styles = StyleSheet.create({
     gap: 12,
     flex: 1,
   },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#EEF2FF",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
   iconCircleActive: {
-    backgroundColor: "#6366F1",
+    backgroundColor: "#306AF3",
+    
   },
   goalLabel: {
     fontSize: 16,
     fontWeight: "500",
-    color: "#1E293B",
+    color: "rgba(255, 255, 255, 0.9)",
     flex: 1,
   },
   goalLabelActive: {
-    color: "#6366F1",
-    fontWeight: "600",
+    color: "#FFFFFF",
+    fontWeight: "700",
   },
   continueButton: {
-    flexDirection: "row",
-    backgroundColor: "#6366F1",
     borderRadius: 12,
+    overflow: "hidden",
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  continueButtonGradient: {
+    flexDirection: "row",
     paddingVertical: 16,
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    shadowColor: "#6366F1",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
   },
   disabledButton: {
     opacity: 0.5,
   },
   continueButtonText: {
     color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 17,
+    fontWeight: "700",
   },
 });
+
