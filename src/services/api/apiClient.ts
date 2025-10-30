@@ -4,7 +4,6 @@ import { jwtDecode } from "jwt-decode";
 
 // API Configuration
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
-const API_TIMEOUT = 30000; // 30 seconds
 
 // Storage Keys
 const ACCESS_TOKEN_KEY = "@sop_access_token";
@@ -14,7 +13,6 @@ const USER_ID_KEY = "@sop_user_id";
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: API_TIMEOUT,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
@@ -52,10 +50,11 @@ apiClient.interceptors.request.use(
       // Get access token from storage
       const accessToken = await AsyncStorage.getItem(ACCESS_TOKEN_KEY);
 
-      // Add token to headers if exists
+      // Add token to headers if exists (with Bearer prefix)
       if (accessToken && config.headers) {
-        config.headers.Authorization = `${accessToken}`;
+        config.headers.Authorization = `Bearer ${accessToken}`;
       }
+      
     }
 
     // Log request in development
@@ -136,17 +135,23 @@ apiClient.interceptors.response.use(
         const refreshToken = await AsyncStorage.getItem(REFRESH_TOKEN_KEY);
 
         if (!refreshToken) {
+          console.warn("⚠️ No refresh token available in storage");
           throw new Error("No refresh token available");
         }
 
+        console.log("🔄 Attempting to refresh token...");
+        console.log("🔑 Refresh token exists:", !!refreshToken);
+        
         // Call refresh token endpoint
         const response = await axios.post(`${API_BASE_URL}/auth/refresh-token`, {
           refreshToken,
         });
 
-        // Extract tokens from response.data (API structure)
+        console.log("✅ Token refresh response received:", response.data);
+
+        // Extract tokens from response.data.data (API structure)
         const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
-          response.data;
+          response.data.data;
 
         // Save new tokens
         await AsyncStorage.setItem(ACCESS_TOKEN_KEY, newAccessToken);
@@ -154,9 +159,11 @@ apiClient.interceptors.response.use(
           await AsyncStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
         }
 
-        // Update authorization header
+        console.log("✅ New tokens saved successfully");
+
+        // Update authorization header (with Bearer prefix)
         if (originalRequest.headers) {
-          originalRequest.headers.Authorization = ` ${newAccessToken}`;
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         }
 
         // Process queued requests
@@ -164,12 +171,18 @@ apiClient.interceptors.response.use(
 
         // Retry original request
         return apiClient(originalRequest);
-      } catch (refreshError) {
+      } catch (refreshError: any) {
         // Refresh failed - clear tokens (app will handle navigation)
+        console.error("❌ Token refresh failed:", {
+          message: refreshError?.message,
+          response: refreshError?.response?.data,
+          status: refreshError?.response?.status,
+        });
+        
         processQueue(refreshError, null);
         await clearTokens();
 
-        console.log("🔒 Session expired, tokens cleared");
+        console.log("🔒 Session expired, tokens cleared - user needs to login again");
 
         return Promise.reject(refreshError);
       } finally {

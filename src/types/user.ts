@@ -7,6 +7,13 @@ export interface ProfileResponse{
     data: User;
 }
 
+export interface UserStyle {
+  id: number;
+  styleId: number;
+  styleName: string;
+  styleDescription: string;
+}
+
 export interface User {
    id: number;
   email: string;
@@ -27,6 +34,6 @@ export interface User {
   jobId: number | null;
   jobName: string | null;
   jobDescription: string | null;
-  userStyles: string[];
+  userStyles: UserStyle[];
 }
 

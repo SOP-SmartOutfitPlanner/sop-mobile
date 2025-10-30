@@ -5,41 +5,16 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-interface RoutineOption {
-  id: string;
-  icon: string;
-  title: string;
-  description: string;
-}
-
-const routineOptions: RoutineOption[] = [
-  {
-    id: "quick",
-    icon: "cafe-outline",
-    title: "Quick & simple",
-    description: "Get ready fast",
-  },
-  {
-    id: "aesthetic",
-    icon: "sunny-outline",
-    title: "Chill & aesthetic",
-    description: "Take your time",
-  },
-  {
-    id: "energetic",
-    icon: "flash-outline",
-    title: "Energetic & bold",
-    description: "Make a statement",
-  },
-];
-
 interface OnboardingStep5Props {
   navigation: any;
-  onNext: (routine: string) => void;
+  onNext: (bio: string) => void;
   onBack: () => void;
 }
 
@@ -48,103 +23,118 @@ export const OnboardingStep5: React.FC<OnboardingStep5Props> = ({
   onNext,
   onBack,
 }) => {
-  const [selectedRoutine, setSelectedRoutine] = useState<string>("");
+  const [bio, setBio] = useState("");
+  const maxLength = 200;
 
   const handleContinue = () => {
-    if (selectedRoutine) {
-      onNext(selectedRoutine);
-    }
+    onNext(bio.trim());
   };
 
-  const getIconName = (icon: string): any => {
-    return icon as any;
+  const handleSkip = () => {
+    onNext(""); // Skip with empty bio
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardContainer}
       >
-        {/* Progress Bar */}
-        <View style={styles.progressContainer}>
-          <View style={[styles.progressBar, { width: "100%" }]} />
-        </View>
-
-        {/* Title */}
-        <Text style={styles.title}>Your ideal morning routine?</Text>
-        <Text style={styles.subtitle}>
-          One more step to find your style persona
-        </Text>
-
-        {/* Routine Options */}
-        <View style={styles.optionsContainer}>
-          {routineOptions.map((option) => {
-            const isSelected = selectedRoutine === option.id;
-            return (
-              <TouchableOpacity
-                key={option.id}
-                style={[
-                  styles.routineCard,
-                  isSelected && styles.routineCardActive,
-                ]}
-                onPress={() => setSelectedRoutine(option.id)}
-              >
-                <View style={styles.routineContent}>
-                  <View
-                    style={[
-                      styles.iconCircle,
-                      isSelected && styles.iconCircleActive,
-                    ]}
-                  >
-                    <Ionicons
-                      name={getIconName(option.icon)}
-                      size={32}
-                      color={isSelected ? "#FFFFFF" : "#6366F1"}
-                    />
-                  </View>
-                  <View style={styles.textContent}>
-                    <Text
-                      style={[
-                        styles.routineTitle,
-                        isSelected && styles.routineTitleActive,
-                      ]}
-                    >
-                      {option.title}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.routineDescription,
-                        isSelected && styles.routineDescriptionActive,
-                      ]}
-                    >
-                      {option.description}
-                    </Text>
-                  </View>
-                </View>
-                <Ionicons
-                  name="arrow-forward"
-                  size={20}
-                  color={isSelected ? "#6366F1" : "#CBD5E1"}
-                />
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Continue Button */}
-        <TouchableOpacity
-          style={[
-            styles.continueButton,
-            !selectedRoutine && styles.disabledButton,
-          ]}
-          onPress={handleContinue}
-          disabled={!selectedRoutine}
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.continueButtonText}>Continue</Text>
-          <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-        </TouchableOpacity>
-      </ScrollView>
+          {/* Progress Bar */}
+          <View style={styles.progressContainer}>
+            <View style={[styles.progressBar, { width: "100%" }]} />
+          </View>
+
+          {/* Icon */}
+          <View style={styles.iconContainer}>
+            <Ionicons name="person" size={48} color="#6366F1" />
+          </View>
+
+          {/* Title */}
+          <Text style={styles.title}>Tell us about yourself</Text>
+          <Text style={styles.subtitle}>
+            Share your fashion story or style preferences (optional)
+          </Text>
+
+          {/* Bio Input */}
+          <View style={styles.inputContainer}>
+            <View style={styles.inputHeader}>
+              <Text style={styles.inputLabel}>Your Bio</Text>
+              <Text style={styles.characterCount}>
+                {bio.length}/{maxLength}
+              </Text>
+            </View>
+            <TextInput
+              style={styles.textInput}
+              placeholder="E.g., I love mixing casual with elegant pieces. Always looking for sustainable fashion options..."
+              placeholderTextColor="#94A3B8"
+              value={bio}
+              onChangeText={(text) => {
+                if (text.length <= maxLength) {
+                  setBio(text);
+                }
+              }}
+              multiline
+              numberOfLines={6}
+              maxLength={maxLength}
+              textAlignVertical="top"
+            />
+          </View>
+
+          {/* Suggestion Chips */}
+          <View style={styles.suggestionsContainer}>
+            <Text style={styles.suggestionsTitle}>💡 Quick suggestions:</Text>
+            <View style={styles.chipContainer}>
+              <TouchableOpacity
+                style={styles.chip}
+                onPress={() =>
+                  setBio("Fashion enthusiast who loves experimenting with styles")
+                }
+              >
+                <Text style={styles.chipText}>Fashion enthusiast</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.chip}
+                onPress={() =>
+                  setBio("Minimalist style lover, always looking for timeless pieces")
+                }
+              >
+                <Text style={styles.chipText}>Minimalist</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.chip}
+                onPress={() =>
+                  setBio("Eco-conscious fashionista seeking sustainable options")
+                }
+              >
+                <Text style={styles.chipText}>Eco-conscious</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Buttons */}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={styles.continueButton}
+              onPress={handleContinue}
+            >
+              <Text style={styles.continueButtonText}>
+                {bio.trim() ? "Continue" : "Skip for now"}
+              </Text>
+              <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.backButton} onPress={onBack}>
+              <Ionicons name="arrow-back" size={20} color="#64748B" />
+              <Text style={styles.backButtonText}>Back</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -153,6 +143,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F8FAFC",
+  },
+  keyboardContainer: {
+    flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
@@ -170,6 +163,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#6366F1",
     borderRadius: 2,
   },
+  iconContainer: {
+    alignItems: "center",
+    marginBottom: 24,
+  },
   title: {
     fontSize: 24,
     fontWeight: "bold",
@@ -182,60 +179,74 @@ const styles = StyleSheet.create({
     color: "#64748B",
     textAlign: "center",
     marginBottom: 32,
+    lineHeight: 20,
   },
-  optionsContainer: {
-    gap: 12,
-    marginBottom: 32,
+  inputContainer: {
+    marginBottom: 24,
   },
-  routineCard: {
+  inputHeader: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 2,
-    borderColor: "#E2E8F0",
-  },
-  routineCardActive: {
-    borderColor: "#6366F1",
-    backgroundColor: "#EEF2FF",
-  },
-  routineContent: {
-    flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    flex: 1,
+    marginBottom: 12,
   },
-  iconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#EEF2FF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconCircleActive: {
-    backgroundColor: "#6366F1",
-  },
-  textContent: {
-    flex: 1,
-  },
-  routineTitle: {
-    fontSize: 16,
+  inputLabel: {
+    fontSize: 14,
     fontWeight: "600",
     color: "#1E293B",
-    marginBottom: 2,
   },
-  routineTitleActive: {
-    color: "#6366F1",
-  },
-  routineDescription: {
-    fontSize: 14,
+  characterCount: {
+    fontSize: 12,
     color: "#64748B",
   },
-  routineDescriptionActive: {
-    color: "#6366F1",
+  textInput: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    padding: 16,
+    fontSize: 15,
+    color: "#1E293B",
+    minHeight: 140,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  suggestionsContainer: {
+    marginBottom: 32,
+  },
+  suggestionsTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#64748B",
+    marginBottom: 12,
+  },
+  chipContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  chip: {
+    backgroundColor: "#EEF2FF",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#C7D2FE",
+  },
+  chipText: {
+    fontSize: 13,
+    color: "#4F46E5",
+    fontWeight: "500",
+  },
+  buttonContainer: {
+    gap: 12,
+    marginTop: "auto",
   },
   continueButton: {
     flexDirection: "row",
@@ -254,12 +265,25 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  disabledButton: {
-    opacity: 0.5,
-  },
   continueButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
+    fontWeight: "600",
+  },
+  backButton: {
+    flexDirection: "row",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  backButtonText: {
+    color: "#64748B",
+    fontSize: 14,
     fontWeight: "600",
   },
 });

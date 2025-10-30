@@ -6,13 +6,15 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 interface OnboardingStep1Props {
   navigation: any;
-  onNext: (data: { gender: string; age: string; location: string }) => void;
+  onNext: (data: { gender: string; dob: string; location: string }) => void;
 }
 
 export const OnboardingStep1: React.FC<OnboardingStep1Props> = ({
@@ -20,17 +22,27 @@ export const OnboardingStep1: React.FC<OnboardingStep1Props> = ({
   onNext,
 }) => {
   const [gender, setGender] = useState<string>("");
-  const [age, setAge] = useState<string>("");
+  const [dob, setDob] = useState<Date>(new Date(2000, 0, 1)); // Default to 2000-01-01
+  const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [location, setLocation] = useState<string>("");
 
   const handleNext = () => {
-    if (!gender || !age || !location) {
+    if (!gender || !location) {
       return;
     }
-    onNext({ gender, age, location });
+    // Format dob as YYYY-MM-DD
+    const formattedDob = dob.toISOString().split('T')[0];
+    onNext({ gender, dob: formattedDob, location });
   };
 
-  const isFormValid = gender && age && location;
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      setDob(selectedDate);
+    }
+  };
+
+  const isFormValid = gender && location;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -111,17 +123,32 @@ export const OnboardingStep1: React.FC<OnboardingStep1Props> = ({
             </TouchableOpacity>
           </View>
 
-          {/* Age */}
-          <Text style={styles.label}>Age</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your age"
-            placeholderTextColor="#94A3B8"
-            value={age}
-            onChangeText={setAge}
-            keyboardType="number-pad"
-            maxLength={2}
-          />
+          {/* Date of Birth */}
+          <Text style={styles.label}>Date of Birth</Text>
+          <TouchableOpacity
+            style={styles.datePickerButton}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Ionicons name="calendar-outline" size={20} color="#64748B" />
+            <Text style={styles.dateText}>
+              {dob.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </Text>
+          </TouchableOpacity>
+          
+          {showDatePicker && (
+            <DateTimePicker
+              value={dob}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={onDateChange}
+              maximumDate={new Date()} // Can't select future dates
+              minimumDate={new Date(1900, 0, 1)} // Minimum year 1900
+            />
+          )}
 
           {/* Location */}
           <Text style={styles.label}>Location</Text>
@@ -293,5 +320,22 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
+  },
+  datePickerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 24,
+    gap: 12,
+  },
+  dateText: {
+    fontSize: 16,
+    color: "#1E293B",
+    flex: 1,
   },
 });

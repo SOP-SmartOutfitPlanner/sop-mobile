@@ -309,7 +309,6 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
               <Animated.View style={headerAnimatedStyle}>
                 <View row center marginB-8>
                   <Text style={styles.title}>Create Account </Text>
-                  <Text style={styles.titleEmoji}>🎨</Text>
                 </View>
                 <Text style={styles.subtitle}>Start your style journey</Text>
               </Animated.View>
@@ -531,9 +530,6 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.2)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
-  },
-  titleEmoji: {
-    fontSize: 28,
   },
   subtitle: {
     fontSize: 14,

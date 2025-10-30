@@ -1,28 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useOnboarding } from "../../hooks/onboarding";
+import { Style } from "../../types/style";
 
-interface StyleOption {
-  id: string;
-  icon: string;
-  label: string;
-}
-
-const styleOptions: StyleOption[] = [
-  { id: "casual", icon: "shirt-outline", label: "Casual" },
-  { id: "minimalist", icon: "heart-outline", label: "Minimalist" },
-  { id: "formal", icon: "briefcase-outline", label: "Formal" },
-  { id: "streetwear", icon: "fitness-outline", label: "Streetwear" },
-  { id: "sporty", icon: "flash-outline", label: "Sporty" },
-  { id: "vintage", icon: "time-outline", label: "Vintage" },
-];
+// Icon mapping for different style types
+const getStyleIcon = (styleName: string): string => {
+  const name = styleName.toLowerCase();
+  if (name.includes("casual")) return "shirt-outline";
+  if (name.includes("minimal")) return "heart-outline";
+  if (name.includes("formal") || name.includes("business")) return "briefcase-outline";
+  if (name.includes("street")) return "fitness-outline";
+  if (name.includes("sport")) return "flash-outline";
+  if (name.includes("vintage") || name.includes("classic")) return "time-outline";
+  if (name.includes("boho") || name.includes("bohemian")) return "flower-outline";
+  if (name.includes("elegant") || name.includes("chic")) return "star-outline";
+  return "shirt-outline"; // default icon
+};
 
 interface OnboardingStep2Props {
   navigation: any;
@@ -36,6 +38,21 @@ export const OnboardingStep2: React.FC<OnboardingStep2Props> = ({
   onBack,
 }) => {
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
+  const { styles: stylesList, fetchStyles, isLoading } = useOnboarding();
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadStyles();
+  }, []);
+
+  const loadStyles = async () => {
+    try {
+      setError(null);
+      await fetchStyles();
+    } catch (err: any) {
+      setError(err.message || "Failed to load styles");
+    }
+  };
 
   const toggleStyle = (styleId: string) => {
     setSelectedStyles((prev) =>
@@ -63,7 +80,7 @@ export const OnboardingStep2: React.FC<OnboardingStep2Props> = ({
       >
         {/* Progress Bar */}
         <View style={styles.progressContainer}>
-          <View style={[styles.progressBar, { width: "40%" }]} />
+          <View style={[styles.progressBar, { width: "33%" }]} />
         </View>
 
         {/* Icon */}
@@ -75,50 +92,72 @@ export const OnboardingStep2: React.FC<OnboardingStep2Props> = ({
         <Text style={styles.title}>What's your style vibe?</Text>
         <Text style={styles.subtitle}>Select all that match your taste</Text>
 
+        {/* Loading State */}
+        {isLoading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#6366F1" />
+            <Text style={styles.loadingText}>Loading styles...</Text>
+          </View>
+        )}
+
+        {/* Error State */}
+        {error && !isLoading && (
+          <View style={styles.errorContainer}>
+            <Ionicons name="alert-circle" size={48} color="#EF4444" />
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={loadStyles}>
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Style Grid */}
-        <View style={styles.gridContainer}>
-          {styleOptions.map((option) => {
-            const isSelected = selectedStyles.includes(option.id);
-            return (
-              <TouchableOpacity
-                key={option.id}
-                style={[styles.styleCard, isSelected && styles.styleCardActive]}
-                onPress={() => toggleStyle(option.id)}
-              >
-                <View
-                  style={[
-                    styles.iconWrapper,
-                    isSelected && styles.iconWrapperActive,
-                  ]}
+        {!isLoading && !error && (
+          <View style={styles.gridContainer}>
+            {stylesList.map((style) => {
+              const isSelected = selectedStyles.includes(String(style.id));
+              const iconName = getStyleIcon(style.name);
+              return (
+                <TouchableOpacity
+                  key={style.id}
+                  style={[styles.styleCard, isSelected && styles.styleCardActive]}
+                  onPress={() => toggleStyle(String(style.id))}
                 >
-                  <Ionicons
-                    name={getIconName(option.icon)}
-                    size={32}
-                    color={isSelected ? "#FFFFFF" : "#6366F1"}
-                  />
-                </View>
-                <Text
-                  style={[
-                    styles.styleLabel,
-                    isSelected && styles.styleLabelActive,
-                  ]}
-                >
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+                  <View
+                    style={[
+                      styles.iconWrapper,
+                      isSelected && styles.iconWrapperActive,
+                    ]}
+                  >
+                    <Ionicons
+                      name={getIconName(iconName)}
+                      size={32}
+                      color={isSelected ? "#FFFFFF" : "#6366F1"}
+                    />
+                  </View>
+                  <Text
+                    style={[
+                      styles.styleLabel,
+                      isSelected && styles.styleLabelActive,
+                    ]}
+                  >
+                    {style.name}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
 
         {/* Buttons */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={[
               styles.continueButton,
-              selectedStyles.length === 0 && styles.disabledButton,
+              (selectedStyles.length === 0 || isLoading) && styles.disabledButton,
             ]}
             onPress={handleContinue}
-            disabled={selectedStyles.length === 0}
+            disabled={selectedStyles.length === 0 || isLoading}
           >
             <Text style={styles.continueButtonText}>
               Continue ({selectedStyles.length} selected)
@@ -168,6 +207,40 @@ const styles = StyleSheet.create({
     color: "#64748B",
     textAlign: "center",
     marginBottom: 32,
+  },
+  loadingContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 48,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: "#64748B",
+    marginTop: 16,
+  },
+  errorContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 48,
+  },
+  errorText: {
+    fontSize: 16,
+    color: "#EF4444",
+    marginTop: 16,
+    marginBottom: 24,
+    textAlign: "center",
+    paddingHorizontal: 32,
+  },
+  retryButton: {
+    backgroundColor: "#6366F1",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
   },
   gridContainer: {
     flexDirection: "row",

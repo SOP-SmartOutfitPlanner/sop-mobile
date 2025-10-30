@@ -1,39 +1,33 @@
-import React from "react";
-import { View, StyleSheet, ScrollView, Alert } from "react-native";
+import React, { useState } from "react";
+import { View, StyleSheet, ScrollView } from "react-native";
 import { Header } from "../components/common";
 import {
   TodayOutfit,
-  WeeklyChallenge,
   YourFavorites,
   TrendingCommunity,
   QuickNavigation,
 } from "../components/home";
 import { useAuth } from "../hooks/auth";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { GuestPrompt } from "../components/notification/GuestPrompt";
 
 export default function HomeScreen({ navigation }: any) {
   const { isGuest } = useAuth();
+  const [guestPromptVisible, setGuestPromptVisible] = useState(false);
+  const [guestFeature, setGuestFeature] = useState("");
 
-  const showGuestAlert = (feature: string) => {
-    Alert.alert(
-      "Yêu cầu đăng nhập",
-      `Bạn cần đăng nhập để sử dụng tính năng ${feature}`,
-      [
-        {
-          text: "Để sau",
-          style: "cancel",
-        },
-        {
-          text: "Đăng nhập",
-          onPress: () => navigation.navigate("Auth", { screen: "Login" }),
-        },
-      ]
-    );
+  const showGuestPrompt = (feature: string) => {
+    setGuestFeature(feature);
+    setGuestPromptVisible(true);
+  };
+
+  const handleLogin = () => {
+    setGuestPromptVisible(false);
+    navigation.navigate("Auth", { screen: "Login" });
   };
 
   const handleNotificationPress = () => {
     if (isGuest) {
-      showGuestAlert("thông báo");
+      showGuestPrompt("notifications");
     } else {
       console.log("Notification pressed");
     }
@@ -41,7 +35,7 @@ export default function HomeScreen({ navigation }: any) {
 
   const handleMessagePress = () => {
     if (isGuest) {
-      showGuestAlert("tin nhắn");
+      showGuestPrompt("messages");
     } else {
       console.log("Message pressed");
     }
@@ -69,12 +63,19 @@ export default function HomeScreen({ navigation }: any) {
       >
         <View style={styles.content}>
           <TodayOutfit />
-          <WeeklyChallenge />
           <YourFavorites />
           <TrendingCommunity />
           <QuickNavigation />
         </View>
       </ScrollView>
+
+      {/* Guest Prompt Modal */}
+      <GuestPrompt
+        visible={guestPromptVisible}
+        onClose={() => setGuestPromptVisible(false)}
+        onLogin={handleLogin}
+        feature={guestFeature}
+      />
     </View>
   );
 }

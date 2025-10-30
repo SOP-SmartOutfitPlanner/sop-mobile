@@ -47,9 +47,9 @@ export const UserProfileSection: React.FC<UserProfileSectionProps> = ({
       {/* User Styles Tags */}
       {user?.userStyles && user.userStyles.length > 0 && (
         <View style={styles.stylesContainer}>
-          {user.userStyles.map((style, index) => (
-            <View key={index} style={styles.styleTag}>
-              <Text style={styles.styleTagText}>{style}</Text>
+          {user.userStyles.map((style) => (
+            <View key={style.id} style={styles.styleTag}>
+              <Text style={styles.styleTagText}>{style.styleName}</Text>
             </View>
           ))}
         </View>

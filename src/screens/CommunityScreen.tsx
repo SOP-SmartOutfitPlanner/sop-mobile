@@ -11,7 +11,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import {
   CommunityStats,
-  WeeklyChallengeCard,
   FeedTabs,
   PostCard,
 } from "../components/community";
@@ -101,14 +100,6 @@ const CommunityScreen = () => {
         showsVerticalScrollIndicator={false}
       >
         <CommunityStats members="2.4K" likes="12.8K" posts="856" />
-
-        <WeeklyChallengeCard
-          title="Winter Layering Challenge"
-          description="Show us your best winter layering techniques! Create stylish, warm outfits perfect for the season."
-          timeLeft="3 days"
-          submissions={48}
-          onJoinPress={handleJoinChallenge}
-        />
 
         <FeedTabs activeTab={activeTab} onTabChange={setActiveTab} />
 

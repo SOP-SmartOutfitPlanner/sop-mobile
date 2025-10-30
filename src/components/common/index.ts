@@ -1,2 +1,2 @@
 export { Header } from "./Header";
-export { GuestPrompt } from "./GuestPrompt";
+export { GuestPrompt } from "../notification/GuestPrompt";

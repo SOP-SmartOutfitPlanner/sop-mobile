@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Header } from "../components/common/Header";
-import { GuestPrompt } from "../components/common/GuestPrompt";
+import { GuestPrompt } from "../components/notification/GuestPrompt";
 import { Item } from "../types/item";
 import { useWardrobe } from "../hooks/useWardrobe";
 import { useAuth } from "../hooks/auth";

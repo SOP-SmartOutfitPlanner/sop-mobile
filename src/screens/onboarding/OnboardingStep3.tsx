@@ -1,31 +1,34 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useOnboarding } from "../../hooks/onboarding";
 
-interface GoalOption {
-  id: string;
-  icon: string;
-  label: string;
-}
-
-const goalOptions: GoalOption[] = [
-  { id: "wardrobe", icon: "shirt-outline", label: "Manage wardrobe" },
-  { id: "daily", icon: "sparkles-outline", label: "Daily outfit ideas" },
-  { id: "weather", icon: "sunny-outline", label: "Match by weather" },
-  { id: "community", icon: "heart-outline", label: "Share with community" },
-  { id: "trends", icon: "flash-outline", label: "Discover trends" },
-];
+// Icon mapping for different job types
+const getJobIcon = (jobName: string): string => {
+  const name = jobName.toLowerCase();
+  if (name.includes("student") || name.includes("education")) return "school-outline";
+  if (name.includes("engineer") || name.includes("developer") || name.includes("tech")) return "code-outline";
+  if (name.includes("business") || name.includes("manager") || name.includes("executive")) return "briefcase-outline";
+  if (name.includes("design") || name.includes("creative") || name.includes("artist")) return "brush-outline";
+  if (name.includes("medical") || name.includes("doctor") || name.includes("nurse")) return "medical-outline";
+  if (name.includes("teacher") || name.includes("professor")) return "book-outline";
+  if (name.includes("sales") || name.includes("marketing")) return "megaphone-outline";
+  if (name.includes("freelance") || name.includes("entrepreneur")) return "rocket-outline";
+  if (name.includes("hospitality") || name.includes("service")) return "restaurant-outline";
+  return "person-outline"; // default icon
+};
 
 interface OnboardingStep3Props {
   navigation: any;
-  onNext: (goals: string[]) => void;
+  onNext: (jobs: string[]) => void;
   onBack: () => void;
 }
 
@@ -34,19 +37,31 @@ export const OnboardingStep3: React.FC<OnboardingStep3Props> = ({
   onNext,
   onBack,
 }) => {
-  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+  const [selectedJob, setSelectedJob] = useState<string | null>(null);
+  const { jobs, fetchJobs, isLoading } = useOnboarding();
+  const [error, setError] = useState<string | null>(null);
 
-  const toggleGoal = (goalId: string) => {
-    setSelectedGoals((prev) =>
-      prev.includes(goalId)
-        ? prev.filter((id) => id !== goalId)
-        : [...prev, goalId]
-    );
+  useEffect(() => {
+    loadJobs();
+  }, []);
+
+  const loadJobs = async () => {
+    try {
+      setError(null);
+      await fetchJobs();
+    } catch (err: any) {
+      setError(err.message || "Failed to load jobs");
+    }
+  };
+
+  const selectJob = (jobId: string) => {
+    // Only single selection for job
+    setSelectedJob(jobId);
   };
 
   const handleContinue = () => {
-    if (selectedGoals.length > 0) {
-      onNext(selectedGoals);
+    if (selectedJob) {
+      onNext([selectedJob]); // Pass as array for consistency
     }
   };
 
@@ -62,71 +77,93 @@ export const OnboardingStep3: React.FC<OnboardingStep3Props> = ({
       >
         {/* Progress Bar */}
         <View style={styles.progressContainer}>
-          <View style={[styles.progressBar, { width: "60%" }]} />
+          <View style={[styles.progressBar, { width: "50%" }]} />
         </View>
 
         {/* Icon */}
         <View style={styles.iconContainer}>
-          <Ionicons name="radio-button-on" size={48} color="#6366F1" />
+          <Ionicons name="briefcase" size={48} color="#6366F1" />
         </View>
 
         {/* Title */}
-        <Text style={styles.title}>What do you want SOP to help you with?</Text>
-        <Text style={styles.subtitle}>Choose your goals</Text>
+        <Text style={styles.title}>What's your profession?</Text>
+        <Text style={styles.subtitle}>Select your job or field</Text>
 
-        {/* Goals List */}
-        <View style={styles.goalsContainer}>
-          {goalOptions.map((option) => {
-            const isSelected = selectedGoals.includes(option.id);
-            return (
-              <TouchableOpacity
-                key={option.id}
-                style={[styles.goalCard, isSelected && styles.goalCardActive]}
-                onPress={() => toggleGoal(option.id)}
-              >
-                <View style={styles.goalContent}>
-                  <View
-                    style={[
-                      styles.iconCircle,
-                      isSelected && styles.iconCircleActive,
-                    ]}
-                  >
-                    <Ionicons
-                      name={getIconName(option.icon)}
-                      size={24}
-                      color={isSelected ? "#FFFFFF" : "#6366F1"}
-                    />
+        {/* Loading State */}
+        {isLoading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#6366F1" />
+            <Text style={styles.loadingText}>Loading jobs...</Text>
+          </View>
+        )}
+
+        {/* Error State */}
+        {error && !isLoading && (
+          <View style={styles.errorContainer}>
+            <Ionicons name="alert-circle" size={48} color="#EF4444" />
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={loadJobs}>
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Jobs List */}
+        {!isLoading && !error && (
+          <View style={styles.goalsContainer}>
+            {jobs.map((job) => {
+              const isSelected = selectedJob === String(job.id);
+              const iconName = getJobIcon(job.name);
+              return (
+                <TouchableOpacity
+                  key={job.id}
+                  style={[styles.goalCard, isSelected && styles.goalCardActive]}
+                  onPress={() => selectJob(String(job.id))}
+                >
+                  <View style={styles.goalContent}>
+                    <View
+                      style={[
+                        styles.iconCircle,
+                        isSelected && styles.iconCircleActive,
+                      ]}
+                    >
+                      <Ionicons
+                        name={getIconName(iconName)}
+                        size={24}
+                        color={isSelected ? "#FFFFFF" : "#6366F1"}
+                      />
+                    </View>
+                    <Text
+                      style={[
+                        styles.goalLabel,
+                        isSelected && styles.goalLabelActive,
+                      ]}
+                    >
+                      {job.name}
+                    </Text>
                   </View>
-                  <Text
-                    style={[
-                      styles.goalLabel,
-                      isSelected && styles.goalLabelActive,
-                    ]}
-                  >
-                    {option.label}
-                  </Text>
-                </View>
-                <Ionicons
-                  name={isSelected ? "checkmark-circle" : "ellipse-outline"}
-                  size={24}
-                  color={isSelected ? "#6366F1" : "#CBD5E1"}
-                />
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+                  <Ionicons
+                    name={isSelected ? "checkmark-circle" : "ellipse-outline"}
+                    size={24}
+                    color={isSelected ? "#6366F1" : "#CBD5E1"}
+                  />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
 
         {/* Continue Button */}
         <TouchableOpacity
           style={[
             styles.continueButton,
-            selectedGoals.length === 0 && styles.disabledButton,
+            (!selectedJob || isLoading) && styles.disabledButton,
           ]}
           onPress={handleContinue}
-          disabled={selectedGoals.length === 0}
+          disabled={!selectedJob || isLoading}
         >
           <Text style={styles.continueButtonText}>
-            Continue ({selectedGoals.length} selected)
+            Continue {selectedJob ? "(1 selected)" : ""}
           </Text>
           <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
         </TouchableOpacity>
@@ -173,6 +210,40 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 32,
   },
+  loadingContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 48,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: "#64748B",
+    marginTop: 16,
+  },
+  errorContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 48,
+  },
+  errorText: {
+    fontSize: 16,
+    color: "#EF4444",
+    marginTop: 16,
+    marginBottom: 24,
+    textAlign: "center",
+    paddingHorizontal: 32,
+  },
+  retryButton: {
+    backgroundColor: "#6366F1",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
+  },
   goalsContainer: {
     gap: 12,
     marginBottom: 32,
@@ -204,6 +275,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#EEF2FF",
     alignItems: "center",
     justifyContent: "center",
+    flexShrink: 0,
   },
   iconCircleActive: {
     backgroundColor: "#6366F1",

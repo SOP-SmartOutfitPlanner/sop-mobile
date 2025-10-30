@@ -142,7 +142,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const decodedToken = decodeJWT(accessToken);
       // console.log(" Decode token:", decodedToken);
-
+    console.log(" accessToken token:", accessToken); 
       await saveTokens(accessToken, refreshToken);
       await extractAndSaveUserId(accessToken);
       await refreshAuthState();
