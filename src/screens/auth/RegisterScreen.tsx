@@ -6,8 +6,11 @@ import {
   ScrollView,
   Image,
   Dimensions,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
 } from "react-native";
-import { View, Text, TextField, TouchableOpacity } from "react-native-ui-lib";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -295,7 +298,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
             showsVerticalScrollIndicator={false}
           >
             {/* Logo and Title with Animation */}
-            <View center marginB-20>
+            <View style={[styles.centerContainer, { marginBottom: 20 }]}>
               <Animated.View style={[styles.logoContainer, logoAnimatedStyle]}>
                 <View style={styles.logoWrapper}>
                   <Image
@@ -307,7 +310,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
               </Animated.View>
 
               <Animated.View style={headerAnimatedStyle}>
-                <View row center marginB-8>
+                <View style={[styles.rowCenter, { marginBottom: 8 }]}>
                   <Text style={styles.title}>Create Account </Text>
                 </View>
                 <Text style={styles.subtitle}>Start your style journey</Text>
@@ -318,63 +321,57 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
             <Animated.View style={[styles.formCard, formAnimatedStyle, shakeAnimatedStyle]}>
               <View style={styles.formInner}>
                 {/* Full Name Input */}
-                <View marginB-16>
+                <View style={{ marginBottom: 16 }}>
                   <View style={styles.inputWrapper}>
                     <View style={styles.inputIconContainer}>
                       <Ionicons name="person-outline" size={20} color="#3b5998" />
                     </View>
-                    <TextField
+                    <TextInput
                       placeholder="Full name"
                       value={fullName}
                       onChangeText={setFullName}
                       autoCapitalize="words"
                       autoCorrect={false}
-                      enableErrors={false}
                       placeholderTextColor="#94A3B8"
                       style={styles.textInput}
-                      containerStyle={{ flex: 1 }}
                     />
                   </View>
                 </View>
 
                 {/* Email Input */}
-                <View marginB-16>
+                <View style={{ marginBottom: 16 }}>
                   <View style={styles.inputWrapper}>
                     <View style={styles.inputIconContainer}>
                       <Ionicons name="mail-outline" size={20} color="#3b5998" />
                     </View>
-                    <TextField
+                    <TextInput
                       placeholder="Email address"
                       value={email}
                       onChangeText={setEmail}
                       keyboardType="email-address"
                       autoCapitalize="none"
                       autoCorrect={false}
-                      enableErrors={false}
                       placeholderTextColor="#94A3B8"
                       style={styles.textInput}
-                      containerStyle={{ flex: 1 }}
                     />
                   </View>
                 </View>
 
                 {/* Password Input */}
-                <View marginB-12>
+                <View style={{ marginBottom: 12 }}>
                   <View style={styles.inputWrapper}>
                     <View style={styles.inputIconContainer}>
                       <Ionicons name="lock-closed-outline" size={20} color="#3b5998" />
                     </View>
-                    <TextField
+                    <TextInput
                       placeholder="Password"
                       value={password}
                       onChangeText={setPassword}
                       secureTextEntry={!showPassword}
                       autoCapitalize="none"
                       autoCorrect={false}
-                      enableErrors={false}
                       placeholderTextColor="#94A3B8"
                       style={styles.textInput}
-                      containerStyle={{ flex: 1 }}
                     />
                     <TouchableOpacity
                       onPress={() => setShowPassword(!showPassword)}
@@ -390,7 +387,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                 </View>
 
                 {/* Password Requirements */}
-                <View marginB-24>
+                <View style={{ marginBottom: 24 }}>
                   <Text style={styles.requirementText}>
                     Password must be at least 6 characters
                   </Text>
@@ -416,7 +413,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                 </TouchableOpacity>
 
                 {/* Terms and Privacy */}
-                <View marginT-16>
+                <View style={{ marginTop: 16 }}>
                   <Text style={styles.termsText}>
                     By creating an account, you agree to our{" "}
                     <Text style={styles.termsLink}>Terms of Service</Text> and{" "}
@@ -427,7 +424,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
             </Animated.View>
 
             {/* Login Link */}
-            <View row center marginT-24>
+            <View style={[styles.rowCenter, { marginTop: 24 }]}>
               <Text style={styles.loginText}>Already have an account? </Text>
               <TouchableOpacity onPress={navigateToLogin}>
                 <Text style={styles.loginLink}>Sign in</Text>
@@ -459,6 +456,15 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+  },
+  centerContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   // Decorative background circles
   circle1: {

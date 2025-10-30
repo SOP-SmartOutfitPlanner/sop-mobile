@@ -6,8 +6,11 @@ import {
   ScrollView,
   Image,
   Dimensions,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
 } from "react-native";
-import { View, Text, TextField, TouchableOpacity } from "react-native-ui-lib";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -264,7 +267,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             showsVerticalScrollIndicator={false}
           >
             {/* Logo and Title with Animation */}
-            <View center marginB-20>
+            <View style={[styles.centerContainer, { marginBottom: 20 }]}>
               <Animated.View style={[styles.logoContainer, logoAnimatedStyle]}>
                 <View style={styles.logoWrapper}>
                   <Image
@@ -290,43 +293,39 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                 <Text style={styles.formSubtitle}>Sign in to continue</Text>
 
                 {/* Email Input */}
-                <View marginT-24 marginB-16>
+                <View style={{ marginTop: 24, marginBottom: 16 }}>
                   <View style={styles.inputWrapper}>
                     <View style={styles.inputIconContainer}>
                       <Ionicons name="mail-outline" size={20} color="#3b5998" />
                     </View>
-                    <TextField
+                    <TextInput
                       placeholder="Email address"
                       value={email}
                       onChangeText={setEmail}
                       keyboardType="email-address"
                       autoCapitalize="none"
                       autoCorrect={false}
-                      enableErrors={false}
                       placeholderTextColor="#94A3B8"
                       style={styles.textInput}
-                      containerStyle={{ flex: 1 }}
                     />
                   </View>
                 </View>
 
                 {/* Password Input */}
-                <View marginB-12>
+                <View style={{ marginBottom: 12 }}>
                   <View style={styles.inputWrapper}>
                     <View style={styles.inputIconContainer}>
                       <Ionicons name="lock-closed-outline" size={20} color="#3b5998" />
                     </View>
-                    <TextField
+                    <TextInput
                       placeholder="Password"
                       value={password}
                       onChangeText={setPassword}
                       secureTextEntry={!showPassword}
                       autoCapitalize="none"
                       autoCorrect={false}
-                      enableErrors={false}
                       placeholderTextColor="#94A3B8"
                       style={styles.textInput}
-                      containerStyle={{ flex: 1 }}
                     />
                     <TouchableOpacity
                       onPress={() => setShowPassword(!showPassword)}
@@ -342,7 +341,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                 </View>
 
                 {/* Forgot Password */}
-                <View right marginB-24>
+                <View style={[styles.rightAlign, { marginBottom: 24 }]}>
                   <TouchableOpacity onPress={handleForgotPassword}>
                     <Text style={styles.forgotText}>Forgot password?</Text>
                   </TouchableOpacity>
@@ -368,7 +367,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                 </TouchableOpacity>
 
                 {/* Divider */}
-                <View row center marginV-24>
+                <View style={[styles.rowCenter, { marginVertical: 24 }]}>
                   <View style={styles.dividerLine} />
                   <Text style={styles.dividerText}>OR</Text>
                   <View style={styles.dividerLine} />
@@ -388,7 +387,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             </Animated.View>
 
             {/* Register Link */}
-            <View row center marginT-24>
+            <View style={[styles.rowCenter, { marginTop: 24 }]}>
               <Text style={styles.registerText}>Don't have an account? </Text>
               <TouchableOpacity onPress={navigateToRegister}>
                 <Text style={styles.registerLink}>Sign up now</Text>
@@ -420,6 +419,18 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+  },
+  centerContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rightAlign: {
+    alignItems: 'flex-end',
   },
   // Decorative background circles
   circle1: {
