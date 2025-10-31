@@ -31,7 +31,12 @@ export const useOnboarding = () => {
   const fetchStyles = async () => {
     try {
       setIsLoading(true);
-      const response = await GetStyles();
+      const params = {
+        pageIndex: 0,
+        pageSize: 0,
+        takeAll: true,
+      }
+      const response = await GetStyles(params);
       if (response.statusCode === 200) {
         // Extract data from nested structure
         const stylesList = response.data.data;

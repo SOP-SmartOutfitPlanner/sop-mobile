@@ -4,3 +4,4 @@ export { useImagePicker } from './useImagePicker';
 export { useNotification } from './useNotification';
 export { useOTAUpdates } from './useOTAUpdates';
 export { useOnboarding } from './onboarding';
+export { useItemMetadata } from './useItemMetadata';

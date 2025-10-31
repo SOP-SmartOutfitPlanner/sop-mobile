@@ -34,7 +34,7 @@ const colorOptions: ColorOption[] = [
 
 interface OnboardingStep4Props {
   navigation: any;
-  onNext: (data: { preferedColor: string; avoidedColor: string }) => void;
+  onNext: (data: { preferedColor: string[]; avoidedColor: string[] }) => void;
   onBack: () => void;
 }
 
@@ -43,8 +43,8 @@ export const OnboardingStep4: React.FC<OnboardingStep4Props> = ({
   onNext,
   onBack,
 }) => {
-  const [preferedColor, setPreferedColor] = useState<string | null>(null);
-  const [avoidedColor, setAvoidedColor] = useState<string | null>(null);
+  const [preferedColor, setPreferedColor] = useState<string[]>([]);
+  const [avoidedColor, setAvoidedColor] = useState<string[]>([]);
 
   // Animations
   const fadeAnim = useState(new Animated.Value(0))[0];
@@ -68,22 +68,34 @@ export const OnboardingStep4: React.FC<OnboardingStep4Props> = ({
 
   const handleColorSelect = (type: "preferred" | "avoided", color: string) => {
     if (type === "preferred") {
-      // Don't allow selecting same color as avoided
-      if (color === avoidedColor) {
-        setAvoidedColor(null);
+      // Toggle color selection
+      if (preferedColor.includes(color)) {
+        // Remove color if already selected
+        setPreferedColor(preferedColor.filter(c => c !== color));
+      } else {
+        // Add color and remove from avoided if present
+        if (avoidedColor.includes(color)) {
+          setAvoidedColor(avoidedColor.filter(c => c !== color));
+        }
+        setPreferedColor([...preferedColor, color]);
       }
-      setPreferedColor(color);
     } else {
-      // Don't allow selecting same color as preferred
-      if (color === preferedColor) {
-        setPreferedColor(null);
+      // Toggle color selection for avoided
+      if (avoidedColor.includes(color)) {
+        // Remove color if already selected
+        setAvoidedColor(avoidedColor.filter(c => c !== color));
+      } else {
+        // Add color and remove from preferred if present
+        if (preferedColor.includes(color)) {
+          setPreferedColor(preferedColor.filter(c => c !== color));
+        }
+        setAvoidedColor([...avoidedColor, color]);
       }
-      setAvoidedColor(color);
     }
   };
 
   const handleContinue = () => {
-    if (preferedColor && avoidedColor) {
+    if (preferedColor.length > 0 && avoidedColor.length > 0) {
       onNext({ preferedColor, avoidedColor });
     }
   };
@@ -138,12 +150,14 @@ export const OnboardingStep4: React.FC<OnboardingStep4Props> = ({
           >
           <View style={styles.sectionHeader}>
             <Ionicons name="heart" size={20} color="#10B981" />
-            <Text style={styles.sectionTitle}>Preferred Color</Text>
+            <Text style={styles.sectionTitle}>
+              Preferred Colors {preferedColor.length > 0 && `(${preferedColor.length})`}
+            </Text>
           </View>
           <View style={styles.colorGrid}>
             {colorOptions.map((color) => {
-              const isSelected = preferedColor === color.name;
-              const isDisabled = avoidedColor === color.name;
+              const isSelected = preferedColor.includes(color.name);
+              const isDisabled = avoidedColor.includes(color.name);
               return (
                 <TouchableOpacity
                   key={`preferred-${color.name}`}
@@ -194,12 +208,14 @@ export const OnboardingStep4: React.FC<OnboardingStep4Props> = ({
           >
           <View style={styles.sectionHeader}>
             <Ionicons name="close-circle" size={20} color="#EF4444" />
-            <Text style={styles.sectionTitle}>Avoided Color</Text>
+            <Text style={styles.sectionTitle}>
+              Avoided Colors {avoidedColor.length > 0 && `(${avoidedColor.length})`}
+            </Text>
           </View>
           <View style={styles.colorGrid}>
             {colorOptions.map((color) => {
-              const isSelected = avoidedColor === color.name;
-              const isDisabled = preferedColor === color.name;
+              const isSelected = avoidedColor.includes(color.name);
+              const isDisabled = preferedColor.includes(color.name);
               return (
                 <TouchableOpacity
                   key={`avoided-${color.name}`}
@@ -243,17 +259,19 @@ export const OnboardingStep4: React.FC<OnboardingStep4Props> = ({
             <TouchableOpacity
             style={[
               styles.continueButton,
-              (!preferedColor || !avoidedColor) && styles.disabledButton,
+              (preferedColor.length === 0 || avoidedColor.length === 0) && styles.disabledButton,
             ]}
               onPress={handleContinue}
-              disabled={!preferedColor || !avoidedColor}
+              disabled={preferedColor.length === 0 || avoidedColor.length === 0}
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={preferedColor && avoidedColor ? ["#2563eb", "#1e40af"] : ["#1e3a5f", "#152238"]}
+                colors={preferedColor.length > 0 && avoidedColor.length > 0 ? ["#2563eb", "#1e40af"] : ["#1e3a5f", "#152238"]}
                 style={styles.continueButtonGradient}
               >
-                <Text style={styles.continueButtonText}>Continue</Text>
+                <Text style={styles.continueButtonText}>
+                  Continue {preferedColor.length > 0 && avoidedColor.length > 0 ? `(${preferedColor.length + avoidedColor.length} selected)` : ""}
+                </Text>
                 <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
               </LinearGradient>
             </TouchableOpacity>

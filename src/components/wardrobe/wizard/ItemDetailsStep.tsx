@@ -14,6 +14,7 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { formatDateDisplay, getCurrentISODate } from "../../../utils/dateUtils";
 import type { Category } from "../../../types/category";
+import { useItemMetadata } from "../../../hooks/useItemMetadata";
 
 interface ItemDetailsStepProps {
   itemName: string;
@@ -27,6 +28,9 @@ interface ItemDetailsStepProps {
   fabric: string;
   lastWornAt: string;
   frequencyWorn: string;
+  selectedStyles: number[];
+  selectedOccasions: number[];
+  selectedSeasons: number[];
   categories: Category[];
   isCategoriesLoading: boolean;
   onItemNameChange: (text: string) => void;
@@ -40,6 +44,9 @@ interface ItemDetailsStepProps {
   onFabricChange: (text: string) => void;
   onLastWornAtChange: (text: string) => void;
   onFrequencyWornChange: (text: string) => void;
+  onStyleToggle: (styleId: number) => void;
+  onOccasionToggle: (occasionId: number) => void;
+  onSeasonToggle: (seasonId: number) => void;
 }
 
 export const ItemDetailsStep: React.FC<ItemDetailsStepProps> = ({
@@ -54,6 +61,9 @@ export const ItemDetailsStep: React.FC<ItemDetailsStepProps> = ({
   fabric,
   lastWornAt,
   frequencyWorn,
+  selectedStyles,
+  selectedOccasions,
+  selectedSeasons,
   categories,
   isCategoriesLoading,
   onItemNameChange,
@@ -67,10 +77,21 @@ export const ItemDetailsStep: React.FC<ItemDetailsStepProps> = ({
   onFabricChange,
   onLastWornAtChange,
   onFrequencyWornChange,
+  onStyleToggle,
+  onOccasionToggle,
+  onSeasonToggle,
 }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const scrollViewRef = React.useRef<ScrollView>(null);
   const frequencyWornInputRef = React.useRef<TextInput>(null);
+
+  // Fetch metadata from API
+  const { 
+    styles: stylesData, 
+    occasions: occasionsData, 
+    seasons: seasonsData, 
+    isLoading: isMetadataLoading 
+  } = useItemMetadata();
 
   // Helper function to scroll to bottom when keyboard appears
   const scrollToBottom = useCallback(() => {
@@ -351,6 +372,108 @@ export const ItemDetailsStep: React.FC<ItemDetailsStepProps> = ({
             How often do you wear this item?
           </Text>
         </View>
+
+        {/* Styles */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Styles (Optional)</Text>
+          <Text style={styles.helperText}>Select one or more styles that match this item</Text>
+          {isMetadataLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#3b82f6" />
+              <Text style={styles.loadingText}>Loading styles...</Text>
+            </View>
+          ) : (
+            <View style={styles.chipGrid}>
+              {stylesData.map((style) => (
+                <TouchableOpacity
+                  key={style.id}
+                  style={[
+                    styles.chip,
+                    selectedStyles.includes(style.id) && styles.chipSelected,
+                  ]}
+                  onPress={() => onStyleToggle(style.id)}
+                >
+                  <Text
+                    style={[
+                      styles.chipText,
+                      selectedStyles.includes(style.id) && styles.chipTextSelected,
+                    ]}
+                  >
+                    {style.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+
+        {/* Occasions */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Occasions (Optional)</Text>
+          <Text style={styles.helperText}>Select occasions when you'd wear this</Text>
+          {isMetadataLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#3b82f6" />
+              <Text style={styles.loadingText}>Loading occasions...</Text>
+            </View>
+          ) : (
+            <View style={styles.chipGrid}>
+              {occasionsData.map((occasion) => (
+                <TouchableOpacity
+                  key={occasion.id}
+                  style={[
+                    styles.chip,
+                    selectedOccasions.includes(occasion.id) && styles.chipSelected,
+                  ]}
+                  onPress={() => onOccasionToggle(occasion.id)}
+                >
+                  <Text
+                    style={[
+                      styles.chipText,
+                      selectedOccasions.includes(occasion.id) && styles.chipTextSelected,
+                    ]}
+                  >
+                    {occasion.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+
+        {/* Seasons */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Seasons (Optional)</Text>
+          <Text style={styles.helperText}>Select suitable seasons for this item</Text>
+          {isMetadataLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#3b82f6" />
+              <Text style={styles.loadingText}>Loading seasons...</Text>
+            </View>
+          ) : (
+            <View style={styles.chipGrid}>
+              {seasonsData.map((season) => (
+                <TouchableOpacity
+                  key={season.id}
+                  style={[
+                    styles.chip,
+                    selectedSeasons.includes(season.id) && styles.chipSelected,
+                  ]}
+                  onPress={() => onSeasonToggle(season.id)}
+                >
+                  <Text
+                    style={[
+                      styles.chipText,
+                      selectedSeasons.includes(season.id) && styles.chipTextSelected,
+                    ]}
+                  >
+                    {season.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -438,13 +561,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   section: {
-    marginBottom: 0,
+    marginBottom: 24,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
     color: "#1f2937",
-    marginBottom: 16,
+    marginBottom: 8,
   },
   typeGrid: {
     flexDirection: "row",
@@ -558,5 +681,33 @@ const styles = StyleSheet.create({
   },
   dateTimePicker: {
     height: 200,
+  },
+  chipGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginTop: 8,
+  },
+  chip: {
+    backgroundColor: "#f9fafb",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  chipSelected: {
+    backgroundColor: "#3b82f6",
+    borderColor: "#3b82f6",
+  },
+  chipText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#6b7280",
+  },
+  chipTextSelected: {
+    color: "#fff",
   },
 });

@@ -125,6 +125,9 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
   const [imageRemBgURL, setImageRemBgURL] = useState("");
   const [lastWornAt, setLastWornAt] = useState("");
   const [frequencyWorn, setFrequencyWorn] = useState("");
+  const [selectedStyles, setSelectedStyles] = useState<number[]>([]);
+  const [selectedOccasions, setSelectedOccasions] = useState<number[]>([]);
+  const [selectedSeasons, setSelectedSeasons] = useState<number[]>([]);
 
   // Loading states
   const [isDetecting, setIsDetecting] = useState(false);
@@ -156,6 +159,9 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     setImageRemBgURL("");
     setLastWornAt("");
     setFrequencyWorn("");
+    setSelectedStyles([]);
+    setSelectedOccasions([]);
+    setSelectedSeasons([]);
     resetImage();
   }, [resetImage]);
 
@@ -180,13 +186,42 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
 
       if (response.statusCode === 200 && response.data) {
         const { data } = response;
-        setColor(data.color || "");
+        
+        // Set item name from AI
+        if (data.name) {
+          setItemName(data.name);
+        }
+        
+        // Handle colors array - join multiple colors or use first color
+        if (data.colors && data.colors.length > 0) {
+          const colorNames = data.colors.map(c => c.name).join(", ");
+          setColor(colorNames);
+        }
+        
+        // Set category from AI
+        if (data.category) {
+          setCategoryId(data.category.id);
+          setCategoryName(data.category.name);
+        }
+        
+        // Set other fields
         setAiDescription(data.aiDescription || "");
         setWeatherSuitable(data.weatherSuitable || "");
         setCondition(data.condition || "");
         setPattern(data.pattern || "");
         setFabric(data.fabric || "");
         setImageRemBgURL(data.imageRemBgURL || "");
+
+        // Set styles, occasions, and seasons from AI
+        if (data.styles && data.styles.length > 0) {
+          setSelectedStyles(data.styles.map(s => s.id));
+        }
+        if (data.occasions && data.occasions.length > 0) {
+          setSelectedOccasions(data.occasions.map(o => o.id));
+        }
+        if (data.seasons && data.seasons.length > 0) {
+          setSelectedSeasons(data.seasons.map(s => s.id));
+        }
 
         notification.showSuccess(
           "Image analyzed successfully! Form auto-filled with AI data.",
@@ -323,6 +358,31 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     setCategoryName(name);
   }, []);
 
+  // Handle toggle selections
+  const handleStyleToggle = useCallback((styleId: number) => {
+    setSelectedStyles(prev => 
+      prev.includes(styleId) 
+        ? prev.filter(id => id !== styleId)
+        : [...prev, styleId]
+    );
+  }, []);
+
+  const handleOccasionToggle = useCallback((occasionId: number) => {
+    setSelectedOccasions(prev => 
+      prev.includes(occasionId) 
+        ? prev.filter(id => id !== occasionId)
+        : [...prev, occasionId]
+    );
+  }, []);
+
+  const handleSeasonToggle = useCallback((seasonId: number) => {
+    setSelectedSeasons(prev => 
+      prev.includes(seasonId) 
+        ? prev.filter(id => id !== seasonId)
+        : [...prev, seasonId]
+    );
+  }, []);
+
   // Step validation - memoized
   const canProceed = useMemo(() => {
     switch (currentStep) {
@@ -391,6 +451,9 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
             fabric={fabric}
             lastWornAt={lastWornAt}
             frequencyWorn={frequencyWorn}
+            selectedStyles={selectedStyles}
+            selectedOccasions={selectedOccasions}
+            selectedSeasons={selectedSeasons}
             categories={categories}
             isCategoriesLoading={isCategoriesLoading}
             onItemNameChange={setItemName}
@@ -404,6 +467,9 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
             onFabricChange={setFabric}
             onFrequencyWornChange={setFrequencyWorn}
             onLastWornAtChange={setLastWornAt}
+            onStyleToggle={handleStyleToggle}
+            onOccasionToggle={handleOccasionToggle}
+            onSeasonToggle={handleSeasonToggle}
           />
         );
       case 3:
@@ -448,9 +514,15 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     fabric,
     lastWornAt,
     frequencyWorn,
+    selectedStyles,
+    selectedOccasions,
+    selectedSeasons,
     categories,
     isCategoriesLoading,
     handleCategorySelect,
+    handleStyleToggle,
+    handleOccasionToggle,
+    handleSeasonToggle,
   ]);
 
   // Button colors - memoized

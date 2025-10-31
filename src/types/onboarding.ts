@@ -5,8 +5,8 @@ export enum Gender {
   OTHER = 2,
 }
 export interface OnboardingRequest {
-    preferedColor: string;
-    avoidedColor: string;
+    preferedColor: string[];
+    avoidedColor: string[];
     gender: Gender;
     location: string;
     jobId: number;

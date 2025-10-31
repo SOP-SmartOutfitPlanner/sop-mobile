@@ -1,29 +1,25 @@
-export interface Style {
-    id: number;
-    name: string;
-    description: string;
-    createdDate: string;
-    updatedDate: string | null;
-}
-
-export interface GetStylesRequest {
+export interface GetSeasonsRequest{
     pageIndex: number;
     pageSize: number;
     takeAll: boolean;
     search?: string;
 }
-export interface GetStylesResponse {
+export interface GetSeasonsResponse{
     statusCode: number;
     message: string;
     data: {
-        data: Style[];
+        data: Season[];
         metaData: {
             totalCount: number;
             pageSize: number;
             currentPage: number;
             totalPages: number;
-            hasNext: boolean
+            hasNext: boolean;
             hasPrevious: boolean;
-        };
-    }
+        }
+    };
+}
+export interface Season{
+    id: number;
+    name: string;
 }

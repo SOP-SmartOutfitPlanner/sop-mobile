@@ -1,5 +1,5 @@
 //=====================Request=========================//
-export interface AddItemRequest{
+export interface AddItemRequest{ 
     userId: number;
     name: string;
     categoryId: number;
@@ -8,14 +8,17 @@ export interface AddItemRequest{
     aiDescription?: string;
     brand?: string;
     frequencyWorn?: string;
-    lastWornAt?: string; 
+    lastWornAt?: string; // ISO date string
     imgUrl?: string;
     weatherSuitable?: string;
     condition?: string;
     pattern?: string;
     fabric?: string;
-    tag?: string;
+    styleIds: number[];
+    occasionIds: number[];
+    seasonIds: number[];
 }
+  
 export interface SummaryItemRequest {
     file: any; 
 }
@@ -35,13 +38,33 @@ export interface SummaryItemResponse {
     statusCode: number;
     message: string;
     data: {
-        color: string;
+        name: string;
+        colors: {
+            name: string;
+            hex: string;
+        }[];
         aiDescription: string;
         weatherSuitable: string;
         condition: string;
         pattern: string;
         fabric: string;
         imageRemBgURL: string;
+        category: {
+            id: number;
+            name: string;
+        };
+        styles: {
+            id: number;
+            name: string;
+        }[];
+        occasions: {
+            id: number;
+            name: string;
+        }[];
+        seasons: {
+            id: number;
+            name: string;
+        }[];
     };
 }
 export interface GetItemResponse {
