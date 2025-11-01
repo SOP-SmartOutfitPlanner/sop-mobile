@@ -1,4 +1,5 @@
 import React from "react";
+import { View, StyleSheet } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -9,24 +10,34 @@ import CollectionScreen from "../screens/CollectionScreen";
 import SuggestionScreen from "../screens/SuggestionScreen";
 import FavoriteScreen from "../screens/FavoriteScreen";
 import CustomTabBar from "../components/common/CustomTabBar";
+import { AIDetectionBanner } from "../components/loading/AIDetectionBanner";
 
 const Tab = createBottomTabNavigator();
 
 const BottomTabNavigator = () => {
   return (
-    <Tab.Navigator
-      tabBar={(props) => <CustomTabBar {...props} />}
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Wardrobe" component={WardrobeScreen} />
-      <Tab.Screen name="Suggestion" component={SuggestionScreen} />
-      <Tab.Screen name="Favorite" component={FavoriteScreen} />
-      <Tab.Screen name="Collection" component={CollectionScreen} />
-    </Tab.Navigator>
+    <View style={styles.container}>
+      <Tab.Navigator
+        tabBar={(props) => <CustomTabBar {...props} />}
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Tab.Screen name="Home" component={HomeScreen} />
+        <Tab.Screen name="Wardrobe" component={WardrobeScreen} />
+        <Tab.Screen name="Suggestion" component={SuggestionScreen} />
+        <Tab.Screen name="Favorite" component={FavoriteScreen} />
+        <Tab.Screen name="Collection" component={CollectionScreen} />
+      </Tab.Navigator>
+      <AIDetectionBanner />
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});
 
 export default BottomTabNavigator;

@@ -7,6 +7,7 @@ import { AuthProvider } from "./src/hooks/auth";
 import { useOTAUpdates } from "./src/hooks/useOTAUpdates";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import { AIDetectionProvider } from "./src/contexts/AIDetectionContext";
 import "./src/config/google";
 
 export default function App() {
@@ -17,12 +18,14 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <AuthProvider>
-          <NavigationContainer>
-            <BottomSheetModalProvider>
-              <StatusBar style="auto" />
-              <AppNavigator />
-            </BottomSheetModalProvider>
-          </NavigationContainer>
+          <AIDetectionProvider>
+            <NavigationContainer>
+              <BottomSheetModalProvider>
+                <StatusBar style="auto" />
+                <AppNavigator />
+              </BottomSheetModalProvider>
+            </NavigationContainer>
+          </AIDetectionProvider>
         </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

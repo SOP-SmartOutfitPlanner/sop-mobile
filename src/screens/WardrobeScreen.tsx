@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   ScrollView,
@@ -18,6 +18,7 @@ import { WardrobeLoadingGrid } from "../components/wardrobe/WardrobeLoadingGrid"
 import { ItemDetailModal } from "../components/wardrobe/ItemDetailModal";
 import { FilterModal } from "../components/wardrobe/FilterModal";
 import { AddItemModal } from "../components/wardrobe/modal/AddItemModal";
+import { useAIDetection } from "../contexts/AIDetectionContext";
 
 const WardrobeScreen = ({ navigation }: any) => {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
@@ -27,6 +28,7 @@ const WardrobeScreen = ({ navigation }: any) => {
   const [showGuestPrompt, setShowGuestPrompt] = useState(false);
 
   const { isGuest, isAuthenticated } = useAuth();
+  const { shouldOpenModal, setShouldOpenModal, hasCompletedDetection } = useAIDetection();
   const {
     items,
     allItems,
@@ -43,6 +45,14 @@ const WardrobeScreen = ({ navigation }: any) => {
     editItem,
     deleteItem,
   } = useWardrobe();
+
+  // Listen for AI detection completion and reopen modal when banner is tapped
+  useEffect(() => {
+    if (shouldOpenModal && hasCompletedDetection) {
+      setIsAddItemModalOpen(true);
+      setShouldOpenModal(false); // Reset flag
+    }
+  }, [shouldOpenModal, hasCompletedDetection, setShouldOpenModal]);
 
   const handleItemClick = (item: Item) => {
     setSelectedItem(item);
@@ -124,7 +134,7 @@ const WardrobeScreen = ({ navigation }: any) => {
       </ScrollView>
 
       {/* FAB for adding items */}
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={styles.fab}
         onPress={() => {
           // Check if user is authenticated (has valid token)
@@ -136,7 +146,7 @@ const WardrobeScreen = ({ navigation }: any) => {
         }}
       >
         <Ionicons name="add" size={24} color="#fff" />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       {/* Modals */}
       <ItemDetailModal

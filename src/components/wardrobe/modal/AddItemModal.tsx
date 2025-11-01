@@ -18,11 +18,11 @@ import { AddItem, SummaryItem } from "../../../services/endpoint/wardorbe";
 import { prepareFileForUpload } from "../../../utils/imageUtils";
 import type { AddItemRequest } from "../../../types/item";
 import { getUserId } from "../../../services/api/apiClient";
-import { AILoadingOutfit } from "../../loading/AILoadingOutfit";
 import NotificationModal from "../../notification/NotificationModal";
 import { useNotification } from "../../../hooks/useNotification";
 import { useCategories } from "../../../hooks/useCategories";
 import { useItemMetadata } from "../../../hooks/useItemMetadata";
+import { useAIDetection } from "../../../contexts/AIDetectionContext";
 
 interface AddItemModalProps {
   visible: boolean;
@@ -161,6 +161,14 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     resetImage,
   } = useImagePicker();
   const { styles: stylesList, occasions: occasionsList, seasons: seasonsList } = useItemMetadata();
+  const { detectImage, detectionData, hasCompletedDetection, clearDetection, setShouldOpenModal } = useAIDetection();
+
+  // Reset shouldOpenModal flag when modal opens
+  useEffect(() => {
+    if (visible) {
+      setShouldOpenModal(false);
+    }
+  }, [visible, setShouldOpenModal]);
 
   // Fetch parent categories on mount
   useEffect(() => {
@@ -168,6 +176,61 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
       fetchParentCategories();
     }
   }, [visible, fetchParentCategories]);
+
+  // Auto-detect image when selected
+  useEffect(() => {
+    if (selectedImage && visible) {
+      detectImage(selectedImage);
+    }
+  }, [selectedImage, visible, detectImage]);
+
+  // Apply AI detection data when completed
+  useEffect(() => {
+    if (hasCompletedDetection && detectionData && visible) {
+      const { data } = { data: detectionData };
+      
+      // Set item name from AI
+      if (data.name) {
+        setItemName(data.name);
+      }
+      
+      // Handle colors array - join multiple colors or use first color
+      if (data.colors && data.colors.length > 0) {
+        const colorNames = data.colors.map(c => c.name).join(", ");
+        setColor(colorNames);
+      }
+      
+      // Set category from AI
+      if (data.category) {
+        setCategoryId(data.category.id);
+        setCategoryName(data.category.name);
+      }
+      
+      // Set other fields
+      setAiDescription(data.aiDescription || "");
+      setWeatherSuitable(data.weatherSuitable || "");
+      setCondition(data.condition || "");
+      setPattern(data.pattern || "");
+      setFabric(data.fabric || "");
+      setImageRemBgURL(data.imageRemBgURL || "");
+
+      // Set styles, occasions, and seasons from AI
+      if (data.styles && data.styles.length > 0) {
+        setSelectedStyles(data.styles.map(s => s.id));
+      }
+      if (data.occasions && data.occasions.length > 0) {
+        setSelectedOccasions(data.occasions.map(o => o.id));
+      }
+      if (data.seasons && data.seasons.length > 0) {
+        setSelectedSeasons(data.seasons.map(s => s.id));
+      }
+
+      // Auto advance to step 2 when AI completes
+      if (currentStep === 1) {
+        setCurrentStep(2);
+      }
+    }
+  }, [hasCompletedDetection, detectionData, visible, currentStep]);
 
   const resetForm = useCallback(() => {
     setCurrentStep(1);
@@ -188,7 +251,8 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     setSelectedOccasions([]);
     setSelectedSeasons([]);
     resetImage();
-  }, [resetImage]);
+    clearDetection();
+  }, [resetImage, clearDetection]);
 
   const handleClose = useCallback(() => {
     resetForm();
@@ -270,7 +334,8 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     } finally {
       setIsDetecting(false);
     }
-  }, [selectedImage, notification]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedImage]);
 
   // Step validation
   const canProceedToStep = (step: number): boolean => {
@@ -360,6 +425,7 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     } finally {
       setIsSaving(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isSaving,
     itemName,
@@ -459,10 +525,8 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
           <UploadPhotoStep
             selectedImage={selectedImage}
             isLoading={isLoading}
-            isDetecting={isDetecting}
             onCameraPress={pickImageFromCamera}
             onGalleryPress={pickImageFromLibrary}
-            onDetectPress={handleDetectImage}
           />
         );
       case 2:
@@ -643,12 +707,6 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
               </TouchableOpacity>
             </View>
           </View>
-
-          {/* AI Loading Overlay - Inside Modal */}
-          <AILoadingOutfit
-            visible={isDetecting}
-            message="Analyzing your item with AI…"
-          />
         </View>
       </Modal>
 
