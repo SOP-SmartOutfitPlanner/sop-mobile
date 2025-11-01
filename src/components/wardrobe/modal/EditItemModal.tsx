@@ -15,6 +15,7 @@ import type { Item, ItemEdit } from "../../../types/item";
 import NotificationModal from "../../notification/NotificationModal";
 import { useNotification } from "../../../hooks/useNotification";
 import { useCategories } from "../../../hooks/useCategories";
+import { useItemMetadata } from "../../../hooks/useItemMetadata";
 
 interface EditItemModalProps {
   visible: boolean;
@@ -53,6 +54,9 @@ const buildEditRequestData = (
     imageUrl: string;
     lastWornAt: string;
     frequencyWorn: string;
+    styleIds: number[];
+    occasionIds: number[];
+    seasonIds: number[];
   }
 ): Partial<ItemEdit> => {
   const {
@@ -70,10 +74,10 @@ const buildEditRequestData = (
     imageUrl,
     lastWornAt,
     frequencyWorn,
+    styleIds,
+    occasionIds,
+    seasonIds,
   } = formData;
-
-  // Build tag from available fields
-  const tagParts = [categoryName, color, weatherSuitable, condition, pattern, fabric].filter(Boolean);
 
   // Build request with all fields
   const requestData: any = {
@@ -91,7 +95,9 @@ const buildEditRequestData = (
     fabric: fabric.trim() || "",
     lastWornAt: lastWornAt.trim() || "",
     frequencyWorn: frequencyWorn.trim() || "",
-    tag: tagParts.length > 0 ? tagParts.join(", ") : "",
+    styleIds: styleIds || [],
+    occasionIds: occasionIds || [],
+    seasonIds: seasonIds || [],
   };
 
   return requestData;
@@ -121,13 +127,31 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
   const [imageUrl, setImageUrl] = useState("");
   const [lastWornAt, setLastWornAt] = useState("");
   const [frequencyWorn, setFrequencyWorn] = useState("");
+  const [selectedStyles, setSelectedStyles] = useState<number[]>([]);
+  const [selectedOccasions, setSelectedOccasions] = useState<number[]>([]);
+  const [selectedSeasons, setSelectedSeasons] = useState<number[]>([]);
 
   // Loading states
   const [isSaving, setIsSaving] = useState(false);
 
   // Hooks
   const notification = useNotification();
-  const { categories, isLoading: isCategoriesLoading } = useCategories();
+  const { 
+    parentCategories, 
+    childCategories,
+    isLoading: isCategoriesLoading,
+    isLoadingChildren,
+    fetchParentCategories,
+    fetchChildCategories,
+  } = useCategories();
+  const { styles: stylesList, occasions: occasionsList, seasons: seasonsList } = useItemMetadata();
+
+  // Fetch parent categories on mount
+  useEffect(() => {
+    if (visible) {
+      fetchParentCategories();
+    }
+  }, [visible, fetchParentCategories]);
 
   // Initialize form with item data
   useEffect(() => {
@@ -145,6 +169,9 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
       setImageUrl(item.imgUrl || "");
       setLastWornAt(item.lastWornAt || "");
       setFrequencyWorn(item.frequencyWorn || "");
+      setSelectedStyles(item.styles?.map(s => s.id) || []);
+      setSelectedOccasions(item.occasions?.map(o => o.id) || []);
+      setSelectedSeasons(item.seasons?.map(s => s.id) || []);
     }
   }, [item, visible]);
 
@@ -163,6 +190,9 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
     setImageUrl("");
     setLastWornAt("");
     setFrequencyWorn("");
+    setSelectedStyles([]);
+    setSelectedOccasions([]);
+    setSelectedSeasons([]);
   }, []);
 
   const handleClose = useCallback(() => {
@@ -245,6 +275,9 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
         imageUrl,
         lastWornAt,
         frequencyWorn,
+        styleIds: selectedStyles,
+        occasionIds: selectedOccasions,
+        seasonIds: selectedSeasons,
       });
 
     //   console.log("=== Edit Request Data ===");
@@ -288,11 +321,39 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
     imageUrl,
     lastWornAt,
     frequencyWorn,
+    selectedStyles,
+    selectedOccasions,
+    selectedSeasons,
     notification,
     handleClose,
     onSave,
     editItem,
   ]);
+
+  // Toggle handlers for styles, occasions, and seasons
+  const handleStyleToggle = useCallback((styleId: number) => {
+    setSelectedStyles((prev) =>
+      prev.includes(styleId)
+        ? prev.filter((id) => id !== styleId)
+        : [...prev, styleId]
+    );
+  }, []);
+
+  const handleOccasionToggle = useCallback((occasionId: number) => {
+    setSelectedOccasions((prev) =>
+      prev.includes(occasionId)
+        ? prev.filter((id) => id !== occasionId)
+        : [...prev, occasionId]
+    );
+  }, []);
+
+  const handleSeasonToggle = useCallback((seasonId: number) => {
+    setSelectedSeasons((prev) =>
+      prev.includes(seasonId)
+        ? prev.filter((id) => id !== seasonId)
+        : [...prev, seasonId]
+    );
+  }, []);
 
   // Memoized step components
   const stepContent = useMemo(() => {
@@ -311,8 +372,17 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
             fabric={fabric}
             lastWornAt={lastWornAt}
             frequencyWorn={frequencyWorn}
-            categories={categories}
+            parentCategories={parentCategories}
+            childCategories={childCategories}
             isCategoriesLoading={isCategoriesLoading}
+            isLoadingChildren={isLoadingChildren}
+            onFetchChildCategories={fetchChildCategories}
+            selectedStyles={selectedStyles}
+            selectedOccasions={selectedOccasions}
+            selectedSeasons={selectedSeasons}
+            onStyleToggle={handleStyleToggle}
+            onOccasionToggle={handleOccasionToggle}
+            onSeasonToggle={handleSeasonToggle}
             onItemNameChange={setItemName}
             onBrandChange={setBrand}
             onCategorySelect={handleCategorySelect}
@@ -342,6 +412,15 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
               lastWornAt,
               frequencyWorn,
               imageUri: imageUrl,
+              styles: selectedStyles
+                .map((id) => stylesList.find((s) => s.id === id)?.name)
+                .filter((name): name is string => !!name),
+              occasions: selectedOccasions
+                .map((id) => occasionsList.find((o) => o.id === id)?.name)
+                .filter((name): name is string => !!name),
+              seasons: selectedSeasons
+                .map((id) => seasonsList.find((s) => s.id === id)?.name)
+                .filter((name): name is string => !!name),
             }}
           />
         );
@@ -363,8 +442,20 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
     lastWornAt,
     frequencyWorn,
     imageUrl,
-    categories,
+    parentCategories,
+    childCategories,
     isCategoriesLoading,
+    isLoadingChildren,
+    fetchChildCategories,
+    selectedStyles,
+    selectedOccasions,
+    selectedSeasons,
+    stylesList,
+    occasionsList,
+    seasonsList,
+    handleStyleToggle,
+    handleOccasionToggle,
+    handleSeasonToggle,
     handleCategorySelect,
   ]);
 

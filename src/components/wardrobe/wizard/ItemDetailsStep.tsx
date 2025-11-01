@@ -31,11 +31,14 @@ interface ItemDetailsStepProps {
   selectedStyles: number[];
   selectedOccasions: number[];
   selectedSeasons: number[];
-  categories: Category[];
+  parentCategories: Category[];
+  childCategories: Category[];
   isCategoriesLoading: boolean;
+  isLoadingChildren: boolean;
   onItemNameChange: (text: string) => void;
   onBrandChange: (text: string) => void;
   onCategorySelect: (categoryId: number, categoryName: string) => void;
+  onFetchChildCategories: (parentId: number) => Promise<Category[]>;
   onColorChange: (text: string) => void;
   onAiDescriptionChange: (text: string) => void;
   onWeatherSuitableChange: (text: string) => void;
@@ -64,11 +67,14 @@ export const ItemDetailsStep: React.FC<ItemDetailsStepProps> = ({
   selectedStyles,
   selectedOccasions,
   selectedSeasons,
-  categories,
+  parentCategories,
+  childCategories,
   isCategoriesLoading,
+  isLoadingChildren,
   onItemNameChange,
   onBrandChange,
   onCategorySelect,
+  onFetchChildCategories,
   onColorChange,
   onAiDescriptionChange,
   onWeatherSuitableChange,
@@ -82,6 +88,7 @@ export const ItemDetailsStep: React.FC<ItemDetailsStepProps> = ({
   onSeasonToggle,
 }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedParentId, setSelectedParentId] = useState<number | null>(null);
   const scrollViewRef = React.useRef<ScrollView>(null);
   const frequencyWornInputRef = React.useRef<TextInput>(null);
 
@@ -161,33 +168,80 @@ export const ItemDetailsStep: React.FC<ItemDetailsStepProps> = ({
         {/* Category */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Category *</Text>
+          
+          {/* Parent Categories */}
+          <Text style={styles.subSectionTitle}>Select Parent Category</Text>
           {isCategoriesLoading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="small" color="#3b82f6" />
-              <Text style={styles.loadingText}>Loading categories...</Text>
+              <Text style={styles.loadingText}>Loading parent categories...</Text>
             </View>
           ) : (
             <View style={styles.typeGrid}>
-              {categories.map((category) => (
+              {parentCategories.map((parent) => (
                 <TouchableOpacity
-                  key={category.id}
+                  key={parent.id}
                   style={[
                     styles.typeChip,
-                    categoryId === category.id && styles.typeChipSelected,
+                    selectedParentId === parent.id && styles.typeChipSelected,
                   ]}
-                  onPress={() => onCategorySelect(category.id, category.name)}
+                  onPress={async () => {
+                    setSelectedParentId(parent.id);
+                    await onFetchChildCategories(parent.id);
+                  }}
                 >
                   <Text
                     style={[
                       styles.typeChipText,
-                      categoryId === category.id && styles.typeChipTextSelected,
+                      selectedParentId === parent.id && styles.typeChipTextSelected,
                     ]}
                   >
-                    {category.name}
+                    {parent.name}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
+          )}
+
+          {/* Child Categories - Show only when parent is selected */}
+          {selectedParentId && (
+            <>
+              <Text style={[styles.subSectionTitle, { marginTop: 16 }]}>
+                Select Specific Category
+              </Text>
+              {isLoadingChildren ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#3b82f6" />
+                  <Text style={styles.loadingText}>Loading categories...</Text>
+                </View>
+              ) : childCategories.length > 0 ? (
+                <View style={styles.typeGrid}>
+                  {childCategories.map((child) => (
+                    <TouchableOpacity
+                      key={child.id}
+                      style={[
+                        styles.typeChip,
+                        categoryId === child.id && styles.typeChipSelected,
+                      ]}
+                      onPress={() => onCategorySelect(child.id, child.name)}
+                    >
+                      <Text
+                        style={[
+                          styles.typeChipText,
+                          categoryId === child.id && styles.typeChipTextSelected,
+                        ]}
+                      >
+                        {child.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.helperText}>
+                  No subcategories available for this category.
+                </Text>
+              )}
+            </>
           )}
         </View>
 
@@ -568,6 +622,12 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#1f2937",
     marginBottom: 8,
+  },
+  subSectionTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#4b5563",
+    marginBottom: 12,
   },
   typeGrid: {
     flexDirection: "row",

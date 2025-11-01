@@ -7,6 +7,7 @@ import {
   DetailInfo,
   DetailStats,
   DetailProperties,
+  DetailMetadata,
   DetailActions,
 } from "./detail";
 import { EditItemModal } from "./modal/EditItemModal";
@@ -50,11 +51,15 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
   if (!item) return null;
 
   // Parse data
-  const tags = item.tag ? item.tag.split(",").map((t) => t.trim()) : [];
   const wearCount = item.frequencyWorn || "0";
   const lastWornDate = item.lastWornAt
     ? new Date(item.lastWornAt).toLocaleDateString()
     : "Never";
+
+  // Extract names from styles, occasions, and seasons objects
+  const itemStyles = item.styles?.map(s => s.name) || [];
+  const itemOccasions = item.occasions?.map(o => o.name) || [];
+  const itemSeasons = item.seasons?.map(s => s.name) || [];
 
   const handleUseInOutfit = () => {
     onUseInOutfit(item);
@@ -116,12 +121,18 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
           >
             <DetailImage imageUrl={item.imgUrl} />
 
-            <DetailInfo name={item.name} brand={item.brand} tags={tags} />
+            <DetailInfo name={item.name} brand={item.brand} />
 
             <DetailStats
               wearCount={wearCount}
               condition={(item.condition as any) || "Good"}
               lastWorn={lastWornDate}
+            />
+
+            <DetailMetadata
+              stylesList={itemStyles}
+              occasions={itemOccasions}
+              seasons={itemSeasons}
             />
 
             <DetailProperties

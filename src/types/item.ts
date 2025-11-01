@@ -105,7 +105,9 @@ export interface Item {
     condition?: string;
     pattern?: string;
     fabric?: string;
-    tag?: string;
+    styles: Array<{ id: number; name: string }>;
+    occasions: Array<{ id: number; name: string }>;
+    seasons: Array<{ id: number; name: string }>;
 }
 export interface ItemEdit{
     userId: number;
@@ -122,5 +124,7 @@ export interface ItemEdit{
     condition: string;
     pattern: string;
     fabric: string;
-    tag: string;
+    styleIds: number[];
+    occasionIds: number[];
+    seasonIds: number[];
 }

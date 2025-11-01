@@ -15,6 +15,9 @@ interface ReviewStepData {
   lastWornAt?: string;
   frequencyWorn?: string;
   imageUri: string | null;
+  styles?: string[];
+  occasions?: string[];
+  seasons?: string[];
 }
 
 interface ReviewStepProps {
@@ -60,12 +63,12 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ data }) => {
     );
   };
 
-  const renderTags = (items: string[], color: string) => {
+  const renderTags = (items: string[], backgroundColor: string, textColor: string = "#1f2937") => {
     return (
       <View style={styles.tagContainer}>
         {items.map((item, index) => (
-          <View key={index} style={[styles.tag, { backgroundColor: color }]}>
-            <Text style={styles.tagText}>{item}</Text>
+          <View key={index} style={[styles.tag, { backgroundColor }]}>
+            <Text style={[styles.tagText, { color: textColor }]}>{item}</Text>
           </View>
         ))}
       </View>
@@ -112,6 +115,28 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ data }) => {
           renderInfoRow("LAST WORN", formatDateShort(data.lastWornAt))}
         {data.frequencyWorn && renderInfoRow("FREQUENCY", data.frequencyWorn)}
       </View>
+
+      {/* Styles, Occasions, and Seasons */}
+      {data.styles && data.styles.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>STYLES</Text>
+          {renderTags(data.styles, "#e0e7ff")}
+        </View>
+      )}
+
+      {data.occasions && data.occasions.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>OCCASIONS</Text>
+          {renderTags(data.occasions, "#fef3c7")}
+        </View>
+      )}
+
+      {data.seasons && data.seasons.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>SEASONS</Text>
+          {renderTags(data.seasons, "#dbeafe")}
+        </View>
+      )}
     </ScrollView>
   );
 };
@@ -183,7 +208,6 @@ const styles = StyleSheet.create({
   tagText: {
     fontSize: 12,
     fontWeight: "500",
-    color: "#3b82f6",
   },
   colorTag: {
     paddingHorizontal: 12,

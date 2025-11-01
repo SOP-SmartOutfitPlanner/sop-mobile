@@ -22,6 +22,7 @@ import { AILoadingOutfit } from "../../loading/AILoadingOutfit";
 import NotificationModal from "../../notification/NotificationModal";
 import { useNotification } from "../../../hooks/useNotification";
 import { useCategories } from "../../../hooks/useCategories";
+import { useItemMetadata } from "../../../hooks/useItemMetadata";
 
 interface AddItemModalProps {
   visible: boolean;
@@ -58,6 +59,9 @@ const buildRequestData = (
     imageRemBgURL: string;
     lastWornAt: string;
     frequencyWorn: string;
+    styleIds: number[];
+    occasionIds: number[];
+    seasonIds: number[];
   }
 ): Partial<AddItemRequest> => {
   const {
@@ -74,6 +78,9 @@ const buildRequestData = (
     imageRemBgURL,
     lastWornAt,
     frequencyWorn,
+    styleIds,
+    occasionIds,
+    seasonIds,
   } = formData;
 
   // Build tag from available fields
@@ -86,6 +93,9 @@ const buildRequestData = (
     categoryId,
     categoryName,
     imgUrl: imageRemBgURL,
+    styleIds: styleIds || [],
+    occasionIds: occasionIds || [],
+    seasonIds: seasonIds || [],
   };
 
   // Add optional fields only if they have actual values
@@ -135,7 +145,14 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
 
   // Hooks
   const notification = useNotification();
-  const { categories, isLoading: isCategoriesLoading } = useCategories();
+  const { 
+    parentCategories, 
+    childCategories,
+    isLoading: isCategoriesLoading,
+    isLoadingChildren,
+    fetchParentCategories,
+    fetchChildCategories,
+  } = useCategories();
   const {
     selectedImage,
     isLoading,
@@ -143,6 +160,14 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     pickImageFromLibrary,
     resetImage,
   } = useImagePicker();
+  const { styles: stylesList, occasions: occasionsList, seasons: seasonsList } = useItemMetadata();
+
+  // Fetch parent categories on mount
+  useEffect(() => {
+    if (visible) {
+      fetchParentCategories();
+    }
+  }, [visible, fetchParentCategories]);
 
   const resetForm = useCallback(() => {
     setCurrentStep(1);
@@ -305,6 +330,9 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
         imageRemBgURL,
         lastWornAt,
         frequencyWorn,
+        styleIds: selectedStyles,
+        occasionIds: selectedOccasions,
+        seasonIds: selectedSeasons,
       });
 
       console.log("=== Final Request Data ===");
@@ -454,11 +482,14 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
             selectedStyles={selectedStyles}
             selectedOccasions={selectedOccasions}
             selectedSeasons={selectedSeasons}
-            categories={categories}
+            parentCategories={parentCategories}
+            childCategories={childCategories}
             isCategoriesLoading={isCategoriesLoading}
+            isLoadingChildren={isLoadingChildren}
             onItemNameChange={setItemName}
             onBrandChange={setBrand}
             onCategorySelect={handleCategorySelect}
+            onFetchChildCategories={fetchChildCategories}
             onColorChange={setColor}
             onAiDescriptionChange={setAiDescription}
             onWeatherSuitableChange={setWeatherSuitable}
@@ -488,6 +519,15 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
               lastWornAt,
               frequencyWorn,
               imageUri: selectedImage,
+              styles: selectedStyles
+                .map((id) => stylesList.find((s) => s.id === id)?.name)
+                .filter((name): name is string => !!name),
+              occasions: selectedOccasions
+                .map((id) => occasionsList.find((o) => o.id === id)?.name)
+                .filter((name): name is string => !!name),
+              seasons: selectedSeasons
+                .map((id) => seasonsList.find((s) => s.id === id)?.name)
+                .filter((name): name is string => !!name),
             }}
           />
         );
@@ -517,12 +557,18 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     selectedStyles,
     selectedOccasions,
     selectedSeasons,
-    categories,
+    stylesList,
+    occasionsList,
+    seasonsList,
+    parentCategories,
+    childCategories,
     isCategoriesLoading,
+    isLoadingChildren,
     handleCategorySelect,
     handleStyleToggle,
     handleOccasionToggle,
     handleSeasonToggle,
+    fetchChildCategories,
   ]);
 
   // Button colors - memoized
