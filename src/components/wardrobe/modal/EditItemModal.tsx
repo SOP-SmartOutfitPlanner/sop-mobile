@@ -13,9 +13,9 @@ import { ItemDetailsStep } from "../wizard/ItemDetailsStep";
 import { ReviewStep } from "../wizard/ReviewStep";
 import type { Item, ItemEdit } from "../../../types/item";
 import NotificationModal from "../../notification/NotificationModal";
-import { useNotification } from "../../../hooks/useNotification";
 import { useCategories } from "../../../hooks/useCategories";
 import { useItemMetadata } from "../../../hooks/useItemMetadata";
+import { useNotification } from "../../../hooks";
 
 interface EditItemModalProps {
   visible: boolean;

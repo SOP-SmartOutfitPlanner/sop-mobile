@@ -96,7 +96,7 @@ export const OnboardingStep5: React.FC<OnboardingStep5Props> = ({
               {/* Title */}
               <Text style={styles.title}>Tell us about yourself</Text>
               <Text style={styles.subtitle}>
-                Share your fashion story or style preferences (optional)
+                Share your fashion story or style preferences 
               </Text>
             </Animated.View>
 

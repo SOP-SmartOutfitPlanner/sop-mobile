@@ -15,8 +15,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { StackScreenProps } from "@react-navigation/stack";
 import { RootStackParamList } from "../../navigation/AppNavigator";
 import { resendOtp, verifyOtp } from "../../services/endpoint";
-import { useNotification } from "../../hooks/useNotification";
 import NotificationModal from "../../components/notification/NotificationModal";
+import { useNotification } from "../../hooks";
 
 type VerifyScreenProps = StackScreenProps<RootStackParamList, "Verify">;
 

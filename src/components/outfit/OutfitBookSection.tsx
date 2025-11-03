@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 interface Outfit {
@@ -23,14 +23,11 @@ export const OutfitBookSection: React.FC<OutfitBookSectionProps> = ({
     <View style={styles.container}>
       <Text style={styles.title}>Outfit Book</Text>
 
-      <View style={styles.outfitsContainer}>
-        {/* Add Outfit Button */}
-        <TouchableOpacity style={styles.addButton} onPress={onCreateOutfit}>
-          <View style={styles.addIconContainer}>
-            <Ionicons name="add" size={32} color="#94a3b8" />
-          </View>
-        </TouchableOpacity>
-
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.outfitsContainer}
+      >
         {/* Existing Outfits */}
         {outfits.map((outfit) => (
           <TouchableOpacity
@@ -39,13 +36,22 @@ export const OutfitBookSection: React.FC<OutfitBookSectionProps> = ({
             onPress={() => onViewOutfit(outfit)}
           >
             <View style={styles.outfitItems}>
-              {outfit.items.slice(0, 2).map((item, index) => (
-                <View key={index} style={styles.itemPreview}>
+              {outfit.items.slice(0, 4).map((item, index) => (
+                <View 
+                  key={index} 
+                  style={[
+                    styles.circleItemContainer,
+                    index === 0 && styles.topLeft,
+                    index === 1 && styles.topRight,
+                    index === 2 && styles.bottomLeft,
+                    index === 3 && styles.bottomRight,
+                  ]}
+                >
                   {item ? (
-                    <Image source={{ uri: item }} style={styles.itemImage} />
+                    <Image source={{ uri: item }} style={styles.circleItemImage} />
                   ) : (
-                    <View style={styles.itemPlaceholder}>
-                      <Ionicons name="shirt-outline" size={24} color="#cbd5e1" />
+                    <View style={styles.circleItemPlaceholder}>
+                      <Ionicons name="shirt-outline" size={16} color="#cbd5e1" />
                     </View>
                   )}
                 </View>
@@ -53,16 +59,8 @@ export const OutfitBookSection: React.FC<OutfitBookSectionProps> = ({
             </View>
           </TouchableOpacity>
         ))}
-
-        {/* Empty Outfit Placeholder */}
-        <TouchableOpacity
-          style={styles.emptyOutfitCard}
-          onPress={onCreateOutfit}
-        >
-          <Ionicons name="shirt-outline" size={32} color="#cbd5e1" />
-          <Text style={styles.emptyText}>Create Outfit</Text>
-        </TouchableOpacity>
-      </View>
+       
+      </ScrollView>
     </View>
   );
 };
@@ -81,36 +79,56 @@ const styles = StyleSheet.create({
   outfitsContainer: {
     flexDirection: "row",
     gap: 12,
+    paddingRight: 16,
   },
-  addButton: {
-    width: 120,
-    aspectRatio: 0.7,
-    backgroundColor: "#f8fafc",
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-  },
-  addIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#fff",
-    justifyContent: "center",
-    alignItems: "center",
-  },
+
   outfitCard: {
-    width: 120,
-    aspectRatio: 0.7,
+    width: 150,
+    height: 150,
     backgroundColor: "#fff",
     borderRadius: 16,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "#e2e8f0",
+    padding: 8,
   },
   outfitItems: {
     flex: 1,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    alignContent: "space-between",
+  },
+  circleItemContainer: {
+    width: "48%",
+    aspectRatio: 1,
+    borderRadius: 100,
+    overflow: "hidden",
+    backgroundColor: "#f8fafc",
+  },
+  topLeft: {
+    // Position for first item (top-left)
+  },
+  topRight: {
+    // Position for second item (top-right)
+  },
+  bottomLeft: {
+    // Position for third item (bottom-left)
+  },
+  bottomRight: {
+    // Position for fourth item (bottom-right)
+  },
+  circleItemImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
+  circleItemPlaceholder: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f8fafc",
   },
   itemPreview: {
     flex: 1,
@@ -127,8 +145,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   emptyOutfitCard: {
-    width: 120,
-    aspectRatio: 0.7,
+    width: 100,
+    height: 100,
     backgroundColor: "#fff",
     borderRadius: 16,
     justifyContent: "center",

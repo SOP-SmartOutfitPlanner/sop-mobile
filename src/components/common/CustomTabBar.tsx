@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -27,11 +28,13 @@ const AnimatedTab = ({
   onPress,
   iconName,
   label,
+  iconFamily = "Ionicons",
 }: {
   isFocused: boolean;
   onPress: () => void;
-  iconName: keyof typeof Ionicons.glyphMap;
+  iconName: keyof typeof Ionicons.glyphMap | keyof typeof MaterialCommunityIcons.glyphMap;
   label: string;
+  iconFamily?: "Ionicons" | "MaterialCommunityIcons";
 }) => {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(isFocused ? 1 : 0.6);
@@ -64,7 +67,7 @@ const AnimatedTab = ({
       style={styles.tab}
     >
       <Animated.View style={[styles.tabContent, animatedStyle]}>
-        <GradientIcon name={iconName} size={24} focused={isFocused} />
+        <GradientIcon name={iconName} size={24} focused={isFocused} iconFamily={iconFamily} />
         {label && (
           <Text
             style={[
@@ -171,15 +174,17 @@ const CustomTabBar = ({
             };
 
             // Icon mapping
-            let iconName: keyof typeof Ionicons.glyphMap;
+            let iconName: keyof typeof Ionicons.glyphMap | keyof typeof MaterialCommunityIcons.glyphMap;
             let label = "";
+            let iconFamily: "Ionicons" | "MaterialCommunityIcons" = "Ionicons";
 
             if (route.name === "Home") {
               iconName = isFocused ? "home" : "home-outline";
               label = "Home";
             } else if (route.name === "Wardrobe") {
-              iconName = isFocused ? "albums" : "albums-outline";
+              iconName = isFocused ? "wardrobe" : "wardrobe-outline";
               label = "Wardrobe";
+              iconFamily = "MaterialCommunityIcons";
             } else if (route.name === "Suggestion") {
               iconName = "add";
               label = "";
@@ -207,6 +212,7 @@ const CustomTabBar = ({
                 onPress={onPress}
                 iconName={iconName}
                 label={label}
+                iconFamily={iconFamily}
               />
             );
           })}

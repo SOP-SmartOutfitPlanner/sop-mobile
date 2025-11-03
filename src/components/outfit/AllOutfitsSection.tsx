@@ -24,12 +24,6 @@ export const AllOutfitsSection: React.FC<AllOutfitsSectionProps> = ({
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Ionicons
-            name="sparkles"
-            size={20}
-            color="#1e293b"
-            style={styles.headerIcon}
-          />
           <Text style={styles.title}>All Outfits</Text>
         </View>
         <Text style={styles.count}>{outfits.length} outfits</Text>

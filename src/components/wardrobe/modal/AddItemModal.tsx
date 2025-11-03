@@ -19,10 +19,10 @@ import { prepareFileForUpload } from "../../../utils/imageUtils";
 import type { AddItemRequest } from "../../../types/item";
 import { getUserId } from "../../../services/api/apiClient";
 import NotificationModal from "../../notification/NotificationModal";
-import { useNotification } from "../../../hooks/useNotification";
 import { useCategories } from "../../../hooks/useCategories";
 import { useItemMetadata } from "../../../hooks/useItemMetadata";
 import { useAIDetection } from "../../../contexts/AIDetectionContext";
+import { useNotification } from "../../../hooks";
 
 interface AddItemModalProps {
   visible: boolean;

@@ -26,8 +26,8 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated";
 import { useAuth } from "../../hooks/auth";
-import { useNotification } from "../../hooks/useNotification";
 import NotificationModal from "../../components/notification/NotificationModal";
+import { useNotification } from "../../hooks";
 
 const { width, height } = Dimensions.get("window");
 

@@ -171,6 +171,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
       const userInfo = await GoogleSignin.signIn();
       const idToken = userInfo?.data?.idToken;
+      console.log("idToken:",idToken );
       if (!idToken) {
         throw new Error("Không thể lấy ID token từ Google");
       }
@@ -178,7 +179,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const accessToken = response.data.accessToken;
       const refreshToken = response.data.refreshToken;
       const decodedToken = decodeJWT(accessToken);
-      console.log("✅ Decode token:", decodedToken);
+      // console.log("✅ Decode token:", decodedToken);
       // Save tokens and user info
       await saveTokens(accessToken, refreshToken);
       await extractAndSaveUserId(accessToken);

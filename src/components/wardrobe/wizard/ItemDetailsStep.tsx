@@ -155,7 +155,7 @@ export const ItemDetailsStep: React.FC<ItemDetailsStepProps> = ({
 
         {/* Brand */}
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Brand (Optional)</Text>
+          <Text style={styles.label}>Brand </Text>
           <TextInput
             style={styles.input}
             value={brand}
@@ -429,7 +429,7 @@ export const ItemDetailsStep: React.FC<ItemDetailsStepProps> = ({
 
         {/* Styles */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Styles (Optional)</Text>
+          <Text style={styles.sectionTitle}>Styles </Text>
           <Text style={styles.helperText}>Select one or more styles that match this item</Text>
           {isMetadataLoading ? (
             <View style={styles.loadingContainer}>
@@ -463,7 +463,7 @@ export const ItemDetailsStep: React.FC<ItemDetailsStepProps> = ({
 
         {/* Occasions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Occasions (Optional)</Text>
+          <Text style={styles.sectionTitle}>Occasions </Text>
           <Text style={styles.helperText}>Select occasions when you'd wear this</Text>
           {isMetadataLoading ? (
             <View style={styles.loadingContainer}>
@@ -497,7 +497,7 @@ export const ItemDetailsStep: React.FC<ItemDetailsStepProps> = ({
 
         {/* Seasons */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Seasons (Optional)</Text>
+          <Text style={styles.sectionTitle}>Seasons </Text>
           <Text style={styles.helperText}>Select suitable seasons for this item</Text>
           {isMetadataLoading ? (
             <View style={styles.loadingContainer}>

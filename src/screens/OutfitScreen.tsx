@@ -1,14 +1,31 @@
 import React, { useState } from "react";
-import { View, ScrollView, StyleSheet, RefreshControl } from "react-native";
+import { View, ScrollView, StyleSheet, RefreshControl, ActivityIndicator, Text } from "react-native";
 import { Header } from "../components/common/Header";
 import { OutfitActionButtons } from "../components/outfit/OutfitActionButtons";
 import { OutfitCalendar } from "../components/outfit/OutfitCalendar";
 import { OutfitBookSection } from "../components/outfit/OutfitBookSection";
 import { AllOutfitsSection } from "../components/outfit/AllOutfitsSection";
+import NotificationModal from "../components/notification/NotificationModal";
+import { useOutfits } from "../hooks/outfit/useOutfits";
 
 const OutfitScreen = ({ navigation }: any) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Use custom hook for outfit management
+  const {
+    outfits,
+    favoriteOutfits,
+    loading,
+    isRefreshing,
+    createOutfit,
+    toggleFavorite,
+    handleRefresh,
+    showError,
+    showSuccess,
+    visible,
+    config,
+    hideNotification,
+  } = useOutfits();
 
   // Mock data for calendar
   const generateCalendarDays = () => {
@@ -35,32 +52,24 @@ const OutfitScreen = ({ navigation }: any) => {
     return days;
   };
 
-  // Mock data for outfits
-  const mockOutfits = [
-    {
-      id: "1",
-      items: [
-        "https://via.placeholder.com/150/0000FF/FFFFFF?text=Top",
-        "https://via.placeholder.com/150/000000/FFFFFF?text=Bottom",
-      ],
-      name: "Casual Outfit",
-    },
-  ];
+  // Transform outfits for components
+  const transformedOutfitsForBook = outfits.slice(0, 5).map((outfit) => ({
+    id: outfit.id.toString(),
+    items: outfit.items.map((item) => item.imgUrl),
+    name: outfit.name,
+  }));
 
-  const mockAllOutfits = [
-    {
-      id: "1",
-      items: [
-        "https://via.placeholder.com/150/0000FF/FFFFFF?text=Top",
-        "https://via.placeholder.com/150/000000/FFFFFF?text=Bottom",
-      ],
-      favoriteCount: 0,
-    },
-  ];
+  const transformedAllOutfits = outfits.map((outfit) => ({
+    id: outfit.id.toString(),
+    items: outfit.items.map((item) => item.imgUrl),
+    name: outfit.name,
+    favoriteCount: outfit.isFavorite ? 1 : 0,
+  }));
 
   const handleCreateOutfit = () => {
     console.log("Create outfit");
     // Navigate to outfit builder
+    // You can implement navigation to outfit creation screen here
   };
 
   const handleAddToCalendar = () => {
@@ -77,14 +86,7 @@ const OutfitScreen = ({ navigation }: any) => {
 
   const handleViewCalendar = () => {
     console.log("View full calendar");
-  };
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    // Fetch data here
-    setTimeout(() => {
-      setIsRefreshing(false);
-    }, 1000);
+    // Navigate to calendar screen
   };
 
   const handleBackPress = () => {
@@ -102,6 +104,26 @@ const OutfitScreen = ({ navigation }: any) => {
   const handleProfilePress = () => {
     navigation.navigate("Profile");
   };
+
+  // Show loading on first load
+  if (loading && outfits.length === 0) {
+    return (
+      <View style={styles.container}>
+        <Header
+          title="Outfits"
+          showBackButton={false}
+          onBackPress={handleBackPress}
+          onNotificationPress={handleNotificationPress}
+          onMessagePress={handleMessagePress}
+          onProfilePress={handleProfilePress}
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#3b82f6" />
+          <Text style={styles.loadingText}>Loading outfits...</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -138,20 +160,33 @@ const OutfitScreen = ({ navigation }: any) => {
 
         {/* Outfit Book Section */}
         <OutfitBookSection
-          outfits={mockOutfits}
+          outfits={transformedOutfitsForBook}
           onCreateOutfit={handleCreateOutfit}
           onViewOutfit={handleViewOutfit}
         />
 
         {/* All Outfits Section */}
         <AllOutfitsSection
-          outfits={mockAllOutfits}
+          outfits={transformedAllOutfits}
           onViewOutfit={handleViewOutfit}
         />
 
         {/* Bottom spacing */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
+
+      {/* Notification Modal */}
+      <NotificationModal
+        isVisible={visible}
+        type={config.type}
+        title={config.title}
+        message={config.message}
+        confirmText={config.confirmText}
+        cancelText={config.cancelText}
+        showCancel={config.showCancel}
+        onConfirm={config.onConfirm}
+        onClose={hideNotification}
+      />
     </View>
   );
 };
@@ -170,6 +205,17 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 80,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: "#64748b",
+    fontWeight: "500",
   },
 });
 

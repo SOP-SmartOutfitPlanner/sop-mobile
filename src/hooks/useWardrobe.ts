@@ -72,10 +72,6 @@ export const useWardrobe = () => {
             if (item.weatherSuitable?.toLowerCase().includes(filter.toLowerCase())) {
               return true;
             }
-            // Match by tags
-            if (item.tag?.toLowerCase().includes(filter.toLowerCase())) {
-              return true;
-            }
             return false;
           }
         );

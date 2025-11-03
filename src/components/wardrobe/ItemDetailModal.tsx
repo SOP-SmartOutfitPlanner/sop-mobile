@@ -11,8 +11,8 @@ import {
   DetailActions,
 } from "./detail";
 import { EditItemModal } from "./modal/EditItemModal";
-import { useNotification } from "../../hooks/useNotification";
 import NotificationModal from "../notification/NotificationModal";
+import { useNotification } from "../../hooks";
 
 interface ItemDetailModalProps {
   visible: boolean;
