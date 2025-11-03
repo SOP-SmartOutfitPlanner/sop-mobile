@@ -8,13 +8,18 @@ const { width } = Dimensions.get("window");
 interface WardrobeItemGridProps {
   items: Item[];
   onItemClick: (item: Item) => void;
+  columns?: 2 | 3; // Number of columns in grid
 }
 
 export const WardrobeItemGrid: React.FC<WardrobeItemGridProps> = ({
   items,
   onItemClick,
+  columns = 3,
 }) => {
-  const itemWidth = (width - 48) / 2 - 8;
+  // Calculate item width based on number of columns
+  // Formula: (screen width - padding (16*2) - gaps between items (12*(columns-1))) / columns
+  const gaps = 12 * (columns - 1);
+  const itemWidth = (width - 32 - gaps) / columns;
 
   return (
     <View style={styles.container}>
@@ -25,7 +30,7 @@ export const WardrobeItemGrid: React.FC<WardrobeItemGridProps> = ({
             styles.itemWrapper,
             {
               width: itemWidth,
-              marginRight: index % 2 === 0 ? 16 : 0,
+              marginRight: (index + 1) % columns === 0 ? 0 : 12,
             },
           ]}
         >
@@ -40,8 +45,9 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     flexWrap: "wrap",
+    paddingHorizontal: 16,
   },
   itemWrapper: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
 });

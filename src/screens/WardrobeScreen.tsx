@@ -5,14 +5,16 @@ import {
   StyleSheet,
   RefreshControl,
   TouchableOpacity,
+  Text,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { Header } from "../components/common/Header";
 import { GuestPrompt } from "../components/notification/GuestPrompt";
 import { Item } from "../types/item";
 import { useWardrobe } from "../hooks/useWardrobe";
 import { useAuth } from "../hooks/auth";
-import { WardrobeControls } from "../components/wardrobe/WardrobeHeader";
+import { WardrobeActionButtons } from "../components/wardrobe/WardrobeActionButtons";
+import { WardrobeSection } from "../components/wardrobe/WardrobeSection";
+import { EmptyWardrobe } from "../components/wardrobe/EmptyWardrobe";
 import { WardrobeItemGrid } from "../components/wardrobe/WardrobeItemGrid";
 import { WardrobeLoadingGrid } from "../components/wardrobe/WardrobeLoadingGrid";
 import { ItemDetailModal } from "../components/wardrobe/ItemDetailModal";
@@ -79,11 +81,24 @@ const WardrobeScreen = ({ navigation }: any) => {
     navigation.navigate("Profile");
   };
 
+  // Mock some favorites for demo
+  const favoriteItems = items.slice(0, Math.min(4, items.length));
+
+  const handleViewFavorites = () => {
+    // Navigate to favorites screen
+    console.log("View favorites");
+  };
+
+  const handleViewFrequency = () => {
+    // Navigate to frequency screen
+    console.log("View frequency");
+  };
+
   if (loading) {
     return (
       <View style={styles.container}>
         <Header
-          title="Wardrobe"
+          title="Tủ đồ"
           showBackButton={false}
           onBackPress={handleBackPress}
           onNotificationPress={handleNotificationPress}
@@ -115,38 +130,49 @@ const WardrobeScreen = ({ navigation }: any) => {
           <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
         }
       >
-        {/* Wardrobe Controls */}
-        <WardrobeControls
-          itemCount={items.length}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          selectedFilters={selectedFilters}
-          onFilterPress={() => setIsFilterModalOpen(true)}
-          onRefresh={handleRefresh}
-          isRefreshing={isRefreshing}
+        {/* Action Buttons */}
+        <WardrobeActionButtons
+          onAddItem={() => setIsAddItemModalOpen(true)}
+          onViewFavorites={handleViewFavorites}
+          onViewFrequency={handleViewFrequency}
         />
 
-        {/* Items Grid */}
-        <WardrobeItemGrid items={items} onItemClick={handleItemClick} />
+        {/* Wardrobe Section */}
+        <WardrobeSection
+          title="Wardrobe"
+          showViewMore={items.length > 0}
+          viewMoreText="View All"
+          onViewMore={() => navigation.navigate("AllWardrobe")}
+        >
+          {items.length === 0 ? (
+            <EmptyWardrobe onCreateWardrobe={() => setIsAddItemModalOpen(true)} />
+          ) : (
+            <WardrobeItemGrid
+              items={items.slice(0, 3)}
+              onItemClick={handleItemClick}
+              columns={3}
+            />
+          )}
+        </WardrobeSection>
 
-        {/* Bottom spacing for FAB */}
+        {/* Favorites Section */}
+        {favoriteItems.length > 0 && (
+          <WardrobeSection
+            title="Favorites list"
+            showViewMore
+            viewMoreText="View All"
+            onViewMore={handleViewFavorites}
+          >
+            <WardrobeItemGrid
+              items={favoriteItems.slice(0, 3)}
+              onItemClick={handleItemClick}
+            />
+          </WardrobeSection>
+        )}
+
+        {/* Bottom spacing */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
-
-      {/* FAB for adding items */}
-      {/* <TouchableOpacity
-        style={styles.fab}
-        onPress={() => {
-          // Check if user is authenticated (has valid token)
-          if (!isAuthenticated) {
-            setShowGuestPrompt(true);
-          } else {
-            setIsAddItemModalOpen(true);
-          }
-        }}
-      >
-        <Ionicons name="add" size={24} color="#fff" />
-      </TouchableOpacity> */}
 
       {/* Modals */}
       <ItemDetailModal
@@ -198,8 +224,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 0,
+    paddingTop: 16,
     paddingBottom: 16,
   },
   sectionsContainer: {
