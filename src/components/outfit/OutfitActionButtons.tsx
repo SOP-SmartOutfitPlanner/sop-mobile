@@ -10,36 +10,28 @@ interface ActionButton {
   isActive?: boolean;
 }
 
-interface WardrobeActionButtonsProps {
-  onAddItem: () => void;
-  onViewFavorites: () => void;
-  onViewFrequency: () => void;
+interface OutfitActionButtonsProps {
+  onCreateOutfit: () => void;
+  onAddToCalendar: () => void;
 }
 
-export const WardrobeActionButtons: React.FC<WardrobeActionButtonsProps> = ({
-  onAddItem,
-  onViewFavorites,
-  onViewFrequency,
+export const OutfitActionButtons: React.FC<OutfitActionButtonsProps> = ({
+  onCreateOutfit,
+  onAddToCalendar,
 }) => {
   const buttons: ActionButton[] = [
     {
-      id: "add",
+      id: "create",
       icon: "shirt-outline",
-      label: "Add Item",
-      onPress: onAddItem,
+      label: "Create Outfit",
+      onPress: onCreateOutfit,
       isActive: true,
     },
     {
-      id: "favorites",
-      icon: "heart-outline",
-      label: "Favorites",
-      onPress: onViewFavorites,
-    },
-    {
-      id: "frequency",
-      icon: "sparkles-outline",
-      label: "Suggest AI Outfit",
-      onPress: onViewFrequency,
+      id: "calendar",
+      icon: "calendar-outline",
+      label: "Add to Calendar",
+      onPress: onAddToCalendar,
     },
   ];
 
@@ -76,6 +68,7 @@ export const WardrobeActionButtons: React.FC<WardrobeActionButtonsProps> = ({
               styles.buttonText,
               button.isActive && styles.buttonTextActive,
             ]}
+            numberOfLines={2}
           >
             {button.label}
           </Text>
@@ -91,7 +84,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingHorizontal: 16,
-    gap: 35,
+    gap: 12,
   },
   button: {
     alignItems: "center",
@@ -118,6 +111,7 @@ const styles = StyleSheet.create({
     color: "#64748b",
     textAlign: "center",
     fontWeight: "500",
+    lineHeight: 16,
   },
   buttonTextActive: {
     color: "#1e293b",

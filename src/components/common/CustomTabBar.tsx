@@ -178,14 +178,14 @@ const CustomTabBar = ({
               iconName = isFocused ? "home" : "home-outline";
               label = "Home";
             } else if (route.name === "Wardrobe") {
-              iconName = isFocused ? "shirt" : "shirt-outline";
+              iconName = isFocused ? "albums" : "albums-outline";
               label = "Wardrobe";
             } else if (route.name === "Suggestion") {
               iconName = "add";
               label = "";
-            } else if (route.name === "Favorite") {
-              iconName = isFocused ? "heart" : "heart-outline";
-              label = "Favorite";
+            } else if (route.name === "Outfit") {
+              iconName = isFocused ? "shirt" : "shirt-outline";
+              label = "Outfit";
             } else if (route.name === "Collection") {
               iconName = isFocused ? "bookmark" : "bookmark-outline";
               label = "Collection";
