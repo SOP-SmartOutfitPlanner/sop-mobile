@@ -41,29 +41,7 @@ const ProfileScreen = ({ navigation }: any) => {
   };
 
   const outfits: OutfitItem[] = [
-    {
-      id: "1",
-      title: "Summer Casual",
-      category: "Casual",
-      tags: ["Casual", "Summer", "Sustainable"],
-      image: require("../../../assets/adaptive-icon.png"),
-      status: "Winner",
-    },
-    {
-      id: "2",
-      title: "Office Chic",
-      category: "Business",
-      tags: ["Business", "Elegant", "Minimalist"],
-      image: require("../../../assets/adaptive-icon.png"),
-      status: "Runner-up",
-    },
-    {
-      id: "3",
-      title: "Street Style",
-      category: "Urban",
-      tags: ["Urban", "Edgy", "Casual"],
-      image: require("../../../assets/adaptive-icon.png"),
-    },
+    
   ];
 
   const handleLogout = () => {

@@ -6,10 +6,13 @@ import {
   StyleSheet,
   ScrollView,
   Animated,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
+import ColorPicker, { Panel1, HueSlider } from "reanimated-color-picker";
+import { runOnJS } from "react-native-reanimated";
 
 interface ColorOption {
   name: string;
@@ -25,7 +28,6 @@ const colorOptions: ColorOption[] = [
   { name: "Green", hex: "#10B981", display: "🟢" },
   { name: "Yellow", hex: "#F59E0B", display: "🟡" },
   { name: "Purple", hex: "#8B5CF6", display: "🟣" },
-  { name: "Pink", hex: "#EC4899", display: "🩷" },
   { name: "Orange", hex: "#F97316", display: "🟠" },
   { name: "Brown", hex: "#92400E", display: "🟤" },
   { name: "Gray", hex: "#6B7280", display: "⚫" },
@@ -45,10 +47,20 @@ export const OnboardingStep4: React.FC<OnboardingStep4Props> = ({
 }) => {
   const [preferedColor, setPreferedColor] = useState<string[]>([]);
   const [avoidedColor, setAvoidedColor] = useState<string[]>([]);
+  const [customColors, setCustomColors] = useState<ColorOption[]>([]);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [colorPickerType, setColorPickerType] = useState<"preferred" | "avoided">("preferred");
+  const [selectedColor, setSelectedColor] = useState("#FF5733");
 
   // Animations
   const fadeAnim = useState(new Animated.Value(0))[0];
   const slideAnim = useState(new Animated.Value(50))[0];
+
+  // Callback for color selection
+  const onSelectColor = (colors: { hex: string }) => {
+    'worklet';
+    runOnJS(setSelectedColor)(colors.hex);
+  };
 
   useEffect(() => {
     Animated.parallel([
@@ -92,6 +104,29 @@ export const OnboardingStep4: React.FC<OnboardingStep4Props> = ({
         setAvoidedColor([...avoidedColor, color]);
       }
     }
+  };
+
+  const handleAddCustomColor = () => {
+    // Check if color already exists
+    const colorExists = customColors.some(c => c.hex.toLowerCase() === selectedColor.toLowerCase());
+    
+    if (!colorExists) {
+      // Add to custom colors list
+      const newColor: ColorOption = {
+        name: selectedColor.toUpperCase(),
+        hex: selectedColor,
+        display: "🎨"
+      };
+      setCustomColors([...customColors, newColor]);
+    }
+    
+    handleColorSelect(colorPickerType, selectedColor);
+    setShowColorPicker(false);
+  };
+
+  const handleOpenColorPicker = (type: "preferred" | "avoided") => {
+    setColorPickerType(type);
+    setShowColorPicker(true);
   };
 
   const handleContinue = () => {
@@ -193,6 +228,54 @@ export const OnboardingStep4: React.FC<OnboardingStep4Props> = ({
                 </TouchableOpacity>
               );
             })}
+            
+            {/* Custom Colors - Preferred */}
+            {customColors.map((color) => {
+              const isSelected = preferedColor.includes(color.hex);
+              const isDisabled = avoidedColor.includes(color.hex);
+              return (
+                <TouchableOpacity
+                  key={`preferred-custom-${color.hex}`}
+                  style={[
+                    styles.colorCard,
+                    isSelected && styles.colorCardSelected,
+                    isDisabled && styles.colorCardDisabled,
+                  ]}
+                  onPress={() => handleColorSelect("preferred", color.hex)}
+                  disabled={isDisabled}
+                >
+                  <View
+                    style={[
+                      styles.colorCircle,
+                      { backgroundColor: color.hex },
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      styles.colorName,
+                      isSelected && styles.colorNameSelected,
+                      isDisabled && styles.colorNameDisabled,
+                    ]}
+                  >
+                    {color.display}
+                  </Text>
+                  {isSelected && (
+                    <View style={styles.checkmark}>
+                      <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+            
+            {/* Add Custom Color Button - Preferred */}
+            <TouchableOpacity
+              style={styles.addColorButton}
+              onPress={() => handleOpenColorPicker("preferred")}
+            >
+              <Ionicons name="add-circle" size={32} color="#10B981" />
+              <Text style={styles.addColorText}>Custom</Text>
+            </TouchableOpacity>
           </View>
           </Animated.View>
 
@@ -251,8 +334,110 @@ export const OnboardingStep4: React.FC<OnboardingStep4Props> = ({
                 </TouchableOpacity>
               );
             })}
+            
+            {/* Custom Colors - Avoided */}
+            {customColors.map((color) => {
+              const isSelected = avoidedColor.includes(color.hex);
+              const isDisabled = preferedColor.includes(color.hex);
+              return (
+                <TouchableOpacity
+                  key={`avoided-custom-${color.hex}`}
+                  style={[
+                    styles.colorCard,
+                    isSelected && styles.colorCardSelectedAvoided,
+                    isDisabled && styles.colorCardDisabled,
+                  ]}
+                  onPress={() => handleColorSelect("avoided", color.hex)}
+                  disabled={isDisabled}
+                >
+                  <View
+                    style={[
+                      styles.colorCircle,
+                      { backgroundColor: color.hex },
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      styles.colorName,
+                      isSelected && styles.colorNameSelected,
+                      isDisabled && styles.colorNameDisabled,
+                    ]}
+                  >
+                    {color.display}
+                  </Text>
+                  {isSelected && (
+                    <View style={[styles.checkmark, styles.checkmarkAvoided]}>
+                      <Ionicons name="close" size={16} color="#FFFFFF" />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+            
+            {/* Add Custom Color Button - Avoided */}
+            <TouchableOpacity
+              style={styles.addColorButton}
+              onPress={() => handleOpenColorPicker("avoided")}
+            >
+              <Ionicons name="add-circle" size={32} color="#EF4444" />
+              <Text style={styles.addColorText}>Custom</Text>
+            </TouchableOpacity>
           </View>
           </Animated.View>
+
+          {/* Color Picker Modal */}
+          <Modal
+            visible={showColorPicker}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowColorPicker(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>
+                  Pick Custom {colorPickerType === "preferred" ? "Preferred" : "Avoided"} Color
+                </Text>
+                <Text style={styles.modalSubtitle}>
+                  Select your color from the palette
+                </Text>
+                
+                <ColorPicker
+                  value={selectedColor}
+                  onComplete={onSelectColor}
+                  style={styles.colorPicker}
+                >
+                  <Panel1 style={styles.panel} />
+                  <HueSlider style={styles.slider} />
+                </ColorPicker>
+                
+                <View style={styles.colorPreview}>
+                  <View style={[
+                    styles.previewCircle,
+                    { backgroundColor: selectedColor }
+                  ]} />
+                  <Text style={styles.previewText}>{selectedColor.toUpperCase()}</Text>
+                </View>
+                
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.cancelButton]}
+                    onPress={() => {
+                      setShowColorPicker(false);
+                    }}
+                  >
+                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.addButton]}
+                    onPress={handleAddCustomColor}
+                  >
+                    <Text style={styles.addButtonText}>Add Color</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
 
           {/* Buttons */}
           <Animated.View style={[styles.buttonContainer, { opacity: fadeAnim }]}>
@@ -447,6 +632,116 @@ const styles = StyleSheet.create({
   continueButtonText: {
     color: "#FFFFFF",
     fontSize: 17,
+    fontWeight: "700",
+  },
+  addColorButton: {
+    width: "22%",
+    aspectRatio: 1,
+    backgroundColor: "rgba(11, 27, 51, 0.8)",
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#1e3a5f",
+    borderStyle: "dashed",
+  },
+  addColorText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "rgba(255, 255, 255, 0.7)",
+    marginTop: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  modalContent: {
+    width: "100%",
+    maxWidth: 400,
+    backgroundColor: "#0b1b33",
+    borderRadius: 20,
+    padding: 24,
+    borderWidth: 2,
+    borderColor: "#1e3a5f",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.7)",
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  colorPicker: {
+    width: "100%",
+    marginBottom: 16,
+  },
+  panel: {
+    width: "100%",
+    height: 200,
+    borderRadius: 16,
+    marginBottom: 12,
+  },
+  slider: {
+    width: "100%",
+    height: 40,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  colorPreview: {
+    alignItems: "center",
+    marginBottom: 24,
+    gap: 8,
+  },
+  previewCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+  },
+  previewText: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.7)",
+    fontWeight: "500",
+  },
+  modalButtons: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cancelButton: {
+    backgroundColor: "rgba(239, 68, 68, 0.2)",
+    borderWidth: 2,
+    borderColor: "#EF4444",
+  },
+  cancelButtonText: {
+    color: "#EF4444",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  addButton: {
+    backgroundColor: "#2563eb",
+    borderWidth: 2,
+    borderColor: "#1e40af",
+  },
+  addButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
     fontWeight: "700",
   },
 });

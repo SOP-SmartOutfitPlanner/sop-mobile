@@ -18,7 +18,7 @@ export const EmptyWardrobe: React.FC<EmptyWardrobeProps> = ({
       <View style={styles.iconContainer}>
         <Ionicons name="bag-add-outline" size={48} color="#cbd5e1" />
       </View>
-      <Text style={styles.text}>Tạo tủ đồ</Text>
+      <Text style={styles.text}>Add Item</Text>
     </TouchableOpacity>
   );
 };

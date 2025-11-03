@@ -14,9 +14,9 @@ export const useOnboarding = () => {
     try {
       setIsLoading(true);
       const response = await GetJobs();
-      if (response.statusCode === 200) {
-        setJobs(response.data);
-        return response.data;
+      if (response.statusCode === 200 && response.data?.data) {
+        setJobs(response.data.data);
+        return response.data.data;
       }
       throw new Error(response.message || 'Failed to fetch jobs');
     } catch (error: any) {

@@ -16,9 +16,13 @@ export const ProfileContent: React.FC<ProfileContentProps> = ({
     <View style={styles.contentContainer}>
       {activeTab === "Outfits" && (
         <View style={styles.outfitsContainer}>
-          {outfits.map((outfit) => (
-            <OutfitCard key={outfit.id} outfit={outfit} />
-          ))}
+          {outfits.length > 0 ? (
+            outfits.map((outfit) => (
+              <OutfitCard key={outfit.id} outfit={outfit} />
+            ))
+          ) : (
+            <Text style={styles.emptyText}>No Outfit yet</Text>
+          )}
         </View>
       )}
 
@@ -49,6 +53,7 @@ const styles = StyleSheet.create({
     minHeight: 200,
   },
   outfitsContainer: {
+    alignItems: "center",
     gap: 16,
   },
   challengesContainer: {

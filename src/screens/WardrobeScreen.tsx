@@ -166,6 +166,7 @@ const WardrobeScreen = ({ navigation }: any) => {
             <WardrobeItemGrid
               items={favoriteItems.slice(0, 3)}
               onItemClick={handleItemClick}
+              columns={3}
             />
           </WardrobeSection>
         )}

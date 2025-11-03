@@ -7,6 +7,9 @@ import {
   ScrollView,
   ActivityIndicator,
   Animated,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -16,21 +19,31 @@ import { useOnboarding } from "../../hooks/onboarding";
 // Icon mapping for different job types
 const getJobIcon = (jobName: string): string => {
   const name = jobName.toLowerCase();
-  if (name.includes("student") || name.includes("education")) return "school-outline";
-  if (name.includes("engineer") || name.includes("developer") || name.includes("tech")) return "code-outline";
-  if (name.includes("business") || name.includes("manager") || name.includes("executive")) return "briefcase-outline";
+  
+  // Specific job matches from API
+  if (name.includes("student")) return "school-outline";
+  if (name.includes("office worker")) return "briefcase-outline";
+  if (name.includes("influencer")) return "megaphone-outline";
+  if (name.includes("fashion stylist") || name.includes("stylist")) return "shirt-outline";
+  if (name.includes("content creator") || name.includes("creator")) return "create-outline";
+  if (name.includes("photographer")) return "camera-outline";
+  if (name.includes("software engineer") || name.includes("engineer")) return "code-slash-outline";
+  if (name.includes("tester") || name.includes("qa")) return "bug-outline";
+  
+  // General fallbacks
   if (name.includes("design") || name.includes("creative") || name.includes("artist")) return "brush-outline";
   if (name.includes("medical") || name.includes("doctor") || name.includes("nurse")) return "medical-outline";
   if (name.includes("teacher") || name.includes("professor")) return "book-outline";
-  if (name.includes("sales") || name.includes("marketing")) return "megaphone-outline";
+  if (name.includes("sales") || name.includes("marketing")) return "trending-up-outline";
   if (name.includes("freelance") || name.includes("entrepreneur")) return "rocket-outline";
   if (name.includes("hospitality") || name.includes("service")) return "restaurant-outline";
+  
   return "person-outline"; // default icon
 };
 
 interface OnboardingStep3Props {
   navigation: any;
-  onNext: (jobs: string[]) => void;
+  onNext: (data: { jobId: string | null, otherJob: string }) => void;
   onBack: () => void;
 }
 
@@ -40,6 +53,8 @@ export const OnboardingStep3: React.FC<OnboardingStep3Props> = ({
   onBack,
 }) => {
   const [selectedJob, setSelectedJob] = useState<string | null>(null);
+  const [showOtherInput, setShowOtherInput] = useState(false);
+  const [otherJobText, setOtherJobText] = useState("");
   const { jobs, fetchJobs, isLoading } = useOnboarding();
   const [error, setError] = useState<string | null>(null);
 
@@ -59,11 +74,20 @@ export const OnboardingStep3: React.FC<OnboardingStep3Props> = ({
   const selectJob = (jobId: string) => {
     // Only single selection for job
     setSelectedJob(jobId);
+    setShowOtherInput(false); // Hide other input when selecting a job
+    setOtherJobText("");
+  };
+
+  const handleSelectOther = () => {
+    setSelectedJob(null); // Deselect any job
+    setShowOtherInput(true);
   };
 
   const handleContinue = () => {
     if (selectedJob) {
-      onNext([selectedJob]); // Pass as array for consistency
+      onNext({ jobId: selectedJob, otherJob: "" });
+    } else if (otherJobText.trim()) {
+      onNext({ jobId: null, otherJob: otherJobText.trim() });
     }
   };
 
@@ -95,9 +119,14 @@ export const OnboardingStep3: React.FC<OnboardingStep3Props> = ({
   return (
     <LinearGradient colors={["#0a1628", "#152238"]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView 
+          behavior={"padding"}
+          style={styles.keyboardAvoid}
+        >
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           {/* Progress Bar */}
           <View style={styles.progressContainer}>
@@ -204,6 +233,55 @@ export const OnboardingStep3: React.FC<OnboardingStep3Props> = ({
                 </TouchableOpacity>
               );
             })}
+
+            {/* Other Job Option */}
+            <TouchableOpacity
+              style={[styles.goalCard, showOtherInput && styles.goalCardActive]}
+              onPress={handleSelectOther}
+            >
+              <View style={styles.goalContent}>
+                <View
+                  style={[
+                    styles.unselectedIconCircle,
+                    showOtherInput && styles.iconCircleActive,
+                  ]}
+                >
+                  <Ionicons
+                    name="create-outline"
+                    size={24}
+                    color="#FFFFFF"
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.goalLabel,
+                    showOtherInput && styles.goalLabelActive,
+                  ]}
+                >
+                  Other (Specify)
+                </Text>
+              </View>
+              <Ionicons
+                name={showOtherInput ? "checkmark-circle" : "ellipse-outline"}
+                size={24}
+                color={showOtherInput ? "#2563eb" : "rgba(255, 255, 255, 0.3)"}
+              />
+            </TouchableOpacity>
+            </Animated.View>
+          )}
+
+          {/* Other Job Input */}
+          {!isLoading && !error && showOtherInput && (
+            <Animated.View style={[styles.otherSection, { opacity: fadeAnim }]}>
+              <Text style={styles.otherTitle}>Enter your job/profession:</Text>
+              <TextInput
+                style={styles.otherInput}
+                value={otherJobText}
+                onChangeText={setOtherJobText}
+                placeholder="e.g., Freelance Designer, Artist..."
+                placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                autoFocus
+              />
             </Animated.View>
           )}
 
@@ -212,24 +290,25 @@ export const OnboardingStep3: React.FC<OnboardingStep3Props> = ({
             <TouchableOpacity
           style={[
             styles.continueButton,
-            (!selectedJob || isLoading) && styles.disabledButton,
+            ((!selectedJob && !otherJobText.trim()) || isLoading) && styles.disabledButton,
           ]}
             onPress={handleContinue}
-            disabled={!selectedJob || isLoading}
+            disabled={(!selectedJob && !otherJobText.trim()) || isLoading}
             activeOpacity={0.8}
           >
             <LinearGradient
-              colors={selectedJob && !isLoading ? ["#2563eb", "#1e40af"] : ["#1e3a5f", "#152238"]}
+              colors={(selectedJob || otherJobText.trim()) && !isLoading ? ["#2563eb", "#1e40af"] : ["#1e3a5f", "#152238"]}
               style={styles.continueButtonGradient}
             >
               <Text style={styles.continueButtonText}>
-                Continue {selectedJob ? "(1 selected)" : ""}
+                Continue {(selectedJob || otherJobText.trim()) ? "(1 selected)" : ""}
               </Text>
               <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
         </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </LinearGradient>
   );
@@ -405,6 +484,29 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 17,
     fontWeight: "700",
+  },
+  otherSection: {
+    marginBottom: 24,
+    paddingHorizontal: 8,
+  },
+  otherTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "rgba(255, 255, 255, 0.9)",
+    marginBottom: 12,
+  },
+  otherInput: {
+    backgroundColor: "rgba(11, 27, 51, 0.8)",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    color: "#FFFFFF",
+    fontSize: 14,
+    borderWidth: 2,
+    borderColor: "#2563eb",
+  },
+  keyboardAvoid: {
+    flex: 1,
   },
 });
 

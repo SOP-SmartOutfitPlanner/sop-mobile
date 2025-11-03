@@ -9,10 +9,12 @@ export interface OnboardingRequest {
     avoidedColor: string[];
     gender: Gender;
     location: string;
-    jobId: number;
+    jobId?: number;
+    otherJob?: string;
     dob: string;
     bio: string;
-    styleIds: number[];
+    styleIds?: number[];
+    otherStyles?: string[];
 }
 
 export interface OnboardingResponse {

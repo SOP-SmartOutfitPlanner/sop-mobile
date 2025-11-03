@@ -7,6 +7,9 @@ import {
   ScrollView,
   ActivityIndicator,
   Animated,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -27,7 +30,6 @@ import {
   type LucideIcon
 } from "lucide-react-native";
 import { useOnboarding } from "../../hooks/onboarding";
-import { Style } from "../../types/style";
 
 // Icon mapping for different style types using Lucide icons
 const getStyleIcon = (styleName: string): LucideIcon => {
@@ -49,7 +51,7 @@ const getStyleIcon = (styleName: string): LucideIcon => {
 
 interface OnboardingStep2Props {
   navigation: any;
-  onNext: (styles: string[]) => void;
+  onNext: (data: { styleIds: string[], otherStyles: string[] }) => void;
   onBack: () => void;
 }
 
@@ -59,6 +61,9 @@ export const OnboardingStep2: React.FC<OnboardingStep2Props> = ({
   onBack,
 }) => {
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
+  const [otherStyles, setOtherStyles] = useState<string[]>([]);
+  const [showOtherInput, setShowOtherInput] = useState(false);
+  const [otherStyleText, setOtherStyleText] = useState("");
   const { styles: stylesList, fetchStyles, isLoading } = useOnboarding();
   const [error, setError] = useState<string | null>(null);
 
@@ -100,10 +105,27 @@ export const OnboardingStep2: React.FC<OnboardingStep2Props> = ({
     );
   };
 
-  const handleContinue = () => {
-    if (selectedStyles.length > 0) {
-      onNext(selectedStyles);
+  const handleAddOtherStyle = () => {
+    if (otherStyleText.trim()) {
+      setOtherStyles([...otherStyles, otherStyleText.trim()]);
+      setOtherStyleText("");
+      setShowOtherInput(false);
     }
+  };
+
+  const handleRemoveOtherStyle = (style: string) => {
+    setOtherStyles(otherStyles.filter(s => s !== style));
+  };
+
+  const handleContinue = () => {
+    // If there's text in input, add it first
+    let finalOtherStyles = [...otherStyles];
+    if (otherStyleText.trim()) {
+      finalOtherStyles = [...otherStyles, otherStyleText.trim()];
+    }
+    
+   
+    onNext({ styleIds: selectedStyles, otherStyles: finalOtherStyles });
   };
 
 
@@ -111,10 +133,15 @@ export const OnboardingStep2: React.FC<OnboardingStep2Props> = ({
   return (
     <LinearGradient colors={["#0a1628", "#152238"]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContainer}
-          showsVerticalScrollIndicator={false}
+        <KeyboardAvoidingView 
+          behavior={"padding"}
+          style={styles.keyboardAvoid}
         >
+          <ScrollView
+            contentContainerStyle={styles.scrollContainer}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
           {/* Progress Bar */}
           <View style={styles.progressContainer}>
             <Animated.View 
@@ -223,26 +250,88 @@ export const OnboardingStep2: React.FC<OnboardingStep2Props> = ({
             </Animated.View>
           )}
 
+          {/* Other Styles Section */}
+          {!isLoading && !error && (
+            <Animated.View style={[styles.otherSection, { opacity: fadeAnim }]}>
+              <Text style={styles.otherTitle}>Don't see your style?</Text>
+              
+              {/* Display added other styles */}
+              {otherStyles.length > 0 && (
+                <View style={styles.otherStylesContainer}>
+                  {otherStyles.map((style, index) => (
+                    <View key={index} style={styles.otherStyleChip}>
+                      <Text style={styles.otherStyleText}>{style}</Text>
+                      <TouchableOpacity onPress={() => handleRemoveOtherStyle(style)}>
+                        <Ionicons name="close-circle" size={20} color="#EF4444" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {/* Input or Add Button */}
+              {showOtherInput ? (
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.otherInput}
+                    value={otherStyleText}
+                    onChangeText={setOtherStyleText}
+                    placeholder="Enter your style..."
+                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                    autoFocus
+                  />
+                  <View style={styles.inputButtons}>
+                    <TouchableOpacity 
+                      style={styles.inputButton} 
+                      onPress={handleAddOtherStyle}
+                      disabled={!otherStyleText.trim()}
+                    >
+                      <Ionicons name="checkmark" size={20} color="#10B981" />
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.inputButton} 
+                      onPress={() => {
+                        setShowOtherInput(false);
+                        setOtherStyleText("");
+                      }}
+                    >
+                      <Ionicons name="close" size={20} color="#EF4444" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <TouchableOpacity 
+                  style={styles.addOtherButton}
+                  onPress={() => setShowOtherInput(true)}
+                >
+                  <Ionicons name="add-circle-outline" size={20} color="#3b82f6" />
+                  <Text style={styles.addOtherText}>Add your own style</Text>
+                </TouchableOpacity>
+              )}
+            </Animated.View>
+          )}
+
           {/* Buttons */}
           <Animated.View style={[styles.buttonContainer, { opacity: fadeAnim }]}>
             <TouchableOpacity
               style={styles.continueButton}
               onPress={handleContinue}
-              disabled={selectedStyles.length === 0 || isLoading}
+              disabled={isLoading || (selectedStyles.length === 0 && otherStyles.length === 0 && otherStyleText.trim() === "")}
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={selectedStyles.length > 0 && !isLoading ? ["#2563eb", "#1e40af"] : ["#1e3a5f", "#152238"]}
+                colors={!isLoading && (selectedStyles.length > 0 || otherStyles.length > 0 || otherStyleText.trim() !== "") ? ["#2563eb", "#1e40af"] : ["#1e3a5f", "#152238"]}
                 style={styles.continueButtonGradient}
               >
                 <Text style={styles.continueButtonText}>
-                  Continue ({selectedStyles.length} selected)
+                  Continue ({selectedStyles.length + otherStyles.length + (otherStyleText.trim() !== "" ? 1 : 0)} selected)
                 </Text>
                 <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
               </LinearGradient>
             </TouchableOpacity>
           </Animated.View>
         </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </LinearGradient>
   );
@@ -253,6 +342,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   safeArea: {
+    flex: 1,
+  },
+  keyboardAvoid: {
     flex: 1,
   },
   scrollContainer: {
@@ -436,5 +528,86 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 17,
     fontWeight: "700",
+  },
+  otherSection: {
+    marginBottom: 24,
+    paddingHorizontal: 8,
+  },
+  otherTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "rgba(255, 255, 255, 0.9)",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  otherStylesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 12,
+  },
+  otherStyleChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(59, 130, 246, 0.2)",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: "#3b82f6",
+  },
+  otherStyleText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  otherInput: {
+    flex: 1,
+    backgroundColor: "rgba(11, 27, 51, 0.8)",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    color: "#FFFFFF",
+    fontSize: 14,
+    borderWidth: 2,
+    borderColor: "#1e3a5f",
+  },
+  inputButtons: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  inputButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(11, 27, 51, 0.8)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#1e3a5f",
+  },
+  addOtherButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(59, 130, 246, 0.1)",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderWidth: 2,
+    borderColor: "#3b82f6",
+    borderStyle: "dashed",
+    gap: 8,
+  },
+  addOtherText: {
+    color: "#3b82f6",
+    fontSize: 14,
+    fontWeight: "600",
   },
 });
