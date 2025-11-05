@@ -7,7 +7,6 @@ interface DetailPropertiesProps {
   weather?: string[];
   fabric?: string;
   pattern?: string;
-  aiDescription?: string;
 }
 
 export const DetailProperties: React.FC<DetailPropertiesProps> = ({
@@ -16,8 +15,10 @@ export const DetailProperties: React.FC<DetailPropertiesProps> = ({
   weather = [],
   fabric,
   pattern,
-  aiDescription,
 }) => {
+  // Check if color is a valid hex code
+  const isHexColor = color && /^#([0-9A-Fa-f]{3}){1,2}$/.test(color);
+  
   return (
     <View style={styles.detailsContainer}>
       <Text style={styles.sectionTitle}>Details</Text>
@@ -33,12 +34,14 @@ export const DetailProperties: React.FC<DetailPropertiesProps> = ({
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Color:</Text>
           <View style={styles.colorRow}>
-            <View
-              style={[
-                styles.colorDot,
-                { backgroundColor: color.toLowerCase() },
-              ]}
-            />
+            {isHexColor && (
+              <View
+                style={[
+                  styles.colorDot,
+                  { backgroundColor: color },
+                ]}
+              />
+            )}
             <Text style={styles.detailValue}>{color}</Text>
           </View>
         </View>
@@ -65,12 +68,6 @@ export const DetailProperties: React.FC<DetailPropertiesProps> = ({
         </View>
       )}
 
-      {aiDescription && (
-        <View style={styles.descriptionContainer}>
-          <Text style={styles.sectionTitle}>AI Description</Text>
-          <Text style={styles.description}>{aiDescription}</Text>
-        </View>
-      )}
     </View>
   );
 };

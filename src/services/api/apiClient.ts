@@ -161,9 +161,8 @@ apiClient.interceptors.response.use(
 
         console.log("✅ New tokens saved successfully");
 
-        // Update authorization header (with Bearer prefix)
         if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          originalRequest.headers.Authorization = `${newAccessToken}`;
         }
 
         // Process queued requests

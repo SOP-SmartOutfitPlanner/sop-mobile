@@ -4,14 +4,11 @@ import {
   ScrollView,
   StyleSheet,
   RefreshControl,
-  TouchableOpacity,
-  Text,
 } from "react-native";
 import { Header } from "../components/common/Header";
 import { GuestPrompt } from "../components/notification/GuestPrompt";
 import { Item } from "../types/item";
 import { useWardrobe } from "../hooks/useWardrobe";
-import { useAuth } from "../hooks/auth";
 import { WardrobeActionButtons } from "../components/wardrobe/WardrobeActionButtons";
 import { WardrobeSection } from "../components/wardrobe/WardrobeSection";
 import { EmptyWardrobe } from "../components/wardrobe/EmptyWardrobe";
@@ -25,26 +22,20 @@ import { useAIDetection } from "../contexts/AIDetectionContext";
 
 const WardrobeScreen = ({ navigation }: any) => {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
-  const [outfitBuilderItem, setOutfitBuilderItem] = useState<Item | null>(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [isEditItemModalOpen, setIsEditItemModalOpen] = useState(false);
   const [showGuestPrompt, setShowGuestPrompt] = useState(false);
 
-  const { isGuest, isAuthenticated } = useAuth();
   const { shouldOpenModal, setShouldOpenModal, hasCompletedDetection, createdItem, clearDetection, setOnItemCreated } = useAIDetection();
   const {
     items,
-    allItems,
-    searchQuery,
-    setSearchQuery,
     selectedFilters,
     toggleFilter,
     clearFilters,
     loading,
     isRefreshing,
     handleRefresh,
-    error,
     refetch,
     editItem,
     deleteItem,
@@ -81,7 +72,8 @@ const WardrobeScreen = ({ navigation }: any) => {
 
   const handleUseInOutfit = (item: Item) => {
     setSelectedItem(null);
-    setOutfitBuilderItem(item);
+    // TODO: Navigate to outfit builder with selected item
+    console.log("Use in outfit:", item.name);
   };
 
   const handleBackPress = () => {
@@ -216,10 +208,7 @@ const WardrobeScreen = ({ navigation }: any) => {
       <AddItemModal
         visible={isAddItemModalOpen}
         onClose={() => setIsAddItemModalOpen(false)}
-        onSave={async () => {
-          setIsAddItemModalOpen(false);
-          await handleRefresh(); // Refresh wardrobe after adding item
-        }}
+        onSave={() => setIsAddItemModalOpen(false)}
       />
 
       <EditItemModal

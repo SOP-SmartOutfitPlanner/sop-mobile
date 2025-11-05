@@ -141,7 +141,6 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
               weather={item.weatherSuitable ? [item.weatherSuitable] : []}
               fabric={item.fabric}
               pattern={item.pattern}
-              aiDescription={item.aiDescription}
             />
 
             <DetailActions
