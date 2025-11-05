@@ -79,26 +79,28 @@ const buildEditRequestData = (
     seasonIds,
   } = formData;
 
-  // Build request with all fields
+  // Build request with required fields
   const requestData: any = {
     userId,
     name: itemName.trim(),
     categoryId,
     categoryName,
     imgUrl: imageUrl,
-    color: color.trim() || "",
-    aiDescription: aiDescription.trim() || "",
-    brand: brand.trim() || "",
-    weatherSuitable: weatherSuitable.trim() || "",
-    condition: condition.trim() || "",
-    pattern: pattern.trim() || "",
-    fabric: fabric.trim() || "",
-    lastWornAt: lastWornAt.trim() || "",
-    frequencyWorn: frequencyWorn.trim() || "",
     styleIds: styleIds || [],
     occasionIds: occasionIds || [],
     seasonIds: seasonIds || [],
   };
+
+  // Add optional fields only if they have actual values
+  if (color?.trim()) requestData.color = color.trim();
+  if (aiDescription?.trim()) requestData.aiDescription = aiDescription.trim();
+  if (brand?.trim()) requestData.brand = brand.trim();
+  if (weatherSuitable?.trim()) requestData.weatherSuitable = weatherSuitable.trim();
+  if (condition?.trim()) requestData.condition = condition.trim();
+  if (pattern?.trim()) requestData.pattern = pattern.trim();
+  if (fabric?.trim()) requestData.fabric = fabric.trim();
+  if (lastWornAt?.trim()) requestData.lastWornAt = lastWornAt.trim();
+  if (frequencyWorn?.trim()) requestData.frequencyWorn = frequencyWorn.trim();
 
   return requestData;
 };
@@ -174,6 +176,36 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
       setSelectedSeasons(item.seasons?.map(s => s.id) || []);
     }
   }, [item, visible]);
+
+  // Auto-fetch child categories when parent categories are loaded and item has a category
+  useEffect(() => {
+    const autoFetchChildCategories = async () => {
+      if (item && visible && parentCategories.length > 0 && item.categoryId) {
+        // Try to find if the categoryId belongs to a parent category
+        const parentCategory = parentCategories.find(cat => cat.id === item.categoryId);
+        
+        if (parentCategory) {
+          // This is a parent category, fetch its children
+          console.log('📂 Auto-fetching child categories for parent:', item.categoryId);
+          await fetchChildCategories(item.categoryId);
+        } else {
+          // This might be a child category, find its parent
+          // We need to fetch all child categories to find the parent
+          for (const parent of parentCategories) {
+            const children = await fetchChildCategories(parent.id);
+            const childCategory = children.find(child => child.id === item.categoryId);
+            
+            if (childCategory) {
+              console.log('📂 Found child category, parent is:', parent.id);
+              break; // We found the parent, no need to continue
+            }
+          }
+        }
+      }
+    };
+
+    autoFetchChildCategories();
+  }, [item, visible, parentCategories, fetchChildCategories]);
 
   const resetForm = useCallback(() => {
     setCurrentStep(1);

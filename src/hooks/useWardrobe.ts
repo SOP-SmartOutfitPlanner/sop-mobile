@@ -11,8 +11,8 @@ export const useWardrobe = () => {
   const [allItems, setAllItems] = useState<Item[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch items from API
-  const fetchItems = async () => {
+  // Fetch items from API - memoized to prevent infinite loops
+  const fetchItems = useCallback(async () => {
     try {
       const userId = await getUserId();``
       
@@ -41,12 +41,12 @@ export const useWardrobe = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Initial load
   useEffect(() => {
     fetchItems();
-  }, []);
+  }, [fetchItems]);
 
   const filteredItems = useMemo(() => {
     // Safety check

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   ScrollView,
@@ -20,6 +20,7 @@ import { WardrobeLoadingGrid } from "../components/wardrobe/WardrobeLoadingGrid"
 import { ItemDetailModal } from "../components/wardrobe/ItemDetailModal";
 import { FilterModal } from "../components/wardrobe/FilterModal";
 import { AddItemModal } from "../components/wardrobe/modal/AddItemModal";
+import { EditItemModal } from "../components/wardrobe/modal/EditItemModal";
 import { useAIDetection } from "../contexts/AIDetectionContext";
 
 const WardrobeScreen = ({ navigation }: any) => {
@@ -27,10 +28,11 @@ const WardrobeScreen = ({ navigation }: any) => {
   const [outfitBuilderItem, setOutfitBuilderItem] = useState<Item | null>(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
+  const [isEditItemModalOpen, setIsEditItemModalOpen] = useState(false);
   const [showGuestPrompt, setShowGuestPrompt] = useState(false);
 
   const { isGuest, isAuthenticated } = useAuth();
-  const { shouldOpenModal, setShouldOpenModal, hasCompletedDetection } = useAIDetection();
+  const { shouldOpenModal, setShouldOpenModal, hasCompletedDetection, createdItem, clearDetection, setOnItemCreated } = useAIDetection();
   const {
     items,
     allItems,
@@ -48,13 +50,30 @@ const WardrobeScreen = ({ navigation }: any) => {
     deleteItem,
   } = useWardrobe();
 
-  // Listen for AI detection completion and reopen modal when banner is tapped
+  // Memoize the callback to prevent infinite loop
+  const handleItemCreated = useCallback(() => {
+    console.log('🔄 Refreshing wardrobe after item creation...');
+    refetch();
+  }, [refetch]);
+
+  // Set callback to refresh wardrobe when item is created
   useEffect(() => {
-    if (shouldOpenModal && hasCompletedDetection) {
-      setIsAddItemModalOpen(true);
+    setOnItemCreated(handleItemCreated);
+
+    // Cleanup
+    return () => {
+      setOnItemCreated(null);
+    };
+  }, [setOnItemCreated, handleItemCreated]);
+
+  // Listen for AI detection completion and open EditItemModal when banner is tapped
+  useEffect(() => {
+    if (shouldOpenModal && hasCompletedDetection && createdItem) {
+      setSelectedItem(createdItem); // Set the created item as selected
+      setIsEditItemModalOpen(true); // Open edit modal
       setShouldOpenModal(false); // Reset flag
     }
-  }, [shouldOpenModal, hasCompletedDetection, setShouldOpenModal]);
+  }, [shouldOpenModal, hasCompletedDetection, createdItem, setShouldOpenModal]);
 
   const handleItemClick = (item: Item) => {
     setSelectedItem(item);
@@ -201,6 +220,23 @@ const WardrobeScreen = ({ navigation }: any) => {
           setIsAddItemModalOpen(false);
           await handleRefresh(); // Refresh wardrobe after adding item
         }}
+      />
+
+      <EditItemModal
+        visible={isEditItemModalOpen}
+        onClose={() => {
+          setIsEditItemModalOpen(false);
+          setSelectedItem(null);
+          clearDetection(); // Clear AI detection data
+        }}
+        onSave={async () => {
+          setIsEditItemModalOpen(false);
+          setSelectedItem(null);
+          clearDetection(); // Clear AI detection data
+          await handleRefresh(); // Refresh wardrobe after editing item
+        }}
+        item={selectedItem}
+        editItem={editItem}
       />
 
       <GuestPrompt

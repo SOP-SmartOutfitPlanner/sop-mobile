@@ -5,12 +5,12 @@ import { Sparkles } from 'lucide-react-native';
 import { useAIDetection } from '../../contexts/AIDetectionContext';
 
 export const AIDetectionBanner: React.FC = () => {
-  const { isDetecting, hasCompletedDetection, error, setShouldOpenModal } = useAIDetection();
+  const { isDetecting, hasCompletedDetection, error, setShouldOpenModal, isCreatingItem } = useAIDetection();
   const slideAnim = React.useRef(new Animated.Value(100)).current; // Start from bottom (100)
   const pulseAnim = React.useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    if (isDetecting || hasCompletedDetection || error) {
+    if (isDetecting || isCreatingItem || hasCompletedDetection || error) {
       // Slide up from bottom
       Animated.spring(slideAnim, {
         toValue: 0,
@@ -19,8 +19,8 @@ export const AIDetectionBanner: React.FC = () => {
         friction: 8,
       }).start();
 
-      // Pulse animation for detecting state
-      if (isDetecting) {
+      // Pulse animation for detecting/creating state
+      if (isDetecting || isCreatingItem) {
         Animated.loop(
           Animated.sequence([
             Animated.timing(pulseAnim, {
@@ -46,9 +46,9 @@ export const AIDetectionBanner: React.FC = () => {
         useNativeDriver: true,
       }).start();
     }
-  }, [isDetecting, hasCompletedDetection, error, slideAnim, pulseAnim]);
+  }, [isDetecting, isCreatingItem, hasCompletedDetection, error, slideAnim, pulseAnim]);
 
-  if (!isDetecting && !hasCompletedDetection && !error) {
+  if (!isDetecting && !isCreatingItem && !hasCompletedDetection && !error) {
     return null;
   }
 
@@ -60,7 +60,8 @@ export const AIDetectionBanner: React.FC = () => {
 
   const getMessage = () => {
     if (error) return error;
-    if (hasCompletedDetection) return 'AI analysis complete! Tap to view';
+    if (hasCompletedDetection) return 'Item created! Tap to edit';
+    if (isCreatingItem) return 'Creating your item...';
     return 'Analyzing your item with AI...';
   };
 
@@ -74,9 +75,9 @@ export const AIDetectionBanner: React.FC = () => {
       ]}
     >
       <TouchableOpacity
-        activeOpacity={hasCompletedDetection ? 0.7 : 1}
-        onPress={hasCompletedDetection ? () => setShouldOpenModal(true) : undefined}
-        disabled={!hasCompletedDetection}
+        activeOpacity={hasCompletedDetection && !isCreatingItem ? 0.7 : 1}
+        onPress={hasCompletedDetection && !isCreatingItem ? () => setShouldOpenModal(true) : undefined}
+        disabled={!hasCompletedDetection || isCreatingItem}
       >
         <LinearGradient
           colors={getColors()}
@@ -87,7 +88,7 @@ export const AIDetectionBanner: React.FC = () => {
           <Animated.View
             style={[
               styles.iconContainer,
-              isDetecting && { transform: [{ scale: pulseAnim }] },
+              (isDetecting || isCreatingItem) && { transform: [{ scale: pulseAnim }] },
             ]}
           >
             <Sparkles color="#ffffff" size={20} />
@@ -99,7 +100,7 @@ export const AIDetectionBanner: React.FC = () => {
             </Text>
           </View>
 
-          {isDetecting && (
+          {(isDetecting || isCreatingItem) && (
             <View style={styles.loadingDots}>
               <View style={[styles.dot, styles.dot1]} />
               <View style={[styles.dot, styles.dot2]} />
