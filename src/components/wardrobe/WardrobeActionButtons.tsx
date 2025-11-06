@@ -13,13 +13,13 @@ interface ActionButton {
 interface WardrobeActionButtonsProps {
   onAddItem: () => void;
   onViewFavorites: () => void;
-  onViewFrequency: () => void;
+  onViewSuggestion: () => void;
 }
 
 export const WardrobeActionButtons: React.FC<WardrobeActionButtonsProps> = ({
   onAddItem,
   onViewFavorites,
-  onViewFrequency,
+  onViewSuggestion,
 }) => {
   const buttons: ActionButton[] = [
     {
@@ -39,7 +39,7 @@ export const WardrobeActionButtons: React.FC<WardrobeActionButtonsProps> = ({
       id: "frequency",
       icon: "sparkles-outline",
       label: "Suggest AI Outfit",
-      onPress: onViewFrequency,
+      onPress: onViewSuggestion,
     },
   ];
 

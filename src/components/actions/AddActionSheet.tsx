@@ -12,36 +12,57 @@ import {
   BottomSheetView,
   BottomSheetBackdrop,
 } from "@gorhom/bottom-sheet";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { AddItemModal } from "../wardrobe/modal/AddItemModal";
 
 // Chiều cao của bottom tab bar
 const TAB_BAR_HEIGHT = 140;
 
+type IconFamily = "Ionicons" | "MaterialCommunityIcons" | "FontAwesome5";
+
 type MenuItem = {
-  icon: keyof typeof Ionicons.glyphMap;
+  iconFamily: IconFamily;
+  icon: string;
   label: string;
   screen: string;
   badge?: string;
+  color?: string;
 };
 
 const menuItems: MenuItem[] = [
-  { icon: "shirt-outline", label: "Add item", screen: "AddItem" }, // Changed screen name
+  { 
+    iconFamily: "MaterialCommunityIcons",
+    icon: "tshirt-crew-outline", 
+    label: "Add item", 
+    screen: "AddItem",
+    color: "#3b82f6"
+  },
   {
+    iconFamily: "Ionicons",
     icon: "heart-outline",
     label: "Add to wishlist",
     screen: "AddWishlist",
-    // badge: "New",
+    color: "#ec4899",
   },
 ];
 
 const outfitItems: MenuItem[] = [
   {
-    icon: "body-outline",
-    label: "Add to outfit",
+    iconFamily: "MaterialCommunityIcons",
+    icon: "hanger",
+    label: "Create new outfit",
     screen: "AddOutfit",
+    color: "#8b5cf6",
   },
+  {
+    iconFamily: "MaterialCommunityIcons",
+    icon: "palette-outline",
+    label: "AI style suggestion",
+    screen: "Suggestion",
+    color: "#10b981",
+    badge: "AI",
+  }
 ];
 
 export const AddActionSheet = forwardRef<BottomSheetModal>((props, ref) => {
@@ -74,6 +95,35 @@ export const AddActionSheet = forwardRef<BottomSheetModal>((props, ref) => {
     // Optionally trigger a refresh or callback here
   };
 
+  const renderIcon = (item: MenuItem) => {
+    const iconColor = item.color || "#000";
+    const iconSize = 24;
+
+    switch (item.iconFamily) {
+      case "MaterialCommunityIcons":
+        return (
+          <MaterialCommunityIcons
+            name={item.icon as any}
+            size={iconSize}
+            color={iconColor}
+          />
+        );
+      case "FontAwesome5":
+        return (
+          <FontAwesome5
+            name={item.icon as any}
+            size={iconSize}
+            color={iconColor}
+          />
+        );
+      case "Ionicons":
+      default:
+        return (
+          <Ionicons name={item.icon as any} size={iconSize} color={iconColor} />
+        );
+    }
+  };
+
   const renderBackdrop = React.useCallback(
     (props: any) => (
       <BottomSheetBackdrop
@@ -101,7 +151,7 @@ export const AddActionSheet = forwardRef<BottomSheetModal>((props, ref) => {
         style={styles.sheetContainer} // Thêm margin horizontal
       >
         <BottomSheetView style={styles.container}>
-          <Text style={styles.title}>Item</Text>
+          <Text style={styles.title}>Quick Actions</Text>
 
           <View style={styles.section}>
             {menuItems.map((item, index) => (
@@ -110,10 +160,10 @@ export const AddActionSheet = forwardRef<BottomSheetModal>((props, ref) => {
                 style={styles.menuItem}
                 onPress={() => handleItemPress(item.screen)}
               >
-                <Ionicons name={item.icon} size={24} color="#000" />
+                {renderIcon(item)}
                 <Text style={styles.menuLabel}>{item.label}</Text>
                 {item.badge && (
-                  <View style={styles.badge}>
+                  <View style={[styles.badge, { backgroundColor: item.color || "#007AFF" }]}>
                     <Text style={styles.badgeText}>{item.badge}</Text>
                   </View>
                 )}
@@ -123,7 +173,7 @@ export const AddActionSheet = forwardRef<BottomSheetModal>((props, ref) => {
 
           <View style={styles.divider} />
 
-          <Text style={styles.sectionTitle}>Outfits</Text>
+          <Text style={styles.sectionTitle}>Outfit Creation</Text>
           <View style={styles.section}>
             {outfitItems.map((item, index) => (
               <TouchableOpacity
@@ -131,8 +181,13 @@ export const AddActionSheet = forwardRef<BottomSheetModal>((props, ref) => {
                 style={styles.menuItem}
                 onPress={() => handleItemPress(item.screen)}
               >
-                <Ionicons name={item.icon} size={24} color="#000" />
+                {renderIcon(item)}
                 <Text style={styles.menuLabel}>{item.label}</Text>
+                {item.badge && (
+                  <View style={[styles.badge, { backgroundColor: item.color || "#007AFF" }]}>
+                    <Text style={styles.badgeText}>{item.badge}</Text>
+                  </View>
+                )}
               </TouchableOpacity>
             ))}
           </View>

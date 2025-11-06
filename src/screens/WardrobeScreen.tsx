@@ -100,9 +100,8 @@ const WardrobeScreen = ({ navigation }: any) => {
     console.log("View favorites");
   };
 
-  const handleViewFrequency = () => {
-    // Navigate to frequency screen
-    console.log("View frequency");
+  const handleViewSuggestion = () => {
+    navigation.navigate("Suggestion");
   };
 
   if (loading) {
@@ -145,7 +144,7 @@ const WardrobeScreen = ({ navigation }: any) => {
         <WardrobeActionButtons
           onAddItem={() => setIsAddItemModalOpen(true)}
           onViewFavorites={handleViewFavorites}
-          onViewFrequency={handleViewFrequency}
+          onViewSuggestion={handleViewSuggestion}
         />
 
         {/* Wardrobe Section */}
