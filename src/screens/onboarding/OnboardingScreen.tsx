@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { View, StyleSheet } from "react-native";
+import { OnboardingStep0 } from "./OnboardingStep0";
 import { OnboardingStep1 } from "./OnboardingStep1";
 import { OnboardingStep2 } from "./OnboardingStep2";
 import { OnboardingStep3 } from "./OnboardingStep3";
@@ -12,6 +13,7 @@ import { Gender, OnboardingRequest } from "../../types/onboarding";
 import { stringToGender } from "../../utils/genderUtils";
 
 interface OnboardingData {
+  // Note: goals from Step 0 is UI only, not saved to API
   gender?: Gender;         // Gender enum: MALE=0, FEMALE=1, OTHER=2
   dob?: string;            // Date of birth in format "YYYY-MM-DD"
   location?: string;       // Location string
@@ -31,10 +33,16 @@ interface OnboardingScreenProps {
 export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   navigation,
 }) => {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0);
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({});
   const { submitOnboarding, isLoading } = useOnboarding();
   const { showNotification } = useNotification();
+
+  // Step 0: What You Use SOP For (UI only - no data saved)
+  const handleStep0Next = () => {
+    // Just move to next step, don't save any data
+    setCurrentStep(1);
+  };
 
   // Step 1: Personal Info (gender, dob, location)
   const handleStep1Next = (data: {
@@ -219,13 +227,16 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   };
 
   const handleBack = () => {
-    if (currentStep > 1) {
+    if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
   };
 
   return (
     <View style={styles.container}>
+      {currentStep === 0 && (
+        <OnboardingStep0 navigation={navigation} onNext={handleStep0Next} />
+      )}
       {currentStep === 1 && (
         <OnboardingStep1 navigation={navigation} onNext={handleStep1Next} />
       )}

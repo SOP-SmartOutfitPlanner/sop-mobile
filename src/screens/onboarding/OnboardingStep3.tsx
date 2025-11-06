@@ -134,7 +134,7 @@ export const OnboardingStep3: React.FC<OnboardingStep3Props> = ({
               style={[
                 styles.progressBar, 
                 { 
-                  width: "50%",
+                  width: "80%",
                   opacity: fadeAnim,
                 }
               ]} 

@@ -2,17 +2,20 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
   Animated,
   KeyboardAvoidingView,
+  ActivityIndicator,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { LinearGradient } from "expo-linear-gradient";
+import { Picker } from "@react-native-picker/picker";
+import { useLocation } from "../../hooks/useLocation";
 
 interface OnboardingStep1Props {
   navigation: any;
@@ -24,9 +27,24 @@ export const OnboardingStep1: React.FC<OnboardingStep1Props> = ({
   onNext,
 }) => {
   const [gender, setGender] = useState<string>("");
-  const [dob, setDob] = useState<Date>(new Date(2000, 0, 1)); // Default to 2000-01-01
+  const [dob, setDob] = useState<Date>(new Date(2000, 0, 1));
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
-  const [location, setLocation] = useState<string>("");
+  
+  // Location states
+  const [selectedProvince, setSelectedProvince] = useState<string>("");
+  const [selectedDistrict, setSelectedDistrict] = useState<string>("");
+  const [selectedWard, setSelectedWard] = useState<string>("");
+  
+  const {
+    provinces,
+    districts,
+    wards,
+    isLoadingProvinces,
+    isLoadingDistricts,
+    isLoadingWards,
+    fetchDistricts,
+    fetchWards,
+  } = useLocation();
 
   // Animations
   const fadeAnim = useState(new Animated.Value(0))[0];
@@ -48,10 +66,36 @@ export const OnboardingStep1: React.FC<OnboardingStep1Props> = ({
     ]).start();
   }, []);
 
+  const handleProvinceChange = (value: string) => {
+    setSelectedProvince(value);
+    setSelectedDistrict("");
+    setSelectedWard("");
+    if (value) {
+      fetchDistricts(value);
+    }
+  };
+
+  const handleDistrictChange = (value: string) => {
+    setSelectedDistrict(value);
+    setSelectedWard("");
+    if (value) {
+      fetchWards(value);
+    }
+  };
+
   const handleNext = () => {
-    if (!gender || !location) {
+    if (!gender || !selectedProvince) {
       return;
     }
+    
+    // Build location string from selected values
+    const provinceName = provinces.find(p => p.id === selectedProvince)?.name || "";
+    const districtName = selectedDistrict ? districts.find(d => d.id === selectedDistrict)?.name : "";
+    const wardName = selectedWard ? wards.find(w => w.id === selectedWard)?.name : "";
+    
+    const locationParts = [wardName, districtName, provinceName].filter(Boolean);
+    const location = locationParts.join(", ");
+    
     // Format dob as YYYY-MM-DD
     const formattedDob = dob.toISOString().split('T')[0];
     onNext({ gender, dob: formattedDob, location });
@@ -64,7 +108,7 @@ export const OnboardingStep1: React.FC<OnboardingStep1Props> = ({
     }
   };
 
-  const isFormValid = gender && location;
+  const isFormValid = gender && selectedProvince;
 
   return (
     <LinearGradient colors={["#0a1628", "#152238"]} style={styles.container}>
@@ -84,7 +128,7 @@ export const OnboardingStep1: React.FC<OnboardingStep1Props> = ({
               style={[
                 styles.progressBar, 
                 { 
-                  width: "17%",
+                  width: "20%",
                   opacity: fadeAnim,
                 }
               ]} 
@@ -181,22 +225,89 @@ export const OnboardingStep1: React.FC<OnboardingStep1Props> = ({
           )}
 
             {/* Location */}
-            <Text style={styles.label}>Location</Text>
-            <View style={styles.inputContainer}>
+            <Text style={styles.label}>
+              Location <Text style={styles.required}>*</Text>
+            </Text>
+            
+            {/* Province Dropdown */}
+            <View style={styles.pickerContainer}>
               <Ionicons
                 name="location-outline"
                 size={20}
                 color="#FFFFFF"
-                style={styles.inputIcon}
+                style={styles.pickerIcon}
               />
-              <TextInput
-                style={styles.inputWithIcon}
-                placeholder="City, Country"
-                placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                value={location}
-                onChangeText={setLocation}
-              />
+              <Picker
+                selectedValue={selectedProvince}
+                onValueChange={handleProvinceChange}
+                style={styles.picker}
+                dropdownIconColor="#FFFFFF"
+                enabled={!isLoadingProvinces}
+              >
+                <Picker.Item label="Select Province" value="" color="#999999" />
+                {provinces.map((p) => (
+                  <Picker.Item key={p.id} label={p.name} value={p.id} color="#FFFFFF" />
+                ))}
+              </Picker>
+              {isLoadingProvinces && (
+                <ActivityIndicator size="small" color="#FFFFFF" style={styles.pickerLoader} />
+              )}
             </View>
+
+            {/* District Dropdown */}
+            {selectedProvince && (
+              <View style={styles.pickerContainer}>
+                <Ionicons
+                  name="business-outline"
+                  size={20}
+                  color="#FFFFFF"
+                  style={styles.pickerIcon}
+                />
+                <Picker
+                  selectedValue={selectedDistrict}
+                  onValueChange={handleDistrictChange}
+                  style={styles.picker}
+                  dropdownIconColor="#FFFFFF"
+                  enabled={!isLoadingDistricts && districts.length > 0}
+                >
+                  <Picker.Item label="Select District" value="" color="#999999" />
+                  {districts.map((d) => (
+                    <Picker.Item key={d.id} label={d.name} value={d.id} color="#FFFFFF" />
+                  ))}
+                </Picker>
+                {isLoadingDistricts && (
+                  <ActivityIndicator size="small" color="#FFFFFF" style={styles.pickerLoader} />
+                )}
+              </View>
+            )}
+
+            {/* Ward Dropdown */}
+            {selectedDistrict && (
+              <View style={styles.pickerContainer}>
+                <Ionicons
+                  name="home-outline"
+                  size={20}
+                  color="#FFFFFF"
+                  style={styles.pickerIcon}
+                />
+                <Picker
+                  selectedValue={selectedWard}
+                  onValueChange={setSelectedWard}
+                  style={styles.picker}
+                  dropdownIconColor="#FFFFFF"
+                  enabled={!isLoadingWards && wards.length > 0}
+                >
+                  <Picker.Item label="Select Ward (Optional)" value="" color="#ffffffff" />
+                  {wards.map((w) => (
+                    <Picker.Item key={w.id} label={w.name} value={w.id} color="#FFFFFF" />
+                  ))}
+                </Picker>
+                {isLoadingWards && (
+                  <ActivityIndicator size="small" color="#FFFFFF" style={styles.pickerLoader} />
+                )}
+              </View>
+            )}
+          
           </Animated.View>
 
           {/* Next Button */}
@@ -338,12 +449,6 @@ const styles = StyleSheet.create({
   inputIcon: {
     marginRight: 12,
   },
-  inputWithIcon: {
-    flex: 1,
-    fontSize: 16,
-    color: "#FFFFFF",
-    padding: 0,
-  },
   nextButton: {
     borderRadius: 12,
     overflow: "hidden",
@@ -385,5 +490,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#FFFFFF",
     flex: 1,
+  },
+  required: {
+    color: "#EF4444",
+  },
+  pickerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    minHeight: 52,
+  },
+  pickerIcon: {
+    marginRight: 12,
+  },
+  picker: {
+    flex: 1,
+    color: "#FFFFFF",
+    marginRight: -10,
+  },
+  pickerLoader: {
+    position: "absolute",
+    right: 16,
+  },
+  helperText: {
+    fontSize: 12,
+    color: "rgba(255, 255, 255, 0.5)",
+    marginBottom: 24,
+    fontStyle: "italic",
   },
 });

@@ -6,3 +6,4 @@ export { useOTAUpdates } from './useOTAUpdates';
 export { useOnboarding } from './onboarding';
 export { useItemMetadata } from './useItemMetadata';
 export { useOutfits } from './outfit/useOutfits';
+export { useLocation } from './useLocation';

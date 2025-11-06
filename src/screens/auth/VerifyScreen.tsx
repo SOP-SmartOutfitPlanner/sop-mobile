@@ -187,9 +187,9 @@ export const VerifyScreen: React.FC<VerifyScreenProps> = ({
 
           {/* Title and Description */}
           <View style={styles.titleContainer}>
-            <Text style={styles.title}>Xác thực Email</Text>
+            <Text style={styles.title}>Verify Email</Text>
             <Text style={styles.subtitle}>
-              Chúng tôi đã gửi mã xác thực gồm 6 số đến
+              We have sent a verification code consisting of 6 digits to email
             </Text>
             <Text style={styles.email}>{email}</Text>
           </View>
@@ -225,13 +225,13 @@ export const VerifyScreen: React.FC<VerifyScreenProps> = ({
             {isLoading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.verifyButtonText}>Xác thực</Text>
+              <Text style={styles.verifyButtonText}>Verify</Text>
             )}
           </TouchableOpacity>
 
           {/* Resend OTP */}
           <View style={styles.resendContainer}>
-            <Text style={styles.resendText}>Không nhận được mã? </Text>
+            <Text style={styles.resendText}>Didn’t receive the code? </Text>
             {canResend ? (
               <TouchableOpacity
                 onPress={handleResendOtp}
@@ -240,11 +240,11 @@ export const VerifyScreen: React.FC<VerifyScreenProps> = ({
                 {isResending ? (
                   <ActivityIndicator size="small" color="#3B82F6" />
                 ) : (
-                  <Text style={styles.resendLink}>Gửi lại</Text>
+                  <Text style={styles.resendLink}>Resend</Text>
                 )}
               </TouchableOpacity>
             ) : (
-              <Text style={styles.countdown}>Gửi lại sau {countdown}s</Text>
+              <Text style={styles.countdown}>Resend after {countdown}s</Text>
             )}
           </View>
 
@@ -256,7 +256,7 @@ export const VerifyScreen: React.FC<VerifyScreenProps> = ({
               color="#64748B"
             />
             <Text style={styles.helpText}>
-              Kiểm tra cả thư mục spam nếu không thấy email
+              Check your spam folder if you don’t see the email
             </Text>
           </View>
         </ScrollView>

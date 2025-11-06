@@ -143,9 +143,15 @@ apiClient.interceptors.response.use(
         console.log("🔑 Refresh token exists:", !!refreshToken);
         
         // Call refresh token endpoint
-        const response = await axios.post(`${API_BASE_URL}/auth/refresh-token`, {
-          refreshToken,
-        });
+        const response = await axios.post(
+          `${API_BASE_URL}/auth/refresh-token`,
+          JSON.stringify(refreshToken),
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
         console.log("✅ Token refresh response received:", response.data);
 

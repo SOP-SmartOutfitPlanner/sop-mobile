@@ -30,6 +30,7 @@ export const WardrobeItemGrid: React.FC<WardrobeItemGridProps> = ({
             styles.itemWrapper,
             {
               width: itemWidth,
+              marginRight: (index + 1) % columns === 0 ? 0 : gap,
             },
           ]}
         >
@@ -45,7 +46,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     paddingHorizontal: 16,
-    justifyContent: "space-between",
   },
   itemWrapper: {
     marginBottom: 12,
