@@ -24,6 +24,10 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
 
   const tag = getItemTypeTag(item.categoryName || "top");
 
+  // Check if item needs analysis or has low confidence
+  const needsAttention = !item.isAnalyzed || (item.aiConfidence !== undefined && item.aiConfidence < 50);
+  const hasLowConfidence = item.aiConfidence !== undefined && item.aiConfidence < 50;
+
   return (
     <TouchableOpacity
       style={styles.container}
@@ -42,6 +46,17 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
             {tag.text}
           </Text>
         </View>
+        
+        {/* Warning badge for low confidence or unanalyzed */}
+        {needsAttention && (
+          <View style={styles.warningBadge}>
+            <Ionicons 
+              name={hasLowConfidence ? "warning" : "analytics-outline"} 
+              size={16} 
+              color="#fff" 
+            />
+          </View>
+        )}
       </View>
 
       <View style={styles.content}>
@@ -53,6 +68,28 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
             {item.brand}
           </Text>
         )}
+        
+        {/* Show confidence score if analyzed */}
+        {item.isAnalyzed && item.aiConfidence !== undefined && (
+          <View style={styles.confidenceContainer}>
+            <View 
+              style={[
+                styles.confidenceBadge, 
+                { backgroundColor: item.aiConfidence >= 50 ? '#dcfce7' : '#fee2e2' }
+              ]}
+            >
+              <Text 
+                style={[
+                  styles.confidenceText,
+                  { color: item.aiConfidence >= 50 ? '#16a34a' : '#dc2626' }
+                ]}
+              >
+                {item.aiConfidence}% {item.aiConfidence >= 50 ? '✓' : '!'}
+              </Text>
+            </View>
+          </View>
+        )}
+        
         <View style={styles.statsContainer}>
           <View style={styles.wearInfo}>
             <Ionicons name="eye-outline" size={12} color="#6b7280" />
@@ -101,6 +138,17 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textTransform: "lowercase",
   },
+  warningBadge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    backgroundColor: "#f59e0b",
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   content: {
     padding: 12,
   },
@@ -114,6 +162,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#6b7280",
     marginBottom: 8,
+  },
+  confidenceContainer: {
+    marginBottom: 8,
+  },
+  confidenceBadge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  confidenceText: {
+    fontSize: 11,
+    fontWeight: "600",
   },
   statsContainer: {
     flexDirection: "row",

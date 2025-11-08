@@ -1,6 +1,8 @@
 //=====================Request=========================//
 export interface AddItemRequest{ 
+   id: number;
     userId: number;
+    userDisplayName: string;
     name: string;
     categoryId: number;
     categoryName: string;
@@ -8,18 +10,21 @@ export interface AddItemRequest{
     aiDescription?: string;
     brand?: string;
     frequencyWorn?: string;
-    lastWornAt?: string; // ISO date string
+    lastWornAt?: string;
     imgUrl?: string;
     weatherSuitable?: string;
     condition?: string;
     pattern?: string;
     fabric?: string;
-    styleIds: number[];
-    occasionIds: number[];
-    seasonIds: number[];
+    isAnalyzed: boolean;
+    aiConfidence: number;
+    occasions: Array<{ id: number; name: string }>;
+    seasons: Array<{ id: number; name: string }>;
+    styles: Array<{ id: number; name: string }>;
 }
-  
-export interface SummaryItemRequest {
+   
+
+export interface AnalyzeItemRequest {
     file: any; 
 }
 
@@ -34,37 +39,12 @@ export interface AddItemResponse {
     message: string;
     data: Item;
 }
-export interface SummaryItemResponse {
+export interface AnalyzeItemResponse {
     statusCode: number;
     message: string;
     data: {
-        name: string;
-        colors: {
-            name: string;
-            hex: string;
-        }[];
-        aiDescription: string;
-        weatherSuitable: string;
-        condition: string;
-        pattern: string;
-        fabric: string;
-        imageRemBgURL: string;
-        category: {
-            id: number;
-            name: string;
-        };
-        styles: {
-            id: number;
-            name: string;
-        }[];
-        occasions: {
-            id: number;
-            name: string;
-        }[];
-        seasons: {
-            id: number;
-            name: string;
-        }[];
+       itemIds: number[];
+       confidence: number;
     };
 }
 export interface GetItemResponse {
@@ -105,6 +85,8 @@ export interface Item {
     condition?: string;
     pattern?: string;
     fabric?: string;
+    isAnalyzed: boolean; // Whether item has been analyzed
+    aiConfidence?: number; // AI confidence score (0-100)
     styles: Array<{ id: number; name: string }>;
     occasions: Array<{ id: number; name: string }>;
     seasons: Array<{ id: number; name: string }>;

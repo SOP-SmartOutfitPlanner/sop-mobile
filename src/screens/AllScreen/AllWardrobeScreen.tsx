@@ -16,6 +16,7 @@ import { WardrobeItemGrid } from "../../components/wardrobe/WardrobeItemGrid";
 import { WardrobeLoadingGrid } from "../../components/wardrobe/WardrobeLoadingGrid";
 import { ItemDetailModal } from "../../components/wardrobe/ItemDetailModal";
 import { FilterModal } from "../../components/wardrobe/FilterModal";
+import { AnalyzeItemsButton } from "../../components/wardrobe/AnalyzeItemsButton";
 
 const AllWardrobeScreen = ({ navigation }: any) => {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
@@ -125,6 +126,9 @@ const AllWardrobeScreen = ({ navigation }: any) => {
             {items.length} Items
           </Text>
         </View>
+
+        {/* Analyze Items Button */}
+        <AnalyzeItemsButton items={items} onAnalysisComplete={handleRefresh} />
 
         {/* Items Grid */}
         {items.length > 0 ? (
