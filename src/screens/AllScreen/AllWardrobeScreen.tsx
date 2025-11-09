@@ -26,14 +26,22 @@ const AllWardrobeScreen = ({ navigation }: any) => {
     items,
     searchQuery,
     setSearchQuery,
-    selectedFilters,
-    toggleFilter,
-    clearFilters,
     loading,
     isRefreshing,
     handleRefresh,
     editItem,
     deleteItem,
+    clearFilters,
+    selectedCategoryId,
+    selectedSeasonId,
+    selectedStyleId,
+    selectedOccasionId,
+    isAnalyzedFilter,
+    setCategoryFilter,
+    setSeasonFilter,
+    setStyleFilter,
+    setOccasionFilter,
+    setAnalyzedFilter,
   } = useWardrobe();
 
   const handleItemClick = (item: Item) => {
@@ -48,6 +56,15 @@ const AllWardrobeScreen = ({ navigation }: any) => {
   const handleBackPress = () => {
     navigation.goBack();
   };
+
+  // Calculate active filters count
+  const activeFiltersCount = [
+    selectedCategoryId,
+    selectedSeasonId,
+    selectedStyleId,
+    selectedOccasionId,
+    isAnalyzedFilter,
+  ].filter((filter) => filter !== undefined).length;
 
   if (loading) {
     return (
@@ -110,10 +127,10 @@ const AllWardrobeScreen = ({ navigation }: any) => {
             onPress={() => setIsFilterModalOpen(true)}
           >
             <Ionicons name="options-outline" size={20} color="#64748b" />
-            {selectedFilters.length > 0 && (
+            {activeFiltersCount > 0 && (
               <View style={styles.filterBadge}>
                 <Text style={styles.filterBadgeText}>
-                  {selectedFilters.length}
+                  {activeFiltersCount}
                 </Text>
               </View>
             )}
@@ -137,7 +154,7 @@ const AllWardrobeScreen = ({ navigation }: any) => {
           <View style={styles.emptyContainer}>
             <Ionicons name="shirt-outline" size={64} color="#cbd5e1" />
             <Text style={styles.emptyText}>
-              {searchQuery || selectedFilters.length > 0
+              {searchQuery || activeFiltersCount > 0
                 ? "No items found"
                 : "No items in wardrobe. Add some!"}
             </Text>
@@ -162,8 +179,16 @@ const AllWardrobeScreen = ({ navigation }: any) => {
       <FilterModal
         visible={isFilterModalOpen}
         onClose={() => setIsFilterModalOpen(false)}
-        selectedFilters={selectedFilters}
-        onFilterToggle={toggleFilter}
+        selectedCategoryId={selectedCategoryId}
+        selectedSeasonId={selectedSeasonId}
+        selectedStyleId={selectedStyleId}
+        selectedOccasionId={selectedOccasionId}
+        isAnalyzed={isAnalyzedFilter}
+        onCategorySelect={setCategoryFilter}
+        onSeasonSelect={setSeasonFilter}
+        onStyleSelect={setStyleFilter}
+        onOccasionSelect={setOccasionFilter}
+        onAnalyzedToggle={setAnalyzedFilter}
         onClearFilters={clearFilters}
       />
     </View>

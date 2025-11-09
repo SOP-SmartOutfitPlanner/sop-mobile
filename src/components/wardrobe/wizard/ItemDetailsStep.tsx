@@ -9,25 +9,21 @@ import {
   ActivityIndicator,
   Platform,
   KeyboardAvoidingView,
-  Modal,
 } from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { formatDateDisplay, getCurrentISODate } from "../../../utils/dateUtils";
 import type { Category } from "../../../types/category";
+import type { ColorItem } from "../../../types/item";
 import { useItemMetadata } from "../../../hooks/useItemMetadata";
+import { ColorSelector } from "../ColorSelector";
 
 interface ItemDetailsStepProps {
   itemName: string;
   brand: string;
   categoryId: number;
-  color: string;
-  aiDescription: string;
+  selectedColors: ColorItem[];
   weatherSuitable: string;
   condition: string;
   pattern: string;
   fabric: string;
-  lastWornAt: string;
-  frequencyWorn: string;
   selectedStyles: number[];
   selectedOccasions: number[];
   selectedSeasons: number[];
@@ -39,14 +35,11 @@ interface ItemDetailsStepProps {
   onBrandChange: (text: string) => void;
   onCategorySelect: (categoryId: number, categoryName: string) => void;
   onFetchChildCategories: (parentId: number) => Promise<Category[]>;
-  onColorChange: (text: string) => void;
-  onAiDescriptionChange: (text: string) => void;
+  onColorToggle: (color: ColorItem) => void;
   onWeatherSuitableChange: (text: string) => void;
   onConditionChange: (text: string) => void;
   onPatternChange: (text: string) => void;
   onFabricChange: (text: string) => void;
-  onLastWornAtChange: (text: string) => void;
-  onFrequencyWornChange: (text: string) => void;
   onStyleToggle: (styleId: number) => void;
   onOccasionToggle: (occasionId: number) => void;
   onSeasonToggle: (seasonId: number) => void;
@@ -56,14 +49,11 @@ export const ItemDetailsStep: React.FC<ItemDetailsStepProps> = ({
   itemName,
   brand,
   categoryId,
-  color,
-  aiDescription,
+  selectedColors,
   weatherSuitable,
   condition,
   pattern,
   fabric,
-  lastWornAt,
-  frequencyWorn,
   selectedStyles,
   selectedOccasions,
   selectedSeasons,
@@ -75,22 +65,17 @@ export const ItemDetailsStep: React.FC<ItemDetailsStepProps> = ({
   onBrandChange,
   onCategorySelect,
   onFetchChildCategories,
-  onColorChange,
-  onAiDescriptionChange,
+  onColorToggle,
   onWeatherSuitableChange,
   onConditionChange,
   onPatternChange,
   onFabricChange,
-  onLastWornAtChange,
-  onFrequencyWornChange,
   onStyleToggle,
   onOccasionToggle,
   onSeasonToggle,
 }) => {
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedParentId, setSelectedParentId] = useState<number | null>(null);
   const scrollViewRef = React.useRef<ScrollView>(null);
-  const frequencyWornInputRef = React.useRef<TextInput>(null);
 
   // Fetch metadata from API
   const { 
@@ -106,24 +91,6 @@ export const ItemDetailsStep: React.FC<ItemDetailsStepProps> = ({
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
   }, []);
-
-  const handleDateChange = useCallback(
-    (event: any, selectedDate?: Date) => {
-      if (Platform.OS === "android") {
-        // Android: close picker and update only on confirmation
-        setShowDatePicker(false);
-        if (event.type === "set" && selectedDate) {
-          onLastWornAtChange(selectedDate.toISOString());
-        }
-      } else {
-        // iOS: real-time update as user scrolls
-        if (selectedDate) {
-          onLastWornAtChange(selectedDate.toISOString());
-        }
-      }
-    },
-    [onLastWornAtChange]
-  );
 
   return (
     <KeyboardAvoidingView
@@ -246,30 +213,11 @@ export const ItemDetailsStep: React.FC<ItemDetailsStepProps> = ({
         </View>
 
         {/* Color */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Color</Text>
-          <TextInput
-            style={styles.input}
-            value={color}
-            onChangeText={onColorChange}
-            placeholder="e.g. Red, Blue, White..."
-            placeholderTextColor="#9ca3af"
-          />
-        </View>
-
-        {/* AI Description */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Description</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={aiDescription}
-            onChangeText={onAiDescriptionChange}
-            placeholder="Auto-filled by AI or enter manually"
-            placeholderTextColor="#9ca3af"
-            multiline
-            numberOfLines={3}
-          />
-        </View>
+        <ColorSelector
+          selectedColors={selectedColors}
+          onColorToggle={onColorToggle}
+          maxColors={5}
+        />
 
         {/* Weather Suitable */}
         <View style={styles.inputGroup}>
@@ -317,114 +265,6 @@ export const ItemDetailsStep: React.FC<ItemDetailsStepProps> = ({
             placeholder="e.g. Cotton, Silk, Polyester..."
             placeholderTextColor="#9ca3af"
           />
-        </View>
-
-        {/* Last Worn At */}
-        <View style={styles.inputGroup}>
-          <View style={styles.labelRow}>
-            <Text style={styles.label}>Last Worn Date</Text>
-            <View style={styles.dateButtonsRow}>
-              <TouchableOpacity
-                style={styles.todayButton}
-                onPress={() => onLastWornAtChange(getCurrentISODate())}
-              >
-                <Text style={styles.todayButtonText}>Today</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.clearButton}
-                onPress={() => onLastWornAtChange("")}
-              >
-                <Text style={styles.clearButtonText}>Clear</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={styles.dateDisplay}
-            onPress={() => setShowDatePicker(true)}
-          >
-            <Text style={styles.dateDisplayText}>
-              {lastWornAt
-                ? formatDateDisplay(lastWornAt)
-                : "Tap to select date"}
-            </Text>
-          </TouchableOpacity>
-
-          {showDatePicker && Platform.OS === "ios" && (
-            <Modal
-              transparent={true}
-              animationType="slide"
-              visible={showDatePicker}
-              onRequestClose={() => setShowDatePicker(false)}
-            >
-              <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
-                  <View style={styles.modalHeader}>
-                    <TouchableOpacity
-                      onPress={() => {
-                        setShowDatePicker(false);
-                      }}
-                    >
-                      <Text style={styles.modalButton}>Cancel</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.modalTitle}>Select Date</Text>
-                    <TouchableOpacity
-                      onPress={() => {
-                        setShowDatePicker(false);
-                      }}
-                    >
-                      <Text
-                        style={[styles.modalButton, styles.modalButtonDone]}
-                      >
-                        Done
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                  <DateTimePicker
-                    value={lastWornAt ? new Date(lastWornAt) : new Date()}
-                    mode="date"
-                    display="spinner"
-                    onChange={handleDateChange}
-                    maximumDate={new Date()}
-                    style={styles.dateTimePicker}
-                  />
-                </View>
-              </View>
-            </Modal>
-          )}
-
-          {showDatePicker && Platform.OS === "android" && (
-            <DateTimePicker
-              value={lastWornAt ? new Date(lastWornAt) : new Date()}
-              mode="date"
-              display="default"
-              onChange={handleDateChange}
-              maximumDate={new Date()}
-            />
-          )}
-
-          <Text style={styles.helperText}>
-            Tap the date area to select, or use "Today"/"Clear" buttons
-          </Text>
-        </View>
-
-        {/* Frequency Worn */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Frequency Worn</Text>
-          <TextInput
-            ref={frequencyWornInputRef}
-            style={styles.input}
-            value={frequencyWorn}
-            onChangeText={onFrequencyWornChange}
-            placeholder="e.g. Daily, Weekly, Monthly, Rarely..."
-            placeholderTextColor="#9ca3af"
-            onFocus={scrollToBottom}
-            returnKeyType="done"
-            blurOnSubmit={true}
-          />
-          <Text style={styles.helperText}>
-            How often do you wear this item?
-          </Text>
         </View>
 
         {/* Styles */}

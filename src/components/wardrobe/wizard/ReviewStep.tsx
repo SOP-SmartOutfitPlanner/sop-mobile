@@ -1,19 +1,17 @@
 import React from "react";
 import { View, Text, Image, StyleSheet, ScrollView } from "react-native";
-import { formatDateShort } from "../../../utils/dateUtils";
+import type { ColorItem } from "../../../types/item";
+import { ColorDisplay } from "../ColorDisplay";
 
 interface ReviewStepData {
   name: string;
   brand?: string;
   type: string;
-  color?: string;
-  aiDescription?: string;
+  colors?: ColorItem[];
   weatherSuitable?: string;
   condition?: string;
   pattern?: string;
   fabric?: string;
-  lastWornAt?: string;
-  frequencyWorn?: string;
   imageUri: string | null;
   styles?: string[];
   occasions?: string[];
@@ -94,16 +92,17 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ data }) => {
         {renderInfoRow("ITEM NAME", data.name)}
         {data.brand && renderInfoRow("BRAND", data.brand)}
         {renderInfoRow("CATEGORY", data.type)}
-        {data.color && renderInfoRow("COLOR", data.color)}
+        {data.colors && data.colors.length > 0 && (
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>COLORS</Text>
+            <ColorDisplay 
+              colorString={JSON.stringify(data.colors)} 
+              size="small" 
+              showText={true}
+            />
+          </View>
+        )}
       </View>
-
-      {/* AI Details */}
-      {data.aiDescription && (
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>AI DESCRIPTION</Text>
-          <Text style={styles.value}>{data.aiDescription}</Text>
-        </View>
-      )}
 
       {/* Additional Info */}
       <View style={styles.section}>
@@ -111,9 +110,6 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ data }) => {
         {data.condition && renderInfoRow("CONDITION", data.condition)}
         {data.pattern && renderInfoRow("PATTERN", data.pattern)}
         {data.fabric && renderInfoRow("FABRIC", data.fabric)}
-        {data.lastWornAt &&
-          renderInfoRow("LAST WORN", formatDateShort(data.lastWornAt))}
-        {data.frequencyWorn && renderInfoRow("FREQUENCY", data.frequencyWorn)}
       </View>
 
       {/* Styles, Occasions, and Seasons */}

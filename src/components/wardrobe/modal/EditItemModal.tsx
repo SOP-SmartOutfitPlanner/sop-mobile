@@ -11,11 +11,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { StepIndicator } from "../wizard/StepIndicator";
 import { ItemDetailsStep } from "../wizard/ItemDetailsStep";
 import { ReviewStep } from "../wizard/ReviewStep";
-import type { Item, ItemEdit } from "../../../types/item";
+import type { Item, ItemEdit, ColorItem } from "../../../types/item";
 import NotificationModal from "../../notification/NotificationModal";
 import { useCategories } from "../../../hooks/useCategories";
 import { useItemMetadata } from "../../../hooks/useItemMetadata";
 import { useNotification } from "../../../hooks";
+import { parseColors, toggleColor } from "../../../utils/colorUtils";
 
 interface EditItemModalProps {
   visible: boolean;
@@ -36,17 +37,14 @@ const GRADIENT_COLORS = {
   disabled: ["#9ca3af", "#9ca3af"],
 } as const;
 
-// Helper function
+// Helper function - simplified (itemId not used)
 const buildEditRequestData = (
-  itemId: number,
   formData: {
     userId: number;
     itemName: string;
     brand: string;
     categoryId: number;
-    categoryName: string;
-    color: string;
-    aiDescription: string;
+    colors: ColorItem[];
     weatherSuitable: string;
     condition: string;
     pattern: string;
@@ -64,9 +62,7 @@ const buildEditRequestData = (
     itemName,
     brand,
     categoryId,
-    categoryName,
-    color,
-    aiDescription,
+    colors,
     weatherSuitable,
     condition,
     pattern,
@@ -84,16 +80,14 @@ const buildEditRequestData = (
     userId,
     name: itemName.trim(),
     categoryId,
-    categoryName,
+    colors: colors || [],
     imgUrl: imageUrl,
     styleIds: styleIds || [],
     occasionIds: occasionIds || [],
     seasonIds: seasonIds || [],
   };
 
-  // Add optional fields only if they have actual values
-  if (color?.trim()) requestData.color = color.trim();
-  if (aiDescription?.trim()) requestData.aiDescription = aiDescription.trim();
+  // Add optional fields only if they have values
   if (brand?.trim()) requestData.brand = brand.trim();
   if (weatherSuitable?.trim()) requestData.weatherSuitable = weatherSuitable.trim();
   if (condition?.trim()) requestData.condition = condition.trim();
@@ -120,15 +114,12 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
   const [brand, setBrand] = useState("");
   const [categoryId, setCategoryId] = useState(0);
   const [categoryName, setCategoryName] = useState("");
-  const [color, setColor] = useState("");
-  const [aiDescription, setAiDescription] = useState("");
+  const [selectedColors, setSelectedColors] = useState<ColorItem[]>([]);
   const [weatherSuitable, setWeatherSuitable] = useState("");
   const [condition, setCondition] = useState("");
   const [pattern, setPattern] = useState("");
   const [fabric, setFabric] = useState("");
   const [imageUrl, setImageUrl] = useState("");
-  const [lastWornAt, setLastWornAt] = useState("");
-  const [frequencyWorn, setFrequencyWorn] = useState("");
   const [selectedStyles, setSelectedStyles] = useState<number[]>([]);
   const [selectedOccasions, setSelectedOccasions] = useState<number[]>([]);
   const [selectedSeasons, setSelectedSeasons] = useState<number[]>([]);
@@ -162,50 +153,45 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
       setBrand(item.brand || "");
       setCategoryId(item.categoryId || 0);
       setCategoryName(item.categoryName || "");
-      setColor(item.color || "");
-      setAiDescription(item.aiDescription || "");
+      setSelectedColors(parseColors(item.color));
       setWeatherSuitable(item.weatherSuitable || "");
       setCondition(item.condition || "");
       setPattern(item.pattern || "");
       setFabric(item.fabric || "");
       setImageUrl(item.imgUrl || "");
-      setLastWornAt(item.lastWornAt || "");
-      setFrequencyWorn(item.frequencyWorn || "");
       setSelectedStyles(item.styles?.map(s => s.id) || []);
       setSelectedOccasions(item.occasions?.map(o => o.id) || []);
       setSelectedSeasons(item.seasons?.map(s => s.id) || []);
     }
   }, [item, visible]);
 
-  // Auto-fetch child categories when parent categories are loaded and item has a category
+  // Auto-fetch child categories when item category is loaded - optimized
   useEffect(() => {
     const autoFetchChildCategories = async () => {
-      if (item && visible && parentCategories.length > 0 && item.categoryId) {
-        // Try to find if the categoryId belongs to a parent category
-        const parentCategory = parentCategories.find(cat => cat.id === item.categoryId);
-        
-        if (parentCategory) {
-          // This is a parent category, fetch its children
-          console.log('📂 Auto-fetching child categories for parent:', item.categoryId);
-          await fetchChildCategories(item.categoryId);
-        } else {
-          // This might be a child category, find its parent
-          // We need to fetch all child categories to find the parent
-          for (const parent of parentCategories) {
-            const children = await fetchChildCategories(parent.id);
-            const childCategory = children.find(child => child.id === item.categoryId);
-            
-            if (childCategory) {
-              console.log('📂 Found child category, parent is:', parent.id);
-              break; // We found the parent, no need to continue
-            }
-          }
+      if (!item?.categoryId || !visible || parentCategories.length === 0) return;
+
+      // Check if categoryId is a parent category
+      const parentCategory = parentCategories.find(cat => cat.id === item.categoryId);
+      
+      if (parentCategory) {
+        // This is a parent category, fetch its children
+        await fetchChildCategories(item.categoryId);
+        return;
+      }
+
+      // categoryId might be a child - find its parent by checking all parents
+      // Only fetch until we find the matching child
+      for (const parent of parentCategories) {
+        const children = await fetchChildCategories(parent.id);
+        if (children.some(child => child.id === item.categoryId)) {
+          // Found the parent, stop searching
+          break;
         }
       }
     };
 
     autoFetchChildCategories();
-  }, [item, visible, parentCategories, fetchChildCategories]);
+  }, [item?.categoryId, visible, parentCategories.length]); // Only re-run when these change
 
   const resetForm = useCallback(() => {
     setCurrentStep(1);
@@ -213,15 +199,12 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
     setBrand("");
     setCategoryId(0);
     setCategoryName("");
-    setColor("");
-    setAiDescription("");
+    setSelectedColors([]);
     setWeatherSuitable("");
     setCondition("");
     setPattern("");
     setFabric("");
     setImageUrl("");
-    setLastWornAt("");
-    setFrequencyWorn("");
     setSelectedStyles([]);
     setSelectedOccasions([]);
     setSelectedSeasons([]);
@@ -275,45 +258,47 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
     }
   }, [currentStep]);
 
+  // Validation helper - memoized
+  const validateForm = useCallback(() => {
+    if (!itemName.trim()) {
+      notification.showError("Item name is required", "Validation Error");
+      return false;
+    }
+
+    if (!categoryId || categoryId === 0) {
+      notification.showError("Please select a category", "Validation Error");
+      return false;
+    }
+
+    return true;
+  }, [itemName, categoryId, notification]);
+
   const handleSave = useCallback(async () => {
     if (isSaving || !item) return;
 
+    // Validate before proceeding
+    if (!validateForm()) return;
+
     setIsSaving(true);
     try {
-      // Validate required fields
-      if (!itemName.trim()) {
-        notification.showError("Item name is required", "Validation Error");
-        return;
-      }
-
-      if (!categoryId || categoryId === 0) {
-        notification.showError("Please select a category", "Validation Error");
-        return;
-      }
-
       // Build request data
-      const requestData = buildEditRequestData(item.id, {
+      const requestData = buildEditRequestData({
         userId: item.userId,
         itemName,
         brand,
         categoryId,
-        categoryName,
-        color,
-        aiDescription,
+        colors: selectedColors,
         weatherSuitable,
         condition,
         pattern,
         fabric,
         imageUrl,
-        lastWornAt,
-        frequencyWorn,
+        lastWornAt: item.lastWornAt || '',
+        frequencyWorn: item.frequencyWorn || '',
         styleIds: selectedStyles,
         occasionIds: selectedOccasions,
         seasonIds: selectedSeasons,
       });
-
-    //   console.log("=== Edit Request Data ===");
-    //   console.log(JSON.stringify(requestData, null, 2));
 
       // Call editItem from hook
       const response = await editItem(item.id, requestData);
@@ -340,26 +325,23 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
   }, [
     isSaving,
     item,
+    validateForm,
     itemName,
     brand,
     categoryId,
-    categoryName,
-    color,
-    aiDescription,
+    selectedColors,
     weatherSuitable,
     condition,
     pattern,
     fabric,
     imageUrl,
-    lastWornAt,
-    frequencyWorn,
     selectedStyles,
     selectedOccasions,
     selectedSeasons,
+    editItem,
     notification,
     handleClose,
     onSave,
-    editItem,
   ]);
 
   // Toggle handlers for styles, occasions, and seasons
@@ -387,6 +369,48 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
     );
   }, []);
 
+  const handleColorToggle = useCallback((color: ColorItem) => {
+    setSelectedColors((prev) => toggleColor(prev, color));
+  }, []);
+
+  // Memoize review data separately to avoid recalculation
+  const reviewData = useMemo(() => ({
+    name: itemName,
+    brand,
+    type: categoryName,
+    colors: selectedColors,
+    weatherSuitable,
+    condition,
+    pattern,
+    fabric,
+    imageUri: imageUrl,
+    styles: selectedStyles
+      .map((id) => stylesList.find((s) => s.id === id)?.name)
+      .filter((name): name is string => !!name),
+    occasions: selectedOccasions
+      .map((id) => occasionsList.find((o) => o.id === id)?.name)
+      .filter((name): name is string => !!name),
+    seasons: selectedSeasons
+      .map((id) => seasonsList.find((s) => s.id === id)?.name)
+      .filter((name): name is string => !!name),
+  }), [
+    itemName,
+    brand,
+    categoryName,
+    selectedColors,
+    weatherSuitable,
+    condition,
+    pattern,
+    fabric,
+    imageUrl,
+    selectedStyles,
+    selectedOccasions,
+    selectedSeasons,
+    stylesList,
+    occasionsList,
+    seasonsList,
+  ]);
+
   // Memoized step components
   const stepContent = useMemo(() => {
     switch (currentStep) {
@@ -396,14 +420,11 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
             itemName={itemName}
             brand={brand}
             categoryId={categoryId}
-            color={color}
-            aiDescription={aiDescription}
+            selectedColors={selectedColors}
             weatherSuitable={weatherSuitable}
             condition={condition}
             pattern={pattern}
             fabric={fabric}
-            lastWornAt={lastWornAt}
-            frequencyWorn={frequencyWorn}
             parentCategories={parentCategories}
             childCategories={childCategories}
             isCategoriesLoading={isCategoriesLoading}
@@ -418,44 +439,15 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
             onItemNameChange={setItemName}
             onBrandChange={setBrand}
             onCategorySelect={handleCategorySelect}
-            onColorChange={setColor}
-            onAiDescriptionChange={setAiDescription}
+            onColorToggle={handleColorToggle}
             onWeatherSuitableChange={setWeatherSuitable}
             onConditionChange={setCondition}
             onPatternChange={setPattern}
             onFabricChange={setFabric}
-            onFrequencyWornChange={setFrequencyWorn}
-            onLastWornAtChange={setLastWornAt}
           />
         );
       case 2:
-        return (
-          <ReviewStep
-            data={{
-              name: itemName,
-              brand,
-              type: categoryName,
-              color,
-              aiDescription,
-              weatherSuitable,
-              condition,
-              pattern,
-              fabric,
-              lastWornAt,
-              frequencyWorn,
-              imageUri: imageUrl,
-              styles: selectedStyles
-                .map((id) => stylesList.find((s) => s.id === id)?.name)
-                .filter((name): name is string => !!name),
-              occasions: selectedOccasions
-                .map((id) => occasionsList.find((o) => o.id === id)?.name)
-                .filter((name): name is string => !!name),
-              seasons: selectedSeasons
-                .map((id) => seasonsList.find((s) => s.id === id)?.name)
-                .filter((name): name is string => !!name),
-            }}
-          />
-        );
+        return <ReviewStep data={reviewData} />;
       default:
         return null;
     }
@@ -464,16 +456,11 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
     itemName,
     brand,
     categoryId,
-    categoryName,
-    color,
-    aiDescription,
+    selectedColors,
     weatherSuitable,
     condition,
     pattern,
     fabric,
-    lastWornAt,
-    frequencyWorn,
-    imageUrl,
     parentCategories,
     childCategories,
     isCategoriesLoading,
@@ -482,13 +469,12 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
     selectedStyles,
     selectedOccasions,
     selectedSeasons,
-    stylesList,
-    occasionsList,
-    seasonsList,
+    reviewData,
     handleStyleToggle,
     handleOccasionToggle,
     handleSeasonToggle,
     handleCategorySelect,
+    handleColorToggle,
   ]);
 
   // Button colors - memoized

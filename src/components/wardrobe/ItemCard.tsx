@@ -24,10 +24,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
 
   const tag = getItemTypeTag(item.categoryName || "top");
 
-  // Check if item needs analysis or has low confidence
-  const needsAttention = !item.isAnalyzed || (item.aiConfidence !== undefined && item.aiConfidence < 50);
-  const hasLowConfidence = item.aiConfidence !== undefined && item.aiConfidence < 50;
-
   return (
     <TouchableOpacity
       style={styles.container}
@@ -38,6 +34,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
         <Image
           source={{ uri: item.imgUrl || "https://via.placeholder.com/300x400" }}
           style={styles.image}
+          resizeMode="cover"
         />
         <View
           style={[styles.typeTag, { backgroundColor: tag.backgroundColor }]}
@@ -47,14 +44,9 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
           </Text>
         </View>
         
-        {/* Warning badge for low confidence or unanalyzed */}
-        {needsAttention && (
-          <View style={styles.warningBadge}>
-            <Ionicons 
-              name={hasLowConfidence ? "warning" : "analytics-outline"} 
-              size={16} 
-              color="#fff" 
-            />
+        {!item.isAnalyzed && (
+          <View style={styles.notAnalyzedBadge}>
+            <Ionicons name="alert-circle" size={14} color="#fff" />
           </View>
         )}
       </View>
@@ -69,37 +61,38 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
           </Text>
         )}
         
-        {/* Show confidence score if analyzed */}
-        {item.isAnalyzed && item.aiConfidence !== undefined && (
-          <View style={styles.confidenceContainer}>
-            <View 
-              style={[
-                styles.confidenceBadge, 
-                { backgroundColor: item.aiConfidence >= 50 ? '#dcfce7' : '#fee2e2' }
-              ]}
-            >
-              <Text 
-                style={[
-                  styles.confidenceText,
-                  { color: item.aiConfidence >= 50 ? '#16a34a' : '#dc2626' }
-                ]}
-              >
-                {item.aiConfidence}% {item.aiConfidence >= 50 ? '✓' : '!'}
-              </Text>
-            </View>
+        {/* Category Badge */}
+        {item.categoryName && (
+          <View style={styles.categoryBadge}>
+            <Ionicons name="pricetag-outline" size={12} color="#6366f1" />
+            <Text style={styles.categoryText}>{item.categoryName}</Text>
+          </View>
+        )}
+        
+        {/* Analysis Status - Compact version */}
+        {!item.isAnalyzed && (
+          <View style={styles.analysisStatus}>
+            <Ionicons name="alert-circle-outline" size={12} color="#f59e0b" />
+            <Text style={styles.analysisStatusText}>Not analyzed</Text>
           </View>
         )}
         
         <View style={styles.statsContainer}>
-          <View style={styles.wearInfo}>
-            <Ionicons name="eye-outline" size={12} color="#6b7280" />
-            <Text style={styles.wearText}>{item.frequencyWorn}</Text>
+          <View style={styles.statItem}>
+            <Ionicons name="eye-outline" size={14} color="#6b7280" />
+            <Text style={styles.statText}>{item.frequencyWorn || 0}</Text>
           </View>
-          <Text style={styles.lastWorn}>
-            {item.lastWornAt
-              ? new Date(item.lastWornAt).toLocaleDateString()
-              : "-"}
-          </Text>
+          {item.lastWornAt && (
+            <View style={styles.statItem}>
+              <Ionicons name="calendar-outline" size={14} color="#6b7280" />
+              <Text style={styles.statText}>
+                {new Date(item.lastWornAt).toLocaleDateString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric' 
+                })}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
     </TouchableOpacity>
@@ -138,14 +131,14 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textTransform: "lowercase",
   },
-  warningBadge: {
+  notAnalyzedBadge: {
     position: "absolute",
     top: 8,
     right: 8,
     backgroundColor: "#f59e0b",
-    borderRadius: 12,
-    width: 24,
-    height: 24,
+    borderRadius: 10,
+    width: 20,
+    height: 20,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -156,42 +149,55 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#1f2937",
-    marginBottom: 2,
+    marginBottom: 4,
   },
   brand: {
     fontSize: 12,
     color: "#6b7280",
     marginBottom: 8,
   },
-  confidenceContainer: {
-    marginBottom: 8,
-  },
-  confidenceBadge: {
-    alignSelf: "flex-start",
+  categoryBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#eef2ff",
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 8,
+    alignSelf: "flex-start",
+    marginBottom: 8,
   },
-  confidenceText: {
+  categoryText: {
     fontSize: 11,
+    color: "#6366f1",
     fontWeight: "600",
+    textTransform: "capitalize",
+  },
+  analysisStatus: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingVertical: 2,
+    marginBottom: 6,
+  },
+  analysisStatusText: {
+    fontSize: 10,
+    color: "#f59e0b",
+    fontWeight: "500",
   },
   statsContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    gap: 12,
     alignItems: "center",
   },
-  wearInfo: {
+  statItem: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 4,
   },
-  wearText: {
-    fontSize: 11,
+  statText: {
+    fontSize: 12,
     color: "#6b7280",
-    marginLeft: 4,
-  },
-  lastWorn: {
-    fontSize: 11,
-    color: "#6b7280",
+    fontWeight: "500",
   },
 });

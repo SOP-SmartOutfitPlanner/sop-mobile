@@ -1,11 +1,11 @@
-import { AddItemRequest, AddItemResponse, AnalyzeItemResponse, GetItemResponse, ItemEdit,  } from "../../types/item";
+import { AddItemRequest, AddItemResponse, AnalyzeItemResponse, GetItemResponse, GetItemRequest, ItemEdit,  } from "../../types/item";
 import apiClient from "../api/apiClient";
 
 export const AddItem = async (data: AddItemRequest): Promise<AddItemResponse> => {
     const response = await apiClient.post<AddItemResponse>("/items", data);
     return response.data;
   }
-export const GetItem = async (data: {pageIndex: number, pageSize: number, userId: number}): Promise<GetItemResponse> => {
+export const GetItem = async (data: GetItemRequest): Promise<GetItemResponse> => {
   const response = await apiClient.get<GetItemResponse>(`/items/user/${data.userId}`, {params: data});
   return response.data;
 }

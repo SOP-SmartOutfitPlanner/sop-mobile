@@ -2,14 +2,31 @@ export interface Image {
     fileName: string;
     downloadUrl?: string;
 }
+
+// Single file upload
 export interface MinioUploadResponse {
     statusCode: number;
     message: string;
     data: Image | null;
-    
 }
+
 export interface MinioUploadRequest {
     file: any;
+}
+
+// Bulk upload
+export interface BulkMinioUploadResponse {
+    statusCode: number;
+    message: string;
+    data: {
+        successfulUploads: Image[];
+        failedUploads: Array<{
+            fileName: string;
+            reason: string;
+        }>;
+        totalSuccess: number;
+        totalFailed: number;
+    } | null;
 }
 
 export interface BulkUploadAutoRequest {
@@ -17,10 +34,33 @@ export interface BulkUploadAutoRequest {
     imageURLs: string[];
 }
 
+export interface FailedItem {
+    imageUrl: string;
+    reason: string;
+}
+
+// For 201 response - all items successfully created
+export interface BulkUploadAutoSuccessData {
+    count: number;
+    itemIds: number[];
+}
+
+// For 404 response - some items failed to classify
+export interface BulkUploadAutoPartialData {
+    successfulItems: {
+        count: number;
+        itemIds: number[];
+    };
+    failedItems: {
+        count: number;
+        items: FailedItem[];
+    };
+}
+
 export interface BulkUploadAutoResponse {
     statusCode: number;
     message: string;
-    data: string[] | null; // Array of failed image URLs (404) or null (201 success)
+    data: BulkUploadAutoSuccessData | BulkUploadAutoPartialData | null;
 }
 
 export interface ItemUploadManual {

@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCategories } from '../../hooks/useCategories';
 import { Category } from '../../types/category';
+import { FailedItem } from '../../types/image';
 
 interface ManualCategoryModalProps {
   visible: boolean;
-  failedImages: string[];
+  failedImages: FailedItem[];
   onClose: () => void;
   onSubmit: (selections: { imageURLs: string; categoryId: number }[]) => void;
 }
@@ -17,61 +18,165 @@ export const ManualCategoryModal: React.FC<ManualCategoryModalProps> = ({
   onClose,
   onSubmit,
 }) => {
-  const { parentCategories, childCategories, fetchParentCategories, fetchChildCategories, isLoading, isLoadingChildren } = useCategories();
+  const { parentCategories, fetchParentCategories, fetchChildCategories, isLoading, isLoadingChildren } = useCategories();
   const [selections, setSelections] = useState<Record<number, number>>({});
   const [selectedParentPerImage, setSelectedParentPerImage] = useState<Record<number, number>>({});
   const [childCategoriesPerImage, setChildCategoriesPerImage] = useState<Record<number, Category[]>>({});
   
-  // Fetch parent categories when modal opens
+  // Reset state when modal opens
   useEffect(() => {
     if (visible) {
       fetchParentCategories();
-      // Reset selections when modal opens
       setSelections({});
       setSelectedParentPerImage({});
       setChildCategoriesPerImage({});
     }
-  }, [visible]);
+  }, [visible, fetchParentCategories]);
 
-  const handleParentSelect = async (imageIndex: number, parentId: number) => {
-    // Set selected parent for this image
+  // Memoized handler for parent category selection
+  const handleParentSelect = useCallback(async (imageIndex: number, parentId: number) => {
     setSelectedParentPerImage(prev => ({
       ...prev,
       [imageIndex]: parentId,
     }));
 
-    // Clear child category selection for this image
     setSelections(prev => {
       const newSelections = { ...prev };
       delete newSelections[imageIndex];
       return newSelections;
     });
 
-    // Fetch child categories for this parent
     const children = await fetchChildCategories(parentId);
     setChildCategoriesPerImage(prev => ({
       ...prev,
       [imageIndex]: children,
     }));
-  };
+  }, [fetchChildCategories]);
 
-  const handleChildCategorySelect = (imageIndex: number, categoryId: number) => {
+  // Memoized handler for child category selection
+  const handleChildCategorySelect = useCallback((imageIndex: number, categoryId: number) => {
     setSelections(prev => ({
       ...prev,
       [imageIndex]: categoryId,
     }));
-  };
+  }, []);
 
-  const handleSubmit = () => {
-    const result = failedImages.map((url, index) => ({
-      imageURLs: url,
-      categoryId: selections[index],
-    })).filter(item => item.categoryId); // Only include items with selected category
+  // Memoized submit handler
+  const handleSubmit = useCallback(() => {
+    const result = failedImages
+      .map((item, index) => ({
+        imageURLs: item.imageUrl,
+        categoryId: selections[index],
+      }))
+      .filter(item => item.categoryId);
 
     onSubmit(result);
-  };
+  }, [failedImages, selections, onSubmit]);
 
-  const allSelected = failedImages.every((_, index) => selections[index] !== undefined);
+  // Memoized calculation for submit button state
+  const allSelected = useMemo(() => 
+    failedImages.every((_, index) => selections[index] !== undefined),
+    [failedImages, selections]
+  );
+
+  // Memoized selection count
+  const selectionCount = useMemo(() => 
+    Object.keys(selections).length,
+    [selections]
+  );
+
+  // Render category chip
+  const renderCategoryChip = useCallback((
+    category: Category,
+    isSelected: boolean,
+    onPress: () => void
+  ) => (
+    <TouchableOpacity
+      key={category.id}
+      style={[styles.categoryChip, isSelected && styles.categoryChipSelected]}
+      onPress={onPress}
+    >
+      <Text style={[styles.categoryChipText, isSelected && styles.categoryChipTextSelected]}>
+        {category.name}
+      </Text>
+    </TouchableOpacity>
+  ), []);
+
+  // Render image card
+  const renderImageCard = useCallback((failedItem: FailedItem, index: number) => {
+    const selectedParent = selectedParentPerImage[index];
+    const selectedChild = selections[index];
+    const childCategories = childCategoriesPerImage[index] || [];
+
+    return (
+      <View key={index} style={styles.imageCard}>
+        <Image source={{ uri: failedItem.imageUrl }} style={styles.image} />
+        
+        {/* Error Reason Badge */}
+        {failedItem.reason && (
+          <View style={styles.reasonBadge}>
+            <Ionicons name="alert-circle" size={14} color="#ef4444" />
+            <Text style={styles.reasonText}>{failedItem.reason}</Text>
+          </View>
+        )}
+        
+        {/* Parent Category Selection */}
+        <View style={styles.categorySelection}>
+          <Text style={styles.label}>Parent Category:</Text>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            style={styles.categoryScroll}
+            contentContainerStyle={styles.scrollContent}
+          >
+            {parentCategories.map((category) => 
+              renderCategoryChip(
+                category,
+                selectedParent === category.id,
+                () => handleParentSelect(index, category.id)
+              )
+            )}
+          </ScrollView>
+        </View>
+
+        {/* Child Category Selection */}
+        {selectedParent && (
+          <View style={styles.categorySelection}>
+            <Text style={styles.label}>Item Type:</Text>
+            {isLoadingChildren ? (
+              <View style={styles.loadingChildContainer}>
+                <ActivityIndicator size="small" color="#3b82f6" />
+              </View>
+            ) : (
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false}
+                style={styles.categoryScroll}
+                contentContainerStyle={styles.scrollContent}
+              >
+                {childCategories.map((category) =>
+                  renderCategoryChip(
+                    category,
+                    selectedChild === category.id,
+                    () => handleChildCategorySelect(index, category.id)
+                  )
+                )}
+              </ScrollView>
+            )}
+          </View>
+        )}
+      </View>
+    );
+  }, [
+    selectedParentPerImage,
+    selections,
+    childCategoriesPerImage,
+    parentCategories,
+    isLoadingChildren,
+    renderCategoryChip,
+    handleParentSelect,
+    handleChildCategorySelect,
+  ]);
 
   return (
     <Modal
@@ -96,7 +201,7 @@ export const ManualCategoryModal: React.FC<ManualCategoryModalProps> = ({
           <ScrollView 
             style={styles.content} 
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 20 }}
+            contentContainerStyle={styles.contentContainer}
           >
             {isLoading ? (
               <View style={styles.loadingContainer}>
@@ -104,81 +209,7 @@ export const ManualCategoryModal: React.FC<ManualCategoryModalProps> = ({
                 <Text style={styles.loadingText}>Loading categories...</Text>
               </View>
             ) : (
-              failedImages.map((imageUrl, index) => (
-                <View key={index} style={styles.imageCard}>
-                  <Image source={{ uri: imageUrl }} style={styles.image} />
-                  
-                  {/* Parent Category Selection */}
-                  <View style={styles.categorySelection}>
-                    <Text style={styles.label}>Parent Category:</Text>
-                    <ScrollView 
-                      horizontal 
-                      showsHorizontalScrollIndicator={false}
-                      style={styles.categoryScroll}
-                      contentContainerStyle={{ paddingRight: 12 }}
-                    >
-                      {parentCategories.map((category) => (
-                        <TouchableOpacity
-                          key={category.id}
-                          style={[
-                            styles.categoryChip,
-                            selectedParentPerImage[index] === category.id && styles.categoryChipSelected,
-                          ]}
-                          onPress={() => handleParentSelect(index, category.id)}
-                        >
-                          <Text
-                            style={[
-                              styles.categoryChipText,
-                              selectedParentPerImage[index] === category.id && styles.categoryChipTextSelected,
-                            ]}
-                          >
-                            {category.name}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
-
-                  {/* Child Category Selection - Only show if parent is selected */}
-                  {selectedParentPerImage[index] && (
-                    <View style={styles.categorySelection}>
-                      <Text style={styles.label}>Item Type:</Text>
-                      {isLoadingChildren ? (
-                        <View style={styles.loadingChildContainer}>
-                          <ActivityIndicator size="small" color="#3b82f6" />
-                        </View>
-                      ) : (
-                        <ScrollView 
-                          horizontal 
-                          showsHorizontalScrollIndicator={false}
-                          style={styles.categoryScroll}
-                          contentContainerStyle={{ paddingRight: 12 }}
-                        >
-                          {(childCategoriesPerImage[index] || []).map((category) => (
-                            <TouchableOpacity
-                              key={category.id}
-                              style={[
-                                styles.categoryChip,
-                                selections[index] === category.id && styles.categoryChipSelected,
-                              ]}
-                              onPress={() => handleChildCategorySelect(index, category.id)}
-                            >
-                              <Text
-                                style={[
-                                  styles.categoryChipText,
-                                  selections[index] === category.id && styles.categoryChipTextSelected,
-                                ]}
-                              >
-                                {category.name}
-                              </Text>
-                            </TouchableOpacity>
-                          ))}
-                        </ScrollView>
-                      )}
-                    </View>
-                  )}
-                </View>
-              ))
+              failedImages.map(renderImageCard)
             )}
           </ScrollView>
 
@@ -189,7 +220,7 @@ export const ManualCategoryModal: React.FC<ManualCategoryModalProps> = ({
               disabled={!allSelected}
             >
               <Text style={styles.submitButtonText}>
-                Submit ({Object.keys(selections).length}/{failedImages.length})
+                Submit ({selectionCount}/{failedImages.length})
               </Text>
             </TouchableOpacity>
           </View>
@@ -242,17 +273,36 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
+  contentContainer: {
+    paddingBottom: 20,
+  },
   imageCard: {
     marginBottom: 24,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#e5e7eb',
     overflow: 'hidden',
+    backgroundColor: '#fff',
   },
   image: {
     width: '100%',
     height: 200,
     backgroundColor: '#f1f5f9',
+  },
+  reasonBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#fef2f2',
+    borderBottomWidth: 1,
+    borderBottomColor: '#fee2e2',
+  },
+  reasonText: {
+    fontSize: 13,
+    color: '#ef4444',
+    flex: 1,
   },
   categorySelection: {
     padding: 12,
@@ -267,6 +317,9 @@ const styles = StyleSheet.create({
   categoryScroll: {
     flexGrow: 0,
     flexShrink: 0,
+  },
+  scrollContent: {
+    paddingRight: 12,
   },
   categoryChip: {
     paddingHorizontal: 16,

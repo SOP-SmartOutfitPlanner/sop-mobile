@@ -61,7 +61,6 @@ export interface Outfit {
         categoryId: number;
         categoryName: string;
         color: string;
-        aiDescription: string;
         brand: string;
         frequencyWorn: string;
         lastWornAt: string;

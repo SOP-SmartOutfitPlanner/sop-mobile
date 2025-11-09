@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { MinioUpload, BulkUploadAuto, BulkUploadManual, AnalyzeItems } from '../services/endpoint/upload';
-import { UploadProgress, ItemUploadManual } from '../types/image';
+import { MinioUpload, BulkMinioUpload, BulkUploadAuto, BulkUploadManual, AnalyzeItems } from '../services/endpoint/upload';
+import { UploadProgress, ItemUploadManual, FailedItem } from '../types/image';
 import { getUserId } from '../services/api/apiClient';
 
 export const useItemUpload = () => {
@@ -11,40 +11,61 @@ export const useItemUpload = () => {
     message: '',
   });
   const [isUploading, setIsUploading] = useState(false);
-  const [failedImages, setFailedImages] = useState<string[]>([]);
+  const [failedImages, setFailedImages] = useState<FailedItem[]>([]);
+  const [successfulItemIds, setSuccessfulItemIds] = useState<number[]>([]);
   const [showManualCategoryModal, setShowManualCategoryModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Step 1: Upload images to Minio and get download URLs
   const uploadImagesToMinio = useCallback(async (imageFiles: any[]) => {
     const uploadedUrls: string[] = [];
-    const failedUploads: any[] = [];
     
-    for (let i = 0; i < imageFiles.length; i++) {
-      try {
+    try {
+      setUploadProgress({
+        phase: 'uploading',
+        current: 0,
+        total: imageFiles.length,
+        message: `Uploading ${imageFiles.length} image${imageFiles.length > 1 ? 's' : ''}...`,
+      });
+
+      // Use bulk upload API
+      const response = await BulkMinioUpload(imageFiles);
+      
+      if (response.data) {
+        const { successfulUploads, failedUploads, totalSuccess, totalFailed } = response.data;
+        
+        // Collect successful URLs
+        uploadedUrls.push(...successfulUploads.map(img => img.downloadUrl || '').filter(Boolean));
+        
+        // Log results
+        console.log(`Minio upload results: ${totalSuccess} success, ${totalFailed} failed`);
+        
+        if (failedUploads.length > 0) {
+          console.warn('Failed uploads:', failedUploads);
+          failedUploads.forEach(failed => {
+            console.warn(`- ${failed.fileName}: ${failed.reason}`);
+          });
+        }
+        
+        // Update progress
         setUploadProgress({
           phase: 'uploading',
-          current: i + 1,
+          current: totalSuccess,
           total: imageFiles.length,
-          message: `Uploading image ${i + 1} of ${imageFiles.length}...`,
+          message: totalFailed > 0 
+            ? `${totalSuccess} uploaded, ${totalFailed} failed`
+            : `All ${totalSuccess} images uploaded successfully!`,
         });
-
-        const response = await MinioUpload(imageFiles[i]);
-        
-        if (response.statusCode === 200 && response.data?.downloadUrl) {
-          uploadedUrls.push(response.data.downloadUrl);
-        } else {
-          console.warn(`Upload failed for image ${i + 1}:`, response);
-          failedUploads.push({ index: i, response });
-        }
-      } catch (err: any) {
-        console.error(`Error uploading image ${i + 1}:`, err.message);
-        failedUploads.push({ index: i, error: err.message });
       }
-    }
-
-    if (failedUploads.length > 0) {
-      console.warn(`${failedUploads.length} image(s) failed to upload`);
+    } catch (err: any) {
+      console.error('Bulk upload error:', err.message);
+      // If bulk upload fails completely, show error
+      setUploadProgress({
+        phase: 'failed',
+        current: 0,
+        total: imageFiles.length,
+        message: err.message || 'Upload failed',
+      });
     }
 
     return uploadedUrls;
@@ -62,33 +83,55 @@ export const useItemUpload = () => {
     try {
       const response = await BulkUploadAuto(userId, imageURLs);
       
-      // Success case (201): Items added to wardrobe
-      if (response.statusCode === 201) {
-        setUploadProgress({
-          phase: 'complete',
-          current: imageURLs.length,
-          total: imageURLs.length,
-          message: `Successfully added ${imageURLs.length} item${imageURLs.length > 1 ? 's' : ''}!`,
-        });
-        return { success: true, failedImages: [] };
-      }
-      
-      // Failed case (404): Images not recognized as clothing
-      if (response.statusCode === 404 && response.data) {
-        const failedUrls = Array.isArray(response.data) ? response.data : [];
-        setFailedImages(failedUrls);
-        
-        if (failedUrls.length > 0) {
-          setShowManualCategoryModal(true);
+      // Success case (201): All items successfully added
+      if (response.statusCode === 201 && response.data) {
+        // Check if it's the success format (has count and itemIds directly)
+        if ('count' in response.data && 'itemIds' in response.data) {
+          const { count, itemIds } = response.data;
+          setSuccessfulItemIds(itemIds);
+          
           setUploadProgress({
-            phase: 'analyzing',
-            current: imageURLs.length - failedUrls.length,
+            phase: 'complete',
+            current: count,
             total: imageURLs.length,
-            message: `${failedUrls.length} image${failedUrls.length > 1 ? 's' : ''} need manual category selection`,
+            message: `Successfully added ${count} item${count > 1 ? 's' : ''}!`,
           });
+          return { success: true, failedImages: [] };
         }
-        
-        return { success: false, failedImages: failedUrls };
+      }
+
+      // Partial success case (404/207): Some items need manual category selection
+      if ((response.statusCode === 404 || response.statusCode === 207) && response.data) {
+        // Check if it's the partial format (has successfulItems and failedItems)
+        if ('successfulItems' in response.data && 'failedItems' in response.data) {
+          const { successfulItems, failedItems } = response.data;
+          
+          // Store successful item IDs
+          setSuccessfulItemIds(successfulItems.itemIds);
+          
+          // Store failed items with reasons
+          setFailedImages(failedItems.items);
+          
+          if (failedItems.count > 0) {
+            setShowManualCategoryModal(true);
+            setUploadProgress({
+              phase: 'analyzing',
+              current: successfulItems.count,
+              total: imageURLs.length,
+              message: `${successfulItems.count} item${successfulItems.count !== 1 ? 's' : ''} added. ${failedItems.count} need${failedItems.count === 1 ? 's' : ''} manual category selection`,
+            });
+          } else {
+            // All successful
+            setUploadProgress({
+              phase: 'complete',
+              current: successfulItems.count,
+              total: imageURLs.length,
+              message: `Successfully added ${successfulItems.count} item${successfulItems.count > 1 ? 's' : ''}!`,
+            });
+          }
+          
+          return { success: failedItems.count === 0, failedImages: failedItems.items };
+        }
       }
       
       return { success: true, failedImages: [] };
@@ -192,6 +235,7 @@ export const useItemUpload = () => {
     });
     setIsUploading(false);
     setFailedImages([]);
+    setSuccessfulItemIds([]);
     setShowManualCategoryModal(false);
     setError(null);
   }, []);
@@ -201,6 +245,7 @@ export const useItemUpload = () => {
     uploadProgress,
     isUploading,
     failedImages,
+    successfulItemIds,
     showManualCategoryModal,
     setShowManualCategoryModal,
     submitManualCategories,

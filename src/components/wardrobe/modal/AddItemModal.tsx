@@ -20,20 +20,13 @@ interface AddItemModalProps {
   visible: boolean;
   onClose: () => void;
   onSave?: () => void;
+  onSuccess?: () => void; // Callback after successful upload
 }
-
-/**
- * New AddItemModal following the upload flow:
- * 1. Select up to 10 images
- * 2. Upload to Minio
- * 3. Auto classify with bulk-upload/auto
- * 4. Manual category for failed images
- * 5. Show analysis button for unanalyzed items
- */
 export const AddItemModal: React.FC<AddItemModalProps> = ({
   visible,
   onClose,
   onSave,
+  onSuccess,
 }) => {
   const [selectedImages, setSelectedImages] = useState<any[]>([]);
   
@@ -133,6 +126,12 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
       }
       
       await submitManualCategories(parseInt(userId), selections);
+      
+      // Call success callback after manual upload completes
+      setTimeout(() => {
+        onSuccess?.(); // Refresh wardrobe items
+        handleClose();
+      }, 1500);
     } catch (error) {
       console.error('Error submitting manual categories:', error);
     }
@@ -144,15 +143,15 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     onClose();
   };
 
-  // Auto-close and refresh when upload completes
+  // Auto-close and refresh when upload completes successfully (auto upload)
   useEffect(() => {
     if (uploadProgress.phase === 'complete' && !showManualCategoryModal) {
       setTimeout(() => {
+        onSuccess?.(); // Refresh wardrobe items
         handleClose();
-        onSave?.();
       }, 1500);
     }
-  }, [uploadProgress.phase, showManualCategoryModal, onSave]);
+  }, [uploadProgress.phase, showManualCategoryModal]);
 
   return (
     <>

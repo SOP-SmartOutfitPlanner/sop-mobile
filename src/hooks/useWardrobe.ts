@@ -1,96 +1,95 @@
 import { getUserId } from './../services/api/apiClient';
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { EditItemAPI, GetItem, DeleteItemAPI } from "../services/endpoint/wardorbe";
 import { Item, ItemEdit } from "../types/item";
 
 export const useWardrobe = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | undefined>();
+  const [selectedSeasonId, setSelectedSeasonId] = useState<number | undefined>();
+  const [selectedStyleId, setSelectedStyleId] = useState<number | undefined>();
+  const [selectedOccasionId, setSelectedOccasionId] = useState<number | undefined>();
+  const [isAnalyzedFilter, setIsAnalyzedFilter] = useState<boolean | undefined>();
+  const [sortByDate, setSortByDate] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [allItems, setAllItems] = useState<Item[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch items from API - memoized to prevent infinite loops
+  // Fetch items from API with filters and search
   const fetchItems = useCallback(async () => {
     try {
-      const userId = await getUserId();``
+      const userId = await getUserId();
       
       if (!userId) {
-        console.log("⚠️ No userId found, skipping fetch");
+        console.log("No userId found, clearing items");
+        setItems([]); // Clear items when no user is logged in
         setLoading(false);
         return;
       }
 
       const response = await GetItem({
         pageIndex: 1,
-        pageSize: 20, // Get all items
+        pageSize: 20,
         userId: parseInt(userId),
+        takeAll: true,
+        search: searchQuery || undefined,
+        categoryId: selectedCategoryId,
+        seasonId: selectedSeasonId,
+        styleId: selectedStyleId,
+        occasionId: selectedOccasionId,
+        isAnalyzed: isAnalyzedFilter,
+        sortByDate: sortByDate,
       });
 
       if (response.statusCode === 200 && response.data?.data) {
-        // Access nested data.data array
-        setAllItems(response.data.data);
+        setItems(response.data.data);
         setError(null);
-        // console.log("✅ Fetched items:", response.data.data.length);
+        console.log("✅ Fetched items:", response.data.data.length);
       }
     } catch (err: any) {
       console.error("❌ Error fetching wardrobe items:", err);
       setError(err.message || "Failed to fetch items");
-      setAllItems([]); // Set empty array on error
+      setItems([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [searchQuery, selectedCategoryId, selectedSeasonId, selectedStyleId, selectedOccasionId, isAnalyzedFilter, sortByDate]);
 
-  // Initial load
+  // Initial load and refetch when filters change
   useEffect(() => {
     fetchItems();
   }, [fetchItems]);
 
-  const filteredItems = useMemo(() => {
-    // Safety check
-    if (!Array.isArray(allItems)) {
-      console.warn("⚠️ allItems is not an array:", allItems);
-      return [];
-    }
+  // Filter functions
+  const setCategoryFilter = useCallback((categoryId?: number) => {
+    setSelectedCategoryId(categoryId);
+  }, []);
 
-    return allItems.filter((item: Item) => {
-      const matchesSearch =
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (item.brand && item.brand.toLowerCase().includes(searchQuery.toLowerCase()));
+  const setSeasonFilter = useCallback((seasonId?: number) => {
+    setSelectedSeasonId(seasonId);
+  }, []);
 
-      const matchesFilters =
-        selectedFilters.length === 0 ||
-        selectedFilters.some(
-          (filter) => {
-            // Match by category name
-            if (item.categoryName?.toLowerCase() === filter.toLowerCase()) {
-              return true;
-            }
-            // Match by weather suitable
-            if (item.weatherSuitable?.toLowerCase().includes(filter.toLowerCase())) {
-              return true;
-            }
-            return false;
-          }
-        );
+  const setStyleFilter = useCallback((styleId?: number) => {
+    setSelectedStyleId(styleId);
+  }, []);
 
-      return matchesSearch && matchesFilters;
-    });
-  }, [searchQuery, selectedFilters, allItems]);
+  const setOccasionFilter = useCallback((occasionId?: number) => {
+    setSelectedOccasionId(occasionId);
+  }, []);
 
-  const toggleFilter = (filter: string) => {
-    setSelectedFilters((prev) =>
-      prev.includes(filter)
-        ? prev.filter((f) => f !== filter)
-        : [...prev, filter]
-    );
-  };
+  const setAnalyzedFilter = useCallback((isAnalyzed?: boolean) => {
+    setIsAnalyzedFilter(isAnalyzed);
+  }, []);
 
-  const clearFilters = () => {
-    setSelectedFilters([]);
-  };
+  const clearFilters = useCallback(() => {
+    setSelectedCategoryId(undefined);
+    setSelectedSeasonId(undefined);
+    setSelectedStyleId(undefined);
+    setSelectedOccasionId(undefined);
+    setIsAnalyzedFilter(undefined);
+    setSortByDate(undefined);
+  }, []);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -104,7 +103,7 @@ export const useWardrobe = () => {
       const response = await EditItemAPI(id, data);
       
       // Update local state with edited item
-      setAllItems(prevItems => 
+      setItems(prevItems => 
         prevItems.map(item => 
           item.id === id ? { ...item, ...response } : item
         )
@@ -123,7 +122,7 @@ export const useWardrobe = () => {
       await DeleteItemAPI(id);
       
       // Remove item from local state
-      setAllItems(prevItems => prevItems.filter(item => item.id !== id));
+      setItems(prevItems => prevItems.filter(item => item.id !== id));
       
       console.log("✅ Item deleted successfully");
     } catch (error) {
@@ -133,12 +132,21 @@ export const useWardrobe = () => {
   }, []);
 
   return {
-    items: filteredItems,
-    allItems,
+    items,
     searchQuery,
     setSearchQuery,
-    selectedFilters,
-    toggleFilter,
+    selectedCategoryId,
+    selectedSeasonId,
+    selectedStyleId,
+    selectedOccasionId,
+    isAnalyzedFilter,
+    sortByDate,
+    setCategoryFilter,
+    setSeasonFilter,
+    setStyleFilter,
+    setOccasionFilter,
+    setAnalyzedFilter,
+    setSortByDate,
     clearFilters,
     loading,
     isRefreshing,

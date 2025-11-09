@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   ScrollView,
   StyleSheet,
   RefreshControl,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { Header } from "../components/common/Header";
-import { GuestPrompt } from "../components/notification/GuestPrompt";
 import { Item } from "../types/item";
 import { useWardrobe } from "../hooks/useWardrobe";
 import { WardrobeActionButtons } from "../components/wardrobe/WardrobeActionButtons";
@@ -15,24 +15,20 @@ import { EmptyWardrobe } from "../components/wardrobe/EmptyWardrobe";
 import { WardrobeItemGrid } from "../components/wardrobe/WardrobeItemGrid";
 import { WardrobeLoadingGrid } from "../components/wardrobe/WardrobeLoadingGrid";
 import { ItemDetailModal } from "../components/wardrobe/ItemDetailModal";
-import { FilterModal } from "../components/wardrobe/FilterModal";
 import { AddItemModal } from "../components/wardrobe/modal/AddItemModal";
 import { EditItemModal } from "../components/wardrobe/modal/EditItemModal";
 import { useAIDetection } from "../contexts/AIDetectionContext";
+import { useAuth } from "../hooks/auth";
 
 const WardrobeScreen = ({ navigation }: any) => {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [isEditItemModalOpen, setIsEditItemModalOpen] = useState(false);
-  const [showGuestPrompt, setShowGuestPrompt] = useState(false);
 
+  const { user } = useAuth(); // Track auth state
   const { shouldOpenModal, setShouldOpenModal, hasCompletedDetection, createdItem, clearDetection, setOnItemCreated } = useAIDetection();
   const {
     items,
-    selectedFilters,
-    toggleFilter,
-    clearFilters,
     loading,
     isRefreshing,
     handleRefresh,
@@ -40,6 +36,14 @@ const WardrobeScreen = ({ navigation }: any) => {
     editItem,
     deleteItem,
   } = useWardrobe();
+
+  // Refetch items when screen is focused (handles login/logout)
+  useFocusEffect(
+    useCallback(() => {
+      console.log('🔄 Screen focused, refetching wardrobe...');
+      refetch();
+    }, [refetch])
+  );
 
   // Memoize the callback to prevent infinite loop
   const handleItemCreated = useCallback(() => {
@@ -66,43 +70,82 @@ const WardrobeScreen = ({ navigation }: any) => {
     }
   }, [shouldOpenModal, hasCompletedDetection, createdItem, setShouldOpenModal]);
 
-  const handleItemClick = (item: Item) => {
+  // Memoize callbacks to prevent re-renders
+  const handleItemClick = useCallback((item: Item) => {
     setSelectedItem(item);
-  };
+  }, []);
 
-  const handleUseInOutfit = (item: Item) => {
+  const handleUseInOutfit = useCallback((item: Item) => {
     setSelectedItem(null);
     // TODO: Navigate to outfit builder with selected item
     console.log("Use in outfit:", item.name);
-  };
+  }, []);
 
-  const handleBackPress = () => {
-    // Handle navigation back if needed
-  };
-
-  const handleNotificationPress = () => {
-    // Handle notification press
-  };
-
-  const handleMessagePress = () => {
-    // Handle message press
-  };
-
-  const handleProfilePress = () => {
-    navigation.navigate("Profile");
-  };
-
-  // Mock some favorites for demo
-  const favoriteItems = items.slice(0, Math.min(4, items.length));
-
-  const handleViewFavorites = () => {
+  const handleViewFavorites = useCallback(() => {
     // Navigate to favorites screen
     console.log("View favorites");
-  };
+  }, []);
 
-  const handleViewSuggestion = () => {
+  const handleViewSuggestion = useCallback(() => {
     navigation.navigate("Suggestion");
-  };
+  }, [navigation]);
+
+  const handleProfilePress = useCallback(() => {
+    navigation.navigate("Profile");
+  }, [navigation]);
+
+  // Empty handlers for Header props (not used in this screen)
+  const handleBackPress = useCallback(() => {}, []);
+  const handleNotificationPress = useCallback(() => {}, []);
+  const handleMessagePress = useCallback(() => {}, []);
+
+  // Memoize favorites to avoid recalculation
+  const favoriteItems = useMemo(
+    () => items.slice(0, Math.min(4, items.length)),
+    [items]
+  );
+
+  // Memoize displayed items
+  const displayedItems = useMemo(
+    () => items.slice(0, 3),
+    [items]
+  );
+
+  const displayedFavorites = useMemo(
+    () => favoriteItems.slice(0, 3),
+    [favoriteItems]
+  );
+
+  // Memoize modal handlers
+  const handleCloseItemDetail = useCallback(() => {
+    setSelectedItem(null);
+  }, []);
+
+  const handleCloseAddItem = useCallback(() => {
+    setIsAddItemModalOpen(false);
+  }, []);
+
+  const handleSaveAddItem = useCallback(() => {
+    setIsAddItemModalOpen(false);
+  }, []);
+
+  const handleSuccessAddItem = useCallback(async () => {
+    console.log('✅ Items uploaded successfully, refreshing wardrobe...');
+    await refetch(); // Refresh wardrobe items
+  }, [refetch]);
+
+  const handleCloseEditItem = useCallback(() => {
+    setIsEditItemModalOpen(false);
+    setSelectedItem(null);
+    clearDetection(); // Clear AI detection data
+  }, [clearDetection]);
+
+  const handleSaveEditItem = useCallback(async () => {
+    setIsEditItemModalOpen(false);
+    setSelectedItem(null);
+    clearDetection(); // Clear AI detection data
+    await handleRefresh(); // Refresh wardrobe after editing item
+  }, [clearDetection, handleRefresh]);
 
   if (loading) {
     return (
@@ -158,7 +201,7 @@ const WardrobeScreen = ({ navigation }: any) => {
             <EmptyWardrobe onCreateWardrobe={() => setIsAddItemModalOpen(true)} />
           ) : (
             <WardrobeItemGrid
-              items={items.slice(0, 3)}
+              items={displayedItems}
               onItemClick={handleItemClick}
               columns={3}
             />
@@ -174,7 +217,7 @@ const WardrobeScreen = ({ navigation }: any) => {
             onViewMore={handleViewFavorites}
           >
             <WardrobeItemGrid
-              items={favoriteItems.slice(0, 3)}
+              items={displayedFavorites}
               onItemClick={handleItemClick}
               columns={3}
             />
@@ -196,18 +239,11 @@ const WardrobeScreen = ({ navigation }: any) => {
         deleteItem={deleteItem}
       />
 
-      <FilterModal
-        visible={isFilterModalOpen}
-        onClose={() => setIsFilterModalOpen(false)}
-        selectedFilters={selectedFilters}
-        onFilterToggle={toggleFilter}
-        onClearFilters={clearFilters}
-      />
-
       <AddItemModal
         visible={isAddItemModalOpen}
-        onClose={() => setIsAddItemModalOpen(false)}
-        onSave={() => setIsAddItemModalOpen(false)}
+        onClose={handleCloseAddItem}
+        onSave={handleSaveAddItem}
+        onSuccess={handleSuccessAddItem}
       />
 
       <EditItemModal
@@ -226,16 +262,6 @@ const WardrobeScreen = ({ navigation }: any) => {
         item={selectedItem}
         editItem={editItem}
       />
-
-      <GuestPrompt
-        visible={showGuestPrompt}
-        onClose={() => setShowGuestPrompt(false)}
-        onLogin={() => {
-          setShowGuestPrompt(false);
-          navigation.navigate("Auth", { screen: "Login" });
-        }}
-        feature="thêm item vào tủ đồ"
-      />
     </View>
   );
 };
@@ -252,28 +278,9 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 16,
   },
-  sectionsContainer: {
-    marginTop: 20,
-    gap: 20,
-  },
   bottomSpacing: {
     height: 80,
   },
-  fab: {
-    position: "absolute",
-    right: 16,
-    bottom: 100,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#3b82f6",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
 });
+
 export default WardrobeScreen;

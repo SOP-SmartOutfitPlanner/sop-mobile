@@ -1,4 +1,11 @@
 //=====================Request=========================//
+
+// Color object structure
+export interface ColorItem {
+    name: string;
+    hex: string;
+}
+
 export interface AddItemRequest{ 
    id: number;
     userId: number;
@@ -7,7 +14,6 @@ export interface AddItemRequest{
     categoryId: number;
     categoryName: string;
     color?: string;
-    aiDescription?: string;
     brand?: string;
     frequencyWorn?: string;
     lastWornAt?: string;
@@ -32,6 +38,14 @@ export interface GetItemRequest {
     pageIndex: number;
     pageSize: number;
     userId: number;
+    takeAll?: boolean;
+    search?: string;
+    isAnalyzed?: boolean;
+    categoryId?: number;
+    seasonId?: number;
+    styleId?: number;
+    occasionId?: number;
+    sortByDate?: string;
 }
 //=====================Response=========================//
 export interface AddItemResponse {
@@ -76,7 +90,6 @@ export interface Item {
     categoryId: number;
     categoryName: string;
     color?: string;
-    aiDescription?: string;
     brand?: string;
     frequencyWorn?: string;
     lastWornAt?: string; // ISO date string
@@ -97,7 +110,6 @@ export interface ItemEdit{
     categoryId: number;
     categoryName: string;
     color?: string;
-    aiDescription?: string;
     brand?: string;
     frequencyWorn?: string;
     lastWornAt?: string; 
