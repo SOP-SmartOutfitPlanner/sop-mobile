@@ -1,63 +1,50 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-
-interface Outfit {
-  id: string;
-  items: string[];
-  name?: string;
-  favoriteCount?: number;
-}
+import { AllOutfitCard, AllOutfitCardData } from "./AllOutfitCard";
 
 interface AllOutfitsSectionProps {
-  outfits: Outfit[];
-  onViewOutfit: (outfit: Outfit) => void;
+  outfits: AllOutfitCardData[];
+  onViewOutfit: (outfitId: string) => void;
+  title?: string;
+  emptyMessage?: string;
 }
 
 export const AllOutfitsSection: React.FC<AllOutfitsSectionProps> = ({
   outfits,
   onViewOutfit,
+  title = "All Outfits",
+  emptyMessage = "There are no outfits to display",
 }) => {
-  if (outfits.length === 0) return null;
+  if (outfits.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.title}>{title}</Text>
+          </View>
+          <Text style={styles.count}>0 outfits</Text>
+        </View>
+        <View style={styles.emptyState}>
+          <Ionicons name="heart-outline" size={32} color="#cbd5e1" />
+          <Text style={styles.emptyMessage}>{emptyMessage}</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.title}>All Outfits</Text>
+          <Text style={styles.title}>{title}</Text>
         </View>
         <Text style={styles.count}>{outfits.length} outfits</Text>
       </View>
 
-      <View style={styles.outfitsGrid}>
+      <View style={styles.cardsGrid}>
         {outfits.map((outfit) => (
-          <TouchableOpacity
-            key={outfit.id}
-            style={styles.outfitCard}
-            onPress={() => onViewOutfit(outfit)}
-          >
-            <View style={styles.outfitPreview}>
-              {outfit.items.length > 0 ? (
-                <View style={styles.itemsContainer}>
-                  {outfit.items.slice(0, 2).map((item, index) => (
-                    <View key={index} style={styles.itemSlot}>
-                      <Image source={{ uri: item }} style={styles.itemImage} />
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <View style={styles.emptyPreview}>
-                  <Ionicons name="shirt-outline" size={32} color="#cbd5e1" />
-                </View>
-              )}
-            </View>
-
-            {outfit.favoriteCount !== undefined && outfit.favoriteCount > 0 && (
-              <View style={styles.favoriteIndicator}>
-                <Ionicons name="heart" size={12} color="#ef4444" />
-              </View>
-            )}
-          </TouchableOpacity>
+          <AllOutfitCard key={outfit.id} outfit={outfit} onPress={onViewOutfit} />
         ))}
       </View>
     </View>
@@ -91,56 +78,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#64748b",
   },
-  outfitsGrid: {
+  cardsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    justifyContent: "space-between",
   },
-  outfitCard: {
-    width: "31%",
-    aspectRatio: 0.7,
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    overflow: "hidden",
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 24,
     borderWidth: 1,
     borderColor: "#e2e8f0",
-    position: "relative",
-  },
-  outfitPreview: {
-    flex: 1,
-  },
-  itemsContainer: {
-    flex: 1,
-  },
-  itemSlot: {
-    flex: 1,
+    borderRadius: 16,
     backgroundColor: "#f8fafc",
+    gap: 12,
   },
-  itemImage: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "cover",
-  },
-  emptyPreview: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f8fafc",
-  },
-  favoriteIndicator: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#fff",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+  emptyMessage: {
+    fontSize: 14,
+    color: "#94a3b8",
+    fontWeight: "500",
+    textAlign: "center",
   },
 });

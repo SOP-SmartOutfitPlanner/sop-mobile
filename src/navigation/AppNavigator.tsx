@@ -7,6 +7,7 @@ import ProfileScreen from "../screens/profile/ProfileScreen";
 import { VerifyScreen } from "../screens/auth/VerifyScreen";
 import { AuthNavigator } from "./AuthNavigator";
 import AllWardrobeScreen from "../screens/AllScreen/AllWardrobeScreen";
+import AllOutfitScreen from "../screens/AllScreen/AllOutfitScreen";
 import SuggestionScreen from "../screens/SuggestionScreen";
 
 export type RootStackParamList = {
@@ -17,6 +18,7 @@ export type RootStackParamList = {
   Onboarding: undefined;
   Verify: { email: string };
   AllWardrobe: undefined;
+  AllOutfit: undefined;
   Suggestion: undefined;
 };
 
@@ -36,6 +38,7 @@ export const AppNavigator: React.FC = () => {
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       <Stack.Screen name="Verify" component={VerifyScreen} />
       <Stack.Screen name="AllWardrobe" component={AllWardrobeScreen} />
+      <Stack.Screen name="AllOutfit" component={AllOutfitScreen} />
       <Stack.Screen name="Suggestion" component={SuggestionScreen} />
     </Stack.Navigator>
   );

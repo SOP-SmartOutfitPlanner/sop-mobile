@@ -37,11 +37,22 @@ export interface GetOutfitsResponse {
         metaData: MetaData;
     }
 }
+export interface GetOutfitResponse {
+    statusCode: number;
+    message: string;
+    data: Outfit;
+}
 
 export interface GetOutfitsFavoriteResponse {
     statusCode: number;
     message: string;
     data: Outfit[];
+}
+
+export interface DeleteOutfitResponse {
+    statusCode: number;
+    message: string;
+    data: null;
 }
 //=====================Data Models=========================//
 export interface Outfit {
@@ -55,21 +66,20 @@ export interface Outfit {
     createdDate: string;
     updatedDate: string | null;
     items: {
-        id: number;
         itemId: number;
         name: string;
         categoryId: number;
         categoryName: string;
         color: string;
-        brand: string;
-        frequencyWorn: string;
+        aiDescription: string;
+        brand: string | null;
+        frequencyWorn: string | null;
         lastWornAt: string;
         imgUrl: string;
         weatherSuitable: string;
         condition: string;
         pattern: string;
         fabric: string;
-        tag: string | null;
     }[];
 }
 

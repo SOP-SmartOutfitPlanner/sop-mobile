@@ -1,65 +1,119 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
-interface Outfit {
+interface OutfitPreview {
   id: string;
   items: string[]; // Array of image URLs
   name?: string;
 }
 
 interface OutfitBookSectionProps {
-  outfits: Outfit[];
+  outfits: OutfitPreview[];
   onCreateOutfit: () => void;
-  onViewOutfit: (outfit: Outfit) => void;
+  onViewOutfit: (outfitId: string) => void;
+  onViewAllOutfits: () => void;
 }
+
+const BRAND_COLORS = {
+  navy: "#0F172A",
+  blue: "#1D4ED8",
+  accent: "#F97316",
+} as const;
+
+const cardGradients: [string, string][] = [
+  [BRAND_COLORS.blue, BRAND_COLORS.navy],
+  [BRAND_COLORS.accent, BRAND_COLORS.navy],
+  [BRAND_COLORS.navy, BRAND_COLORS.blue],
+];
 
 export const OutfitBookSection: React.FC<OutfitBookSectionProps> = ({
   outfits,
   onCreateOutfit,
   onViewOutfit,
+  onViewAllOutfits,
 }) => {
+  const cards = useMemo(() => outfits.slice(0, 10), [outfits]);
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Outfit Book</Text>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.title}>Outfit Book</Text>
+          <Text style={styles.subtitle}>Your signature outfit inspirations</Text>
+        </View>
+        <TouchableOpacity style={styles.viewAllButton} onPress={onViewAllOutfits}>
+          <Text style={styles.viewAllText}>View all</Text>
+          <Ionicons name="arrow-forward" size={16} color={BRAND_COLORS.blue} />
+        </TouchableOpacity>
+      </View>
 
-      <ScrollView 
-        horizontal 
+      <ScrollView
+        horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.outfitsContainer}
       >
-        {/* Existing Outfits */}
-        {outfits.map((outfit) => (
-          <TouchableOpacity
-            key={outfit.id}
-            style={styles.outfitCard}
-            onPress={() => onViewOutfit(outfit)}
+        <TouchableOpacity style={styles.createCardWrapper} onPress={onCreateOutfit}>
+          <LinearGradient
+            colors={[BRAND_COLORS.accent, BRAND_COLORS.blue]}
+            style={styles.createCard}
           >
-            <View style={styles.outfitItems}>
-              {outfit.items.slice(0, 4).map((item, index) => (
-                <View 
-                  key={index} 
-                  style={[
-                    styles.circleItemContainer,
-                    index === 0 && styles.topLeft,
-                    index === 1 && styles.topRight,
-                    index === 2 && styles.bottomLeft,
-                    index === 3 && styles.bottomRight,
-                  ]}
-                >
-                  {item ? (
-                    <Image source={{ uri: item }} style={styles.circleItemImage} />
-                  ) : (
-                    <View style={styles.circleItemPlaceholder}>
-                      <Ionicons name="shirt-outline" size={16} color="#cbd5e1" />
-                    </View>
-                  )}
-                </View>
-              ))}
+            <View style={styles.createIconWrapper}>
+              <Ionicons name="add" size={24} color="#fff" />
             </View>
-          </TouchableOpacity>
-        ))}
-       
+            <Text style={styles.createTitle}>Create Outfit</Text>
+            <Text style={styles.createSubtitle}>Start a fresh combo</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {cards.map((outfit, index) => {
+          const colors = cardGradients[index % cardGradients.length];
+          const items = outfit.items.slice(0, 4);
+
+          return (
+            <TouchableOpacity
+              key={outfit.id}
+              style={styles.cardWrapper}
+              activeOpacity={0.9}
+              onPress={() => onViewOutfit(outfit.id)}
+            >
+              <LinearGradient colors={colors} style={styles.outfitCard}>
+                <View style={styles.cardTopRow}>
+                  <View style={styles.cardLabel}>
+                    <Ionicons name="layers-outline" size={14} color="#fff" />
+                    <Text style={styles.cardLabelText}>Look #{index + 1}</Text>
+                  </View>
+                  <View style={styles.cardChip}>
+                    <Text style={styles.cardChipText}>{outfit.items.length} items</Text>
+                  </View>
+                </View>
+
+                <View style={styles.outfitItems}>
+                  {Array.from({ length: 4 }).map((_, slot) => {
+                    const imageUri = items[slot];
+                    return (
+                      <View key={slot} style={styles.circleItemContainer}>
+                        {imageUri ? (
+                          <Image source={{ uri: imageUri }} style={styles.circleItemImage} />
+                        ) : (
+                          <View style={styles.circleItemPlaceholder}>
+                            <Ionicons name="shirt-outline" size={18} color="#cbd5e1" />
+                          </View>
+                        )}
+                      </View>
+                    );
+                  })}
+                </View>
+
+                <Text numberOfLines={1} style={styles.cardTitle}>
+                  {outfit.name || "Unnamed outfit"}
+                </Text>
+                <Text style={styles.cardMeta}>Tap to view details</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -70,27 +124,86 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     paddingHorizontal: 16,
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: 12,
+    gap: 16,
+  },
   title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "700",
-    color: "#1e293b",
-    marginBottom: 16,
+    color: "#0f172a",
+  },
+  subtitle: {
+    marginTop: 4,
+    fontSize: 13,
+    color: "#64748b",
+  },
+  viewAllButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: "rgba(29,78,216,0.12)",
+  },
+  viewAllText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: BRAND_COLORS.blue,
   },
   outfitsContainer: {
     flexDirection: "row",
-    gap: 12,
+    gap: 16,
     paddingRight: 16,
+    paddingBottom: 4,
   },
-
+  cardWrapper: {
+    width: 180,
+  },
   outfitCard: {
-    width: 150,
-    height: 150,
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    padding: 8,
+    borderRadius: 22,
+    padding: 16,
+    height: 210,
+    justifyContent: "space-between",
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  cardTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  cardLabel: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(15,23,42,0.4)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  cardLabelText: {
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  cardChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.25)",
+  },
+  cardChipText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
   },
   outfitItems: {
     flex: 1,
@@ -102,21 +215,11 @@ const styles = StyleSheet.create({
   circleItemContainer: {
     width: "48%",
     aspectRatio: 1,
-    borderRadius: 100,
+    borderRadius: 18,
     overflow: "hidden",
-    backgroundColor: "#f8fafc",
-  },
-  topLeft: {
-    // Position for first item (top-left)
-  },
-  topRight: {
-    // Position for second item (top-right)
-  },
-  bottomLeft: {
-    // Position for third item (bottom-left)
-  },
-  bottomRight: {
-    // Position for fourth item (bottom-right)
+    backgroundColor: "rgba(15,23,42,0.25)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
   },
   circleItemImage: {
     width: "100%",
@@ -128,7 +231,7 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f8fafc",
+    // backgroundColor: "#f8fafc",
   },
   itemPreview: {
     flex: 1,
@@ -144,21 +247,40 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  emptyOutfitCard: {
-    width: 100,
-    height: 100,
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#e2e8f0",
-    borderStyle: "dashed",
-    gap: 8,
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#fff",
   },
-  emptyText: {
+  cardMeta: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.75)",
+  },
+  createCardWrapper: {
+    width: 160,
+  },
+  createCard: {
+    borderRadius: 24,
+    padding: 16,
+    height: 210,
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderColor: BRAND_COLORS.accent,
+  },
+  createIconWrapper: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  createTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  createSubtitle: {
     fontSize: 13,
-    color: "#94a3b8",
-    fontWeight: "500",
+    color: "rgba(255,255,255,0.8)",
   },
 });

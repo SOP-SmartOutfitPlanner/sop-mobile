@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { GetOutFitAPI, CreateOutfitAPI, SaveFavoriteOutfitAPI } from "../../services/endpoint/outfit";
+import {  CreateOutfitAPI, DeleteOutfitAPI, GetOutFitsAPI, SaveFavoriteOutfitAPI } from "../../services/endpoint/outfit";
 import { 
   Outfit, 
   GetOutfitsRequest, 
@@ -36,7 +36,7 @@ export const useOutfits = () => {
         ...params,
       };
 
-      const response = await GetOutFitAPI(request);
+      const response = await GetOutFitsAPI(request);
       
       if (response.statusCode === 200 && response.data?.data) {
         setOutfits(response.data.data);
@@ -65,11 +65,12 @@ export const useOutfits = () => {
         isFavorite: true,
       };
 
-      const response = await GetOutFitAPI(request);
+      const response = await GetOutFitsAPI(request);
       
       if (response.statusCode === 200 && response.data?.data) {
-        setFavoriteOutfits(response.data.data);
-        return response.data.data;
+        const favoritesOnly = response.data.data.filter((outfit) => outfit.isFavorite);
+        setFavoriteOutfits(favoritesOnly);
+        return favoritesOnly;
       }
       return [];
     } catch (err: any) {
@@ -132,6 +133,28 @@ export const useOutfits = () => {
     }
   }, [fetchFavoriteOutfits, showError]);
 
+  const deleteOutfit = useCallback(async (outfitId: number) => {
+    try {
+      setLoading(true);
+      const response = await DeleteOutfitAPI(outfitId);
+
+      if (response.statusCode === 200) {
+        setOutfits((prev) => prev.filter((outfit) => outfit.id !== outfitId));
+        setFavoriteOutfits((prev) => prev.filter((outfit) => outfit.id !== outfitId));
+        showSuccess("Outfit deleted successfully");
+        return true;
+      } else {
+        throw new Error(response.message || "Failed to delete outfit");
+      }
+    } catch (err: any) {
+      const errorMessage = err.message || "Failed to delete outfit";
+      showError(errorMessage);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [showError, showSuccess]);
+
   // Refresh data
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -156,6 +179,7 @@ export const useOutfits = () => {
     fetchFavoriteOutfits,
     createOutfit,
     toggleFavorite,
+    deleteOutfit,
     handleRefresh,
     showError,
     showSuccess,

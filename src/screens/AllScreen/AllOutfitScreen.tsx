@@ -1,0 +1,184 @@
+import React, { useMemo, useState } from "react";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
+  ActivityIndicator,
+  Text,
+} from "react-native";
+import { Header } from "../../components/common/Header";
+import { AllOutfitsSection } from "../../components/outfit/AllOutfitsSection";
+import { OutfitDetailModal } from "../../components/outfit/OutfitDetailModal";
+import NotificationModal from "../../components/notification/NotificationModal";
+import { useOutfits } from "../../hooks/outfit/useOutfits";
+import { Outfit } from "../../types/outfit";
+
+const AllOutfitScreen = ({ navigation }: any) => {
+  const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null);
+  const [isDetailVisible, setIsDetailVisible] = useState(false);
+
+  const {
+    outfits,
+    loading,
+    isRefreshing,
+    handleRefresh,
+    showError,
+    toggleFavorite,
+    deleteOutfit,
+    visible,
+    config,
+    hideNotification,
+  } = useOutfits();
+
+  const transformedOutfits = useMemo(
+    () =>
+      outfits.map((outfit) => ({
+        id: outfit.id.toString(),
+        items: outfit.items.map((item) => item.imgUrl),
+        name: outfit.name,
+        favoriteCount: outfit.isFavorite ? 1 : 0,
+        userDisplayName: outfit.userDisplayName,
+        createdDate: outfit.createdDate,
+        description: outfit.description,
+        totalItems: outfit.items.length,
+      })),
+    [outfits]
+  );
+
+  const outfitPool = useMemo(() => {
+    const mapping = new Map<number, Outfit>();
+    outfits.forEach((item) => mapping.set(item.id, item));
+    return mapping;
+  }, [outfits]);
+
+  const handleBack = () => {
+    navigation?.goBack?.();
+  };
+
+  const handleViewOutfit = (outfitId: string) => {
+    const found = outfitPool.get(Number(outfitId));
+    if (found) {
+      setSelectedOutfit(found);
+      setIsDetailVisible(true);
+    } else {
+      showError("Unable to find outfit details. Please try again.");
+    }
+  };
+
+  const handleCloseDetail = () => {
+    setIsDetailVisible(false);
+    setSelectedOutfit(null);
+  };
+
+  const handleFavoriteToggle = async (outfitId: number) => {
+    const success = await toggleFavorite(outfitId);
+    if (success) {
+      setSelectedOutfit((prev) =>
+        prev && prev.id === outfitId ? { ...prev, isFavorite: !prev.isFavorite } : prev
+      );
+    }
+  };
+
+  const handleDeleteOutfit = async (outfitId: number) => {
+    const success = await deleteOutfit(outfitId);
+    if (success) {
+      handleCloseDetail();
+    }
+  };
+
+  const handleEditOutfit = (outfitId: number) => {
+    showError("Edit outfit feature will be available soon.");
+  };
+
+  if (loading && outfits.length === 0) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#3b82f6" />
+        <Text style={styles.loadingText}>Loading outfits...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <Header
+        title="All Outfits"
+        showBackButton
+        onBackPress={handleBack}
+        onNotificationPress={() => {}}
+        onMessagePress={() => {}}
+        onProfilePress={() => navigation.navigate("Profile")}
+      />
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
+        }
+      >
+        <AllOutfitsSection
+          outfits={transformedOutfits}
+          title="All Outfits"
+          emptyMessage="You have not created any outfits yet"
+          onViewOutfit={handleViewOutfit}
+        />
+        <View style={styles.bottomSpacing} />
+      </ScrollView>
+
+      <NotificationModal
+        isVisible={visible}
+        type={config.type}
+        title={config.title}
+        message={config.message}
+        confirmText={config.confirmText}
+        cancelText={config.cancelText}
+        showCancel={config.showCancel}
+        onConfirm={config.onConfirm}
+        onClose={hideNotification}
+      />
+
+      <OutfitDetailModal
+        visible={isDetailVisible}
+        outfit={selectedOutfit}
+        onClose={handleCloseDetail}
+        onToggleFavorite={handleFavoriteToggle}
+        onDeleteOutfit={handleDeleteOutfit}
+        onEditOutfit={handleEditOutfit}
+      />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f8fafc",
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingTop: 16,
+    paddingBottom: 16,
+  },
+  bottomSpacing: {
+    height: 80,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f8fafc",
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: "#64748b",
+    fontWeight: "500",
+  },
+});
+
+export default AllOutfitScreen;
+

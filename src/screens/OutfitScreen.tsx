@@ -1,15 +1,19 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { View, ScrollView, StyleSheet, RefreshControl, ActivityIndicator, Text } from "react-native";
 import { Header } from "../components/common/Header";
 import { OutfitActionButtons } from "../components/outfit/OutfitActionButtons";
 import { OutfitCalendar } from "../components/outfit/OutfitCalendar";
 import { OutfitBookSection } from "../components/outfit/OutfitBookSection";
-import { AllOutfitsSection } from "../components/outfit/AllOutfitsSection";
+import { FavoriteOutfitsSection } from "../components/outfit/FavoriteOutfitsSection";
+import { OutfitDetailModal } from "../components/outfit/OutfitDetailModal";
 import NotificationModal from "../components/notification/NotificationModal";
 import { useOutfits } from "../hooks/outfit/useOutfits";
+import { Outfit } from "../types/outfit";
 
 const OutfitScreen = ({ navigation }: any) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+  const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null);
+  const [isDetailVisible, setIsDetailVisible] = useState(false);
   
   // Use custom hook for outfit management
   const {
@@ -19,9 +23,9 @@ const OutfitScreen = ({ navigation }: any) => {
     isRefreshing,
     createOutfit,
     toggleFavorite,
+    deleteOutfit,
     handleRefresh,
     showError,
-    showSuccess,
     visible,
     config,
     hideNotification,
@@ -59,12 +63,20 @@ const OutfitScreen = ({ navigation }: any) => {
     name: outfit.name,
   }));
 
-  const transformedAllOutfits = outfits.map((outfit) => ({
+  const transformedFavoriteOutfits = favoriteOutfits.map((outfit) => ({
     id: outfit.id.toString(),
     items: outfit.items.map((item) => item.imgUrl),
     name: outfit.name,
     favoriteCount: outfit.isFavorite ? 1 : 0,
   }));
+
+  const allOutfitPool = useMemo(() => {
+    const map = new Map<number, Outfit>();
+    [...outfits, ...favoriteOutfits].forEach((item) => {
+      map.set(item.id, item);
+    });
+    return map;
+  }, [outfits, favoriteOutfits]);
 
   const handleCreateOutfit = () => {
     console.log("Create outfit");
@@ -80,8 +92,47 @@ const OutfitScreen = ({ navigation }: any) => {
     console.log("Create suggestion list");
   };
 
-  const handleViewOutfit = (outfit: any) => {
-    console.log("View outfit:", outfit);
+  const handleViewOutfit = (outfitId: string) => {
+    const numericId = Number(outfitId);
+    const found = allOutfitPool.get(numericId);
+    if (found) {
+      setSelectedOutfit(found);
+      setIsDetailVisible(true);
+    } else {
+      showError("Unable to find outfit information. Please try again.");
+    }
+  };
+
+  const handleCloseDetail = () => {
+    setIsDetailVisible(false);
+    setSelectedOutfit(null);
+  };
+
+  const handleNavigateAllOutfits = () => {
+    if (navigation?.navigate) {
+      navigation.navigate("AllOutfit");
+    }
+  };
+
+  const handleFavoriteToggle = async (outfitId: number) => {
+    const success = await toggleFavorite(outfitId);
+    if (success) {
+      setSelectedOutfit((prev) =>
+        prev && prev.id === outfitId ? { ...prev, isFavorite: !prev.isFavorite } : prev
+      );
+    }
+  };
+
+  const handleDeleteOutfit = async (outfitId: number) => {
+    const success = await deleteOutfit(outfitId);
+    if (success) {
+      handleCloseDetail();
+    }
+  };
+
+  const handleEditOutfit = (outfitId: number) => {
+    console.log("Edit outfit", outfitId);
+    showError("Edit outfit feature will be available soon.");
   };
 
   const handleViewCalendar = () => {
@@ -163,12 +214,14 @@ const OutfitScreen = ({ navigation }: any) => {
           outfits={transformedOutfitsForBook}
           onCreateOutfit={handleCreateOutfit}
           onViewOutfit={handleViewOutfit}
+          onViewAllOutfits={handleNavigateAllOutfits}
         />
 
-        {/* All Outfits Section */}
-        <AllOutfitsSection
-          outfits={transformedAllOutfits}
+        {/* Favorite Outfits */}
+        <FavoriteOutfitsSection
+          outfits={transformedFavoriteOutfits}
           onViewOutfit={handleViewOutfit}
+          onViewAll={handleNavigateAllOutfits}
         />
 
         {/* Bottom spacing */}
@@ -186,6 +239,15 @@ const OutfitScreen = ({ navigation }: any) => {
         showCancel={config.showCancel}
         onConfirm={config.onConfirm}
         onClose={hideNotification}
+      />
+
+      <OutfitDetailModal
+        visible={isDetailVisible}
+        outfit={selectedOutfit}
+        onClose={handleCloseDetail}
+        onToggleFavorite={handleFavoriteToggle}
+        onDeleteOutfit={handleDeleteOutfit}
+        onEditOutfit={handleEditOutfit}
       />
     </View>
   );
