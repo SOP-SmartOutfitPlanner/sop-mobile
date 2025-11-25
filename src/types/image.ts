@@ -3,6 +3,18 @@ export interface Image {
     downloadUrl?: string;
 }
 
+export interface SplitItem {
+    category: string;
+    url: string;
+    fileName: string;
+}
+
+export interface SplitItemResponse {
+    statusCode: number;
+    message: string;
+    data: SplitItem[];
+}
+
 // Single file upload
 export interface MinioUploadResponse {
     statusCode: number;

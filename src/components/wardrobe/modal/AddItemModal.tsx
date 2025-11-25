@@ -32,6 +32,7 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
   
   const {
     uploadItems,
+    uploadSplitOutfit,
     uploadProgress,
     isUploading,
     failedImages,
@@ -117,6 +118,39 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     await uploadItems(selectedImages);
   };
 
+  const handleSplitOutfitUpload = async () => {
+    try {
+      const hasPermissions = await requestPermissions();
+      if (!hasPermissions) return;
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [3, 5],
+        quality: 0.9,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        const uriParts = asset.uri.split('.');
+        const fileExtension = uriParts[uriParts.length - 1] || 'jpg';
+
+        const outfitImage = {
+          uri: asset.uri,
+          type: asset.mimeType || `image/${fileExtension}`,
+          name: asset.fileName || `outfit_${Date.now()}.${fileExtension}`,
+          fileName: asset.fileName || `outfit_${Date.now()}.${fileExtension}`,
+          mimeType: asset.mimeType || `image/${fileExtension}`,
+        };
+
+        await uploadSplitOutfit(outfitImage);
+      }
+    } catch (error) {
+      console.error('Error processing outfit image:', error);
+      Alert.alert('Error', 'Failed to process outfit image. Please try again.');
+    }
+  };
+
   const handleManualCategorySubmit = async (selections: { imageURLs: string; categoryId: number }[]) => {
     try {
       const userId = await getUserId();
@@ -173,7 +207,7 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
             <View style={styles.infoCard}>
               <Ionicons name="information-circle" size={20} color="#3b82f6" />
               <Text style={styles.infoText}>
-                Upload up to 10 images. Items will be automatically classified and added to your wardrobe.
+                Upload up to 10 images or send one full-body outfit photo for AI splitting. Items will be automatically classified and added to your wardrobe.
               </Text>
             </View>
 
@@ -219,6 +253,15 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
               >
                 <Ionicons name="images" size={24} color="#fff" />
                 <Text style={styles.actionButtonText}>Gallery</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.actionButton, styles.splitButton]}
+                onPress={handleSplitOutfitUpload}
+                disabled={isUploading}
+              >
+                <Ionicons name="shirt" size={24} color="#fff" />
+                <Text style={styles.actionButtonText}>AI Split Outfit</Text>
               </TouchableOpacity>
             </View>
 
@@ -346,6 +389,9 @@ const styles = StyleSheet.create({
   },
   galleryButton: {
     backgroundColor: "#8b5cf6",
+  },
+  splitButton: {
+    backgroundColor: "#f97316",
   },
   actionButtonText: {
     color: "#fff",
