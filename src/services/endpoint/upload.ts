@@ -1,4 +1,4 @@
-import { AnalysisRequest, AnalysisResponse, BulkUploadAutoRequest, BulkUploadAutoResponse, BulkUploadManualRequest, BulkUploadManualResponse, ItemUploadManual, MinioUploadResponse, BulkMinioUploadResponse } from "../../types/image";
+import { AnalysisRequest, AnalysisResponse, BulkUploadAutoRequest, BulkUploadAutoResponse, BulkUploadManualRequest, BulkUploadManualResponse, ItemUploadManual, MinioUploadResponse, BulkMinioUploadResponse, SplitItemResponse } from "../../types/image";
 import apiClient from "../api/apiClient";
 
 // Step 1a: Upload single image to Minio
@@ -69,6 +69,37 @@ export const BulkMinioUpload = async (files: any[]): Promise<BulkMinioUploadResp
     validateStatus: (status) => status === 200 || status === 207 || status === 400
   });
   
+  return response.data;
+}
+
+// Step 1c: Split full outfit image into individual pieces
+export const SplitOutfitImage = async (file: any): Promise<SplitItemResponse> => {
+  if (!file) {
+    throw new Error("No file provided for outfit split");
+  }
+
+  const validMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+  const mimeType = file.type?.toLowerCase() || file.mimeType?.toLowerCase();
+
+  if (mimeType && !validMimeTypes.includes(mimeType)) {
+    const error = `Invalid file type: "${mimeType}". Allowed types: ${validMimeTypes.join(', ')}`;
+    console.error(error);
+    throw new Error(error);
+  }
+
+  const formData = new FormData();
+  formData.append('file', {
+    uri: file.uri,
+    type: file.mimeType || file.type || 'image/jpeg',
+    name: file.fileName || file.name || `outfit_${Date.now()}.jpg`,
+  } as any);
+
+  const response = await apiClient.post<SplitItemResponse>("/items/split-item", formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+
   return response.data;
 }
 

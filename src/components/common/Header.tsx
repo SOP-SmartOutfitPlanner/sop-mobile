@@ -3,10 +3,12 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Bell, MessageCircle, ArrowLeft } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { COLORS, SPACING, SHADOWS } from "../../constants/homeStyles";
 
 interface HeaderProps {
   title?: string;
+  subtitle?: string;
   showBackButton?: boolean;
   showNotification?: boolean;
   showMessage?: boolean;
@@ -27,75 +29,94 @@ export const Header: React.FC<HeaderProps> = ({
   onNotificationPress,
   onMessagePress,
   onProfilePress,
+  subtitle,
 }) => {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <View style={styles.container}>
-        <View style={styles.leftSection}>
+      <LinearGradient
+        colors={["#0f172a", "#111827"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientWrapper}
+      >
+        <View style={styles.container}>
           {showBackButton ? (
-            <TouchableOpacity style={styles.iconButton} onPress={onBackPress}>
-              <ArrowLeft size={20} color={COLORS.text.primary} />
+            <TouchableOpacity
+              style={[styles.iconButton, styles.backButton]}
+              onPress={onBackPress}
+              activeOpacity={0.85}
+            >
+              <ArrowLeft size={18} color="#e2e8f0" />
             </TouchableOpacity>
           ) : null}
-          <Text style={styles.title}>{title}</Text>
+
+          <View style={styles.titleWrapper}>
+            <Text numberOfLines={1} style={styles.title}>
+              {title}
+            </Text>
+            {subtitle && (
+              <Text numberOfLines={1} style={styles.subtitle}>
+                {subtitle}
+              </Text>
+            )}
+          </View>
+
+          <View style={styles.rightSection}>
+            {showNotification && (
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={onNotificationPress}
+                activeOpacity={0.85}
+              >
+                <Bell size={18} color="#e2e8f0" />
+                <View style={styles.notificationBadge} />
+              </TouchableOpacity>
+            )}
+
+            {showMessage && (
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={onMessagePress}
+                activeOpacity={0.85}
+              >
+                <MessageCircle size={18} color="#e2e8f0" />
+              </TouchableOpacity>
+            )}
+
+            {showProfile && (
+              <TouchableOpacity
+                style={styles.profileButton}
+                onPress={onProfilePress}
+                activeOpacity={0.9}
+              >
+                <View style={styles.avatar}>
+                  <Ionicons name="person" size={18} color={COLORS.white} />
+                </View>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
-
-        <View style={styles.rightSection}>
-          {showNotification && (
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={onNotificationPress}
-            >
-              <Bell size={20} color={COLORS.text.secondary} />
-              {/* Notification badge */}
-              <View style={styles.notificationBadge}>
-                <View style={styles.badgeDot} />
-              </View>
-            </TouchableOpacity>
-          )}
-
-          {showMessage && (
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={onMessagePress}
-            >
-              <MessageCircle size={20} color={COLORS.text.secondary} />
-            </TouchableOpacity>
-          )}
-
-          {showProfile && (
-            <TouchableOpacity
-              style={styles.profileButton}
-              onPress={onProfilePress}
-            >
-              <View style={styles.avatar}>
-                <Ionicons name="person" size={18} color={COLORS.white} />
-              </View>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+      </LinearGradient>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: COLORS.white,
+    backgroundColor: "#050816",
+  },
+  gradientWrapper: {
     ...SHADOWS.card,
+    borderBottomLeftRadius: 26,
+    borderBottomRightRadius: 26,
+    paddingBottom: SPACING.sm,
+    paddingHorizontal: SPACING.md,
   },
   container: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    backgroundColor: COLORS.white,
-  },
-  leftSection: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
+    paddingTop: SPACING.md,
   },
   rightSection: {
     flexDirection: "row",
@@ -103,40 +124,44 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     gap: SPACING.sm,
   },
-  placeholder: {
-    width: 40,
-  },
   iconButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "rgba(255,255,255,0.08)",
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+  },
+  backButton: {
+    marginRight: SPACING.sm,
   },
   title: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: COLORS.text.primary,
-    marginLeft: SPACING.sm,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#f1f5f9",
+  },
+  subtitle: {
+    fontSize: 13,
+    color: "rgba(226,232,240,0.8)",
+    marginTop: 2,
+  },
+  titleWrapper: {
+    flex: 1,
   },
   notificationBadge: {
     position: "absolute",
     top: 8,
-    right: 10,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#ef4444",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  badgeDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#ef4444",
+    right: 8,
+    width: 10,
+    height: 10,
+    borderRadius: 6,
+    backgroundColor: "#f87171",
+    shadowColor: "#f87171",
+    shadowOpacity: 0.6,
+    shadowRadius: 4,
   },
   profileButton: {
     marginLeft: SPACING.xs,
@@ -148,5 +173,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     justifyContent: "center",
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.35)",
   },
 });

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { MinioUpload, BulkMinioUpload, BulkUploadAuto, BulkUploadManual, AnalyzeItems } from '../services/endpoint/upload';
+import { MinioUpload, BulkMinioUpload, BulkUploadAuto, BulkUploadManual, AnalyzeItems, SplitOutfitImage } from '../services/endpoint/upload';
 import { UploadProgress, ItemUploadManual, FailedItem } from '../types/image';
 import { getUserId } from '../services/api/apiClient';
 
@@ -175,6 +175,56 @@ export const useItemUpload = () => {
     }
   }, []);
 
+  // Step 4: Split outfit image flow
+  const uploadSplitOutfit = useCallback(async (imageFile: any) => {
+    setIsUploading(true);
+    setError(null);
+
+    try {
+      setUploadProgress({
+        phase: 'uploading',
+        current: 0,
+        total: 1,
+        message: 'Splitting outfit image...',
+      });
+
+      const splitResponse = await SplitOutfitImage(imageFile);
+
+      if (!splitResponse.data || splitResponse.data.length === 0) {
+        throw new Error('AI could not detect individual pieces. Try another photo.');
+      }
+
+      const userId = await getUserId();
+      if (!userId) {
+        throw new Error('User not found. Please login again.');
+      }
+
+      const outfitImageURLs = splitResponse.data.map(item => item.url).filter(Boolean);
+
+      if (outfitImageURLs.length === 0) {
+        throw new Error('Split API did not return any valid items.');
+      }
+
+      if (outfitImageURLs.length > 10) {
+        console.warn(`Split returned ${outfitImageURLs.length} items. Only first 10 will be processed.`);
+      }
+
+      await autoClassifyItems(parseInt(userId), outfitImageURLs.slice(0, 10));
+    } catch (err: any) {
+      console.error('Outfit split upload error:', err.message);
+      setError(err.message || 'Failed to process outfit image');
+      setUploadProgress({
+        phase: 'failed',
+        current: 0,
+        total: 0,
+        message: err.message || 'Outfit split failed',
+      });
+      throw err;
+    } finally {
+      setIsUploading(false);
+    }
+  }, [autoClassifyItems]);
+
   // Complete upload flow
   const uploadItems = useCallback(async (imageFiles: any[]) => {
     if (imageFiles.length === 0) {
@@ -242,6 +292,7 @@ export const useItemUpload = () => {
 
   return {
     uploadItems,
+    uploadSplitOutfit,
     uploadProgress,
     isUploading,
     failedImages,
