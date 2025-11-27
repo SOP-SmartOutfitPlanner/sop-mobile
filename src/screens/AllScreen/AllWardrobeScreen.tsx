@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   ScrollView,
@@ -9,6 +9,7 @@ import {
   Text,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { Header } from "../../components/common/Header";
 import { Item } from "../../types/item";
 import { useWardrobe } from "../../hooks/useWardrobe";
@@ -57,14 +58,37 @@ const AllWardrobeScreen = ({ navigation }: any) => {
     navigation.goBack();
   };
 
-  // Calculate active filters count
-  const activeFiltersCount = [
-    selectedCategoryId,
-    selectedSeasonId,
-    selectedStyleId,
-    selectedOccasionId,
-    isAnalyzedFilter,
-  ].filter((filter) => filter !== undefined).length;
+  const activeFiltersCount = useMemo(
+    () =>
+      [
+        selectedCategoryId,
+        selectedSeasonId,
+        selectedStyleId,
+        selectedOccasionId,
+        isAnalyzedFilter,
+      ].filter((filter) => filter !== undefined).length,
+    [
+      selectedCategoryId,
+      selectedSeasonId,
+      selectedStyleId,
+      selectedOccasionId,
+      isAnalyzedFilter,
+    ]
+  );
+
+  const analyzedCount = useMemo(
+    () => items.filter((item) => item.isAnalyzed).length,
+    [items]
+  );
+
+  const frequentCount = useMemo(
+    () =>
+      items.filter((item) => {
+        const freq = Number(item.frequencyWorn || 0);
+        return freq > 5;
+      }).length,
+    [items]
+  );
 
   if (loading) {
     return (
@@ -97,36 +121,69 @@ const AllWardrobeScreen = ({ navigation }: any) => {
           <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
         }
       >
-        {/* Search and Filter Bar */}
+        <View style={styles.heroWrapper}>
+          <LinearGradient
+            colors={["#1d4ed8", "#0f172a"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroCard}
+          >
+            <View style={styles.heroHeader}>
+              <View>
+                <Text style={styles.heroTitle}>Entire Wardrobe</Text>
+                <Text style={styles.heroSubtitle}>
+                  Filter, analyze, and manage every AI-tagged piece.
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.heroBack}
+                onPress={handleBackPress}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="chevron-back" size={18} color="#e0f2fe" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.heroStatsRow}>
+              <View style={styles.heroStat}>
+                <Text style={styles.heroStatValue}>{items.length}</Text>
+                <Text style={styles.heroStatLabel}>Total</Text>
+              </View>
+              <View style={styles.heroStat}>
+                <Text style={styles.heroStatValue}>{analyzedCount}</Text>
+                <Text style={styles.heroStatLabel}>Analyzed</Text>
+              </View>
+              <View style={styles.heroStat}>
+                <Text style={styles.heroStatValue}>{frequentCount}</Text>
+                <Text style={styles.heroStatLabel}>Most worn</Text>
+              </View>
+            </View>
+          </LinearGradient>
+        </View>
+
         <View style={styles.controlsContainer}>
-          {/* Search Bar */}
           <View style={styles.searchContainer}>
-            <Ionicons
-              name="search"
-              size={18}
-              color="#999"
-              style={styles.searchIcon}
-            />
+            <Ionicons name="search" size={18} color="#94a3b8" />
             <TextInput
               style={styles.searchInput}
               placeholder="Search in wardrobe..."
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholderTextColor="#999"
+              placeholderTextColor="#94a3b8"
             />
             {searchQuery.length > 0 && (
               <TouchableOpacity onPress={() => setSearchQuery("")}>
-                <Ionicons name="close-circle" size={18} color="#999" />
+                <Ionicons name="close-circle" size={18} color="#94a3b8" />
               </TouchableOpacity>
             )}
           </View>
 
-          {/* Filter Button */}
           <TouchableOpacity
             style={styles.filterButton}
             onPress={() => setIsFilterModalOpen(true)}
+            activeOpacity={0.85}
           >
-            <Ionicons name="options-outline" size={20} color="#64748b" />
+            <Ionicons name="options-outline" size={20} color="#0f172a" />
             {activeFiltersCount > 0 && (
               <View style={styles.filterBadge}>
                 <Text style={styles.filterBadgeText}>
@@ -137,11 +194,13 @@ const AllWardrobeScreen = ({ navigation }: any) => {
           </TouchableOpacity>
         </View>
 
-        {/* Item Count */}
         <View style={styles.itemCountContainer}>
           <Text style={styles.itemCountText}>
-            {items.length} Items
+            {items.length} curated items
           </Text>
+          <TouchableOpacity onPress={clearFilters}>
+            <Text style={styles.clearFiltersText}>Clear filters</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Analyze Items Button */}
@@ -149,7 +208,11 @@ const AllWardrobeScreen = ({ navigation }: any) => {
 
         {/* Items Grid */}
         {items.length > 0 ? (
-          <WardrobeItemGrid items={items} onItemClick={handleItemClick} />
+          <WardrobeItemGrid
+            items={items}
+            onItemClick={handleItemClick}
+            columns={2}
+          />
         ) : (
           <View style={styles.emptyContainer}>
             <Ionicons name="shirt-outline" size={64} color="#cbd5e1" />
@@ -198,56 +261,50 @@ const AllWardrobeScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#030617",
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 16,
-    paddingBottom: 16,
+    paddingVertical: 24,
+    gap: 20,
   },
   controlsContainer: {
     flexDirection: "row",
     paddingHorizontal: 16,
-    marginBottom: 16,
     gap: 12,
   },
   searchContainer: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    paddingHorizontal: 12,
+    backgroundColor: "rgba(15,23,42,0.85)",
+    borderRadius: 16,
+    paddingHorizontal: 14,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
-  },
-  searchIcon: {
-    marginRight: 8,
+    borderColor: "rgba(148,163,184,0.25)",
   },
   searchInput: {
     flex: 1,
     fontSize: 15,
-    color: "#1f2937",
+    color: "#e2e8f0",
   },
   filterButton: {
-    width: 70,
-    height: 70,
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    width: 60,
+    height: 60,
+    backgroundColor: "#38bdf8",
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
     position: "relative",
   },
   filterBadge: {
     position: "absolute",
     top: -4,
     right: -4,
-    backgroundColor: "#3b82f6",
+    backgroundColor: "#0f172a",
     borderRadius: 10,
     minWidth: 20,
     height: 20,
@@ -256,18 +313,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   filterBadgeText: {
-    color: "#fff",
+    color: "#38bdf8",
     fontSize: 11,
     fontWeight: "bold",
   },
   itemCountContainer: {
     paddingHorizontal: 16,
-    marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   itemCountText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
-    color: "#1e293b",
+    color: "#e2e8f0",
+  },
+  clearFiltersText: {
+    fontSize: 13,
+    color: "#94a3b8",
   },
   emptyContainer: {
     alignItems: "center",
@@ -281,6 +344,64 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 40,
+  },
+  heroWrapper: {
+    paddingHorizontal: 16,
+  },
+  heroCard: {
+    borderRadius: 24,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    gap: 20,
+  },
+  heroHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  heroTitle: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  heroSubtitle: {
+    color: "rgba(226,232,240,0.85)",
+    marginTop: 6,
+    fontSize: 13,
+  },
+  heroBack: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(224,242,254,0.35)",
+    backgroundColor: "rgba(15,23,42,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  heroStatsRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  heroStat: {
+    flex: 1,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.35)",
+    backgroundColor: "rgba(15,23,42,0.35)",
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  heroStatValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  heroStatLabel: {
+    fontSize: 12,
+    color: "rgba(226,232,240,0.8)",
+    marginTop: 4,
   },
 });
 

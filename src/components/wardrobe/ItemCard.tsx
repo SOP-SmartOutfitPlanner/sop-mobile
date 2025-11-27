@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, TouchableOpacity, Image, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { Item } from "../../types/item";
 
 interface ItemCardProps {
@@ -9,127 +10,151 @@ interface ItemCardProps {
 }
 
 export const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
-  const getItemTypeTag = (type: string) => {
-    const tagStyles = {
-      shoes: { backgroundColor: "#fef3c7", color: "#92400e", text: "shoes" },
-      top: { backgroundColor: "#dbeafe", color: "#1e40af", text: "top" },
-      accessory: {
-        backgroundColor: "#fecaca",
-        color: "#dc2626",
-        text: "accessory",
-      },
-    };
-    return tagStyles[type as keyof typeof tagStyles] || tagStyles.top;
+  const seasonColors: Record<string, string> = {
+    Spring: "#ec4899",
+    Summer: "#f59e0b",
+    Fall: "#f97316",
+    Winter: "#22d3ee",
   };
 
-  const tag = getItemTypeTag(item.categoryName || "top");
+  const formattedLastWorn = useMemo(() => {
+    if (!item.lastWornAt) return "Freshly added";
+
+    try {
+      const date = new Date(item.lastWornAt);
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return "Recently worn";
+    }
+  }, [item.lastWornAt]);
+
+  const displayedSeasons = useMemo(
+    () => item.seasons?.slice(0, 3) ?? [],
+    [item.seasons]
+  );
+
+  const hasSeasons = displayedSeasons.length > 0;
 
   return (
     <TouchableOpacity
-      style={styles.container}
+      style={styles.touchable}
       onPress={() => onItemClick(item)}
-      activeOpacity={0.8}
+      activeOpacity={0.9}
     >
-      <View style={styles.imageContainer}>
-        <Image
-          source={{ uri: item.imgUrl || "https://via.placeholder.com/300x400" }}
-          style={styles.image}
-          resizeMode="cover"
-        />
-        <View
-          style={[styles.typeTag, { backgroundColor: tag.backgroundColor }]}
-        >
-          <Text style={[styles.typeTagText, { color: tag.color }]}>
-            {tag.text}
-          </Text>
-        </View>
-        
-        {!item.isAnalyzed && (
-          <View style={styles.notAnalyzedBadge}>
-            <Ionicons name="alert-circle" size={14} color="#fff" />
-          </View>
-        )}
-      </View>
+      <LinearGradient
+        colors={["#122c52", "#0b1730"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.container}
+      >
+        <View style={styles.imageContainer}>
+          <Image
+            source={{ uri: item.imgUrl || "https://via.placeholder.com/300x400" }}
+            style={styles.image}
+            resizeMode="cover"
+          />
 
-      <View style={styles.content}>
-        <Text style={styles.name} numberOfLines={1}>
-          {item.name}
-        </Text>
-        {item.brand && (
-          <Text style={styles.brand} numberOfLines={1}>
-            {item.brand}
-          </Text>
-        )}
-        
-        {/* Category Badge */}
-        {item.categoryName && (
-          <View style={styles.categoryBadge}>
-            <Ionicons name="pricetag-outline" size={12} color="#6366f1" />
-            <Text style={styles.categoryText}>{item.categoryName}</Text>
+          <View style={styles.badgeRow}>
+            <View style={styles.aiBadge}>
+              <Text style={styles.aiBadgeText}>AI</Text>
+            </View>
+            {item.categoryName && (
+              <View style={styles.categoryBadge}>
+                <Text style={styles.categoryBadgeText}>
+                  {item.categoryName}
+                </Text>
+              </View>
+            )}
           </View>
-        )}
-        
-        {/* Analysis Status - Compact version */}
-        {!item.isAnalyzed && (
-          <View style={styles.analysisStatus}>
-            <Ionicons name="alert-circle-outline" size={12} color="#f59e0b" />
-            <Text style={styles.analysisStatusText}>Not analyzed</Text>
-          </View>
-        )}
-        
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Ionicons name="eye-outline" size={14} color="#6b7280" />
-            <Text style={styles.statText}>{item.frequencyWorn || 0}</Text>
-          </View>
-          {item.lastWornAt && (
-            <View style={styles.statItem}>
-              <Ionicons name="calendar-outline" size={14} color="#6b7280" />
-              <Text style={styles.statText}>
-                {new Date(item.lastWornAt).toLocaleDateString('en-US', { 
-                  month: 'short', 
-                  day: 'numeric' 
-                })}
-              </Text>
+
+          {!item.isAnalyzed && (
+            <View style={styles.notAnalyzedBadge}>
+              <Ionicons name="alert-circle" size={14} color="#fff" />
             </View>
           )}
         </View>
-      </View>
+
+        <View style={styles.content}>
+          <Text
+            style={styles.name}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {item.name}
+          </Text>
+
+          {item.styles?.length > 0 && (
+            <Text style={styles.subText} numberOfLines={1}>
+              {item.styles.map((style) => style.name).join(", ")}
+            </Text>
+          )}
+
+          <View style={styles.seasonRow}>
+            {hasSeasons ? (
+              displayedSeasons.map((season) => (
+                <View
+                  key={season.id}
+                  style={[
+                    styles.seasonChip,
+                    { backgroundColor: seasonColors[season.name] || "#334155" },
+                  ]}
+                >
+                  <Text style={styles.seasonChipText}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {season.name}
+                  </Text>
+                </View>
+              ))
+            ) : (
+              // Invisible placeholder to preserve height when no seasons
+              <View style={styles.seasonPlaceholder} />
+            )}
+          </View>
+
+          <View style={styles.footer}>
+            <View style={styles.footerInfo}>
+              <Ionicons name="time-outline" size={14} color="#94a3b8" />
+              <Text style={styles.footerText}>{formattedLastWorn}</Text>
+            </View>
+            <View style={styles.footerInfo}>
+              <Ionicons name="analytics-outline" size={14} color="#94a3b8" />
+              <Text style={styles.footerText}>
+                {item.aiConfidence ? `${item.aiConfidence}%` : "Pending"}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </LinearGradient>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
+  touchable: {
+    borderRadius: 24,
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  },
+  container: {
+    borderRadius: 24,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "rgba(148, 163, 184, 0.15)",
   },
   imageContainer: {
     position: "relative",
     aspectRatio: 3 / 4,
+    borderRadius: 18,
+    overflow: "hidden",
+    marginBottom: 12,
   },
   image: {
     width: "100%",
     height: "100%",
-  },
-  typeTag: {
-    position: "absolute",
-    top: 8,
-    left: 8,
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  typeTagText: {
-    fontSize: 10,
-    fontWeight: "600",
-    textTransform: "lowercase",
   },
   notAnalyzedBadge: {
     position: "absolute",
@@ -142,62 +167,85 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  content: {
-    padding: 12,
+  badgeRow: {
+    position: "absolute",
+    top: 10,
+    left: 10,
+    flexDirection: "row",
+    gap: 8,
   },
-  name: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#1f2937",
-    marginBottom: 4,
+  aiBadge: {
+    backgroundColor: "#22d3ee",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    shadowColor: "#22d3ee",
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
   },
-  brand: {
+  aiBadgeText: {
+    color: "#0f172a",
+    fontWeight: "700",
     fontSize: 12,
-    color: "#6b7280",
-    marginBottom: 8,
   },
   categoryBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#eef2ff",
-    paddingHorizontal: 8,
+    backgroundColor: "rgba(15, 23, 42, 0.65)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 8,
-    alignSelf: "flex-start",
-    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "rgba(148, 163, 184, 0.4)",
   },
-  categoryText: {
+  categoryBadgeText: {
+    color: "#e2e8f0",
     fontSize: 11,
-    color: "#6366f1",
-    fontWeight: "600",
     textTransform: "capitalize",
   },
-  analysisStatus: {
+  content: {
+    gap: 8,
+  },
+  name: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#f8fafc",
+  },
+  subText: {
+    fontSize: 13,
+    color: "#94a3b8",
+  },
+  seasonRow: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-    paddingVertical: 2,
-    marginBottom: 6,
+    // flexWrap: "wrap",
+    gap: 6,
   },
-  analysisStatusText: {
-    fontSize: 10,
-    color: "#f59e0b",
-    fontWeight: "500",
+  seasonChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 999,
   },
-  statsContainer: {
+  seasonPlaceholder: {
+    height: 18,
+    opacity: 0,
+  },
+  seasonChipText: {
+    fontSize: 11,
+    color: "#0f172a",
+    fontWeight: "600",
+  },
+  footer: {
     flexDirection: "row",
-    gap: 12,
+    justifyContent: "space-between",
     alignItems: "center",
+    marginTop: 4,
   },
-  statItem: {
+  footerInfo: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
   },
-  statText: {
+  footerText: {
+    color: "#cbd5f5",
     fontSize: 12,
-    color: "#6b7280",
-    fontWeight: "500",
   },
 });
+

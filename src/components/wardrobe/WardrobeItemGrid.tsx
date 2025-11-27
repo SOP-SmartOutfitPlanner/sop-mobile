@@ -14,15 +14,15 @@ interface WardrobeItemGridProps {
 export const WardrobeItemGrid: React.FC<WardrobeItemGridProps> = ({
   items,
   onItemClick,
-  columns = 3,
+  columns = 2,
 }) => {
-  const containerPadding = 32; 
-  const gap = 12;
+  const containerPadding = 32;
+  const gap = 16;
   const totalGaps = gap * (columns - 1);
   const itemWidth = (width - containerPadding - totalGaps) / columns;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingHorizontal: containerPadding / 2 }]}>
       {items.map((item, index) => (
         <View
           key={item.id}
@@ -45,9 +45,8 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     flexWrap: "wrap",
-    paddingHorizontal: 16,
   },
   itemWrapper: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
 });

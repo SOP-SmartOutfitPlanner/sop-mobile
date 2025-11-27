@@ -66,14 +66,25 @@ const AnimatedTab = ({
       }}
       style={styles.tab}
     >
-      <Animated.View style={[styles.tabContent, animatedStyle]}>
-        <GradientIcon name={iconName} size={24} focused={isFocused} iconFamily={iconFamily} />
+      <Animated.View
+        style={[
+          styles.tabContent,
+          animatedStyle,
+          isFocused && styles.tabContentActive,
+        ]}
+      >
+        <GradientIcon
+          name={iconName}
+          size={24}
+          focused={isFocused}
+          iconFamily={iconFamily}
+        />
         {label && (
           <Text
             style={[
               styles.label,
               {
-                color: isFocused ? "#30cfd0" : "#8e8e93",
+                color: isFocused ? "#f8fafc" : "#94a3b8",
                 fontWeight: isFocused ? "700" : "600",
               },
             ]}
@@ -147,7 +158,12 @@ const CustomTabBar = ({
   return (
     <>
       <View style={styles.container}>
-        <View style={styles.tabBar}>
+        <LinearGradient
+          colors={["rgba(3,7,18,0.95)", "rgba(2,6,23,0.85)"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.tabBar}
+        >
           {state.routes.map((route, index) => {
             const { options } = descriptors[route.key];
             const isFocused = state.index === index;
@@ -216,7 +232,7 @@ const CustomTabBar = ({
               />
             );
           })}
-        </View>
+        </LinearGradient>
       </View>
 
       {/* Bottom Sheet Modal */}
@@ -234,17 +250,17 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexDirection: "row",
-    backgroundColor: "#fff",
-    height: 85,
+    height: 90,
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 15,
-    paddingBottom: Platform.OS === "ios" ? 25 : 20,
-    paddingTop: 8,
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 18,
+    paddingBottom: Platform.OS === "ios" ? 28 : 20,
+    paddingTop: 12,
+    paddingHorizontal: 12,
     borderTopWidth: 0,
   },
   tab: {
@@ -257,6 +273,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
     position: "relative",
+    paddingHorizontal: 6,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  tabContentActive: {
+    backgroundColor: "rgba(48,207,208,0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(48,207,208,0.3)",
   },
   activeIndicator: {
     position: "absolute",
@@ -270,7 +294,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    top: -15,
+    top: -18,
   },
   pressableArea: {
     justifyContent: "center",
@@ -278,16 +302,16 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   middleButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 70,
+    height: 70,
+    borderRadius: 36,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#330867",
-    shadowOffset: { width: 0, height: 6 },
+    shadowColor: "#30cfd0",
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 12,
+    shadowRadius: 16,
+    elevation: 14,
   },
   middleButtonInner: {
     width: "100%",
@@ -304,7 +328,7 @@ const styles = StyleSheet.create({
     height: 72,
     borderRadius: 36,
     borderWidth: 2,
-    borderColor: "rgba(48, 207, 208, 0.2)",
+    borderColor: "rgba(48, 207, 208, 0.25)",
     zIndex: 1,
   },
   label: {
