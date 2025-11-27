@@ -4,6 +4,7 @@ import React, {
   useState,
   useEffect,
   ReactNode,
+  useCallback,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -21,6 +22,7 @@ import {
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { getUserProfile } from "../../services/endpoint/user";
 import { User } from "../../types/user";
+import { usePushToken } from "../notification/usePushToken";
 
 interface DecodedToken {
   FirstTime: string;
@@ -71,6 +73,54 @@ const USER_ID_KEY = "@sop_user_id";
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true); // Start with true to check token
+  const { registerDevice, unregisterDevice } = usePushToken();
+
+  const syncDeviceToken = useCallback(async () => {
+    try {
+      const userIdString = await getUserId();
+      if (!userIdString) {
+        return;
+      }
+      const userId = Number(userIdString);
+      if (Number.isNaN(userId)) {
+        return;
+      }
+      await registerDevice(userId);
+    } catch (error) {
+      console.error("❌ Failed to sync device token:", error);
+    }
+  }, [registerDevice]);
+
+  const clearSession = useCallback(async () => {
+    try {
+      await unregisterDevice();
+    } catch (deviceError) {
+      console.error("❌ Error unregistering device:", deviceError);
+    }
+
+    try {
+      await GoogleSignin.signOut();
+    } catch (googleError) {
+      console.log("ℹ️ Google sign out skipped:", googleError);
+    }
+
+    try {
+      await AsyncStorage.multiRemove([
+        ACCESS_TOKEN_KEY,
+        REFRESH_TOKEN_KEY,
+        USER_ID_KEY,
+      ]);
+    } catch (storageError) {
+      console.error("❌ Error clearing storage:", storageError);
+    }
+
+    setUser(null);
+  }, [unregisterDevice]);
+
+  const handleSessionExpired = useCallback(async () => {
+    console.log("⚠️ Session expired, clearing credentials");
+    await clearSession();
+  }, [clearSession]);
 
   // Load user profile from API
   const loadUserProfile = async () => {
@@ -78,7 +128,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const userId = await getUserId();
 
       if (!userId) {
-        console.log("⚠️ No userId found in storage");
+        // console.log("⚠️ No userId found in storage");
         return;
       }
 
@@ -92,10 +142,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           "❌ Failed to load profile, status:",
           response.statusCode
         );
+        if (response.statusCode === 401 || response.statusCode === 403) {
+          await handleSessionExpired();
+        }
       }
     } catch (error: any) {
       console.error("❌ Error loading user profile:", error);
       console.error("❌ Error details:", error.response?.data || error.message);
+      const status = error?.response?.status;
+      const message = error?.response?.data?.message;
+      if (
+        status === 401 ||
+        status === 403 ||
+        (typeof message === "string" &&
+          message.toLowerCase().includes("token not valid"))
+      ) {
+        await handleSessionExpired();
+      }
     }
   };
 
@@ -109,6 +172,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (accessToken && userId) {
         // Load full user profile
         await loadUserProfile();
+        await syncDeviceToken();
       } else {
         setUser(null);
       }
@@ -142,9 +206,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const decodedToken = decodeJWT(accessToken);
       // console.log(" Decode token:", decodedToken);
-    console.log(" accessToken token:", accessToken); 
+      // console.log(" accessToken token:", accessToken);
       await saveTokens(accessToken, refreshToken);
       await extractAndSaveUserId(accessToken);
+      await syncDeviceToken();
       await refreshAuthState();
 
       return decodedToken;
@@ -171,7 +236,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
       const userInfo = await GoogleSignin.signIn();
       const idToken = userInfo?.data?.idToken;
-      console.log("idToken:",idToken );
+      // console.log("idToken:", idToken);
       if (!idToken) {
         throw new Error("Không thể lấy ID token từ Google");
       }
@@ -179,10 +244,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const accessToken = response.data.accessToken;
       const refreshToken = response.data.refreshToken;
       const decodedToken = decodeJWT(accessToken);
-      console.log("✅ Decode token:", decodedToken);
+      // console.log("✅ Decode token:", decodedToken);
       // Save tokens and user info
       await saveTokens(accessToken, refreshToken);
       await extractAndSaveUserId(accessToken);
+      await syncDeviceToken();
       await refreshAuthState();
       return decodedToken;
     } catch (error: any) {
@@ -243,23 +309,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log("ℹ️ Token already expired, clearing local data");
       }
     } finally {
-      try {
-        try {
-          await GoogleSignin.signOut();
-        } catch (googleError) {
-          console.log("ℹ️ Google sign out skipped:", googleError);
-        }
-
-        await AsyncStorage.multiRemove([
-          ACCESS_TOKEN_KEY,
-          REFRESH_TOKEN_KEY,
-          USER_ID_KEY,
-        ]);
-        console.log("✅ Logged out successfully");
-      } catch (storageError) {
-        console.error("❌ Error clearing storage:", storageError);
-      }
-      setUser(null);
+      await clearSession();
+      console.log("✅ Logged out successfully");
     }
   };
 

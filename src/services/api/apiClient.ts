@@ -42,9 +42,20 @@ const processQueue = (error: any, token: string | null = null) => {
 apiClient.interceptors.request.use(
   async (config) => {
     // Skip auth endpoints (login, register, etc) - they don't need token
-    const authEndpoints = ["/auth", "/auth/register", "/auth/otp/verify", "/auth/otp/resend","/auth/password/forgot","/auth/password/reset", "/auth/password/verify-otp", "/auth/login/google/oauth"];
-    const isAuthEndpoint = authEndpoints.some(endpoint => config.url?.includes(endpoint));
-    
+    const authEndpoints = [
+      "/auth",
+      "/auth/register",
+      "/auth/otp/verify",
+      "/auth/otp/resend",
+      "/auth/password/forgot",
+      "/auth/password/reset",
+      "/auth/password/verify-otp",
+      "/auth/login/google/oauth",
+    ];
+    const isAuthEndpoint = authEndpoints.some((endpoint) =>
+      config.url?.includes(endpoint)
+    );
+
     // Only add token for non-auth endpoints
     if (!isAuthEndpoint) {
       // Get access token from storage
@@ -54,17 +65,16 @@ apiClient.interceptors.request.use(
       if (accessToken && config.headers) {
         config.headers.Authorization = `Bearer ${accessToken}`;
       }
-      
     }
 
     // Log request in development
     if (__DEV__) {
-      console.log("🚀 API Request:", {
-        method: config.method?.toUpperCase(),
-        url: config.url,
-        data: config.data,
-        hasToken: !!config.headers?.Authorization,
-      });
+      // console.log("🚀 API Request:", {
+      //   method: config.method?.toUpperCase(),
+      //   url: config.url,
+      //   data: config.data,
+      //   hasToken: !!config.headers?.Authorization,
+      // });
     }
 
     return config;
@@ -80,11 +90,11 @@ apiClient.interceptors.response.use(
   (response) => {
     // Log response in development
     if (__DEV__) {
-      console.log("✅ API Response:", {
-        url: response.config.url,
-        status: response.status,
-        data: response.data,
-      });
+      // console.log("✅ API Response:", {
+      //   url: response.config.url,
+      //   status: response.status,
+      //   data: response.data,
+      // });
     }
     return response;
   },
@@ -94,7 +104,9 @@ apiClient.interceptors.response.use(
     };
 
     // Check if this is a logout endpoint with 401 - this is expected behavior
-    const isLogoutWith401 = originalRequest?.url?.includes("/auth/logout") && error.response?.status === 401;
+    const isLogoutWith401 =
+      originalRequest?.url?.includes("/auth/logout") &&
+      error.response?.status === 401;
 
     // Log error in development (skip expected logout 401)
     if (__DEV__ && !isLogoutWith401) {
@@ -107,10 +119,25 @@ apiClient.interceptors.response.use(
 
     // Handle 401 Unauthorized - Token expired
     // Skip refresh token logic for auth endpoints (login, register, logout, etc)
-    const authEndpoints = ["/auth", "/auth/register", "/auth/otp/verify", "/auth/otp/resend","/auth/password/forgot","/auth/password/reset", "/auth/password/verify-otp", "/auth/login/google/oauth"];
-    const isAuthEndpoint = authEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
-    
-    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
+    const authEndpoints = [
+      "/auth",
+      "/auth/register",
+      "/auth/otp/verify",
+      "/auth/otp/resend",
+      "/auth/password/forgot",
+      "/auth/password/reset",
+      "/auth/password/verify-otp",
+      "/auth/login/google/oauth",
+    ];
+    const isAuthEndpoint = authEndpoints.some((endpoint) =>
+      originalRequest.url?.includes(endpoint)
+    );
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isAuthEndpoint
+    ) {
       if (isRefreshing) {
         // Queue the request while refreshing
         return new Promise((resolve, reject) => {
@@ -141,7 +168,7 @@ apiClient.interceptors.response.use(
 
         console.log("🔄 Attempting to refresh token...");
         console.log("🔑 Refresh token exists:", !!refreshToken);
-        
+
         // Call refresh token endpoint
         const response = await axios.post(
           `${API_BASE_URL}/auth/refresh-token`,
@@ -183,11 +210,13 @@ apiClient.interceptors.response.use(
           response: refreshError?.response?.data,
           status: refreshError?.response?.status,
         });
-        
+
         processQueue(refreshError, null);
         await clearTokens();
 
-        console.log("🔒 Session expired, tokens cleared - user needs to login again");
+        console.log(
+          "🔒 Session expired, tokens cleared - user needs to login again"
+        );
 
         return Promise.reject(refreshError);
       } finally {
@@ -237,7 +266,11 @@ export const getRefreshToken = async (): Promise<string | null> => {
 
 export const clearTokens = async (): Promise<void> => {
   try {
-    await AsyncStorage.multiRemove([ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, USER_ID_KEY]);
+    await AsyncStorage.multiRemove([
+      ACCESS_TOKEN_KEY,
+      REFRESH_TOKEN_KEY,
+      USER_ID_KEY,
+    ]);
     console.log("✅ Tokens cleared successfully");
   } catch (error) {
     console.error("❌ Error clearing tokens:", error);
@@ -245,7 +278,7 @@ export const clearTokens = async (): Promise<void> => {
   }
 };
 
-// JWT Decode Function 
+// JWT Decode Function
 export const decodeJWT = (token: string): any => {
   try {
     return jwtDecode(token);
@@ -276,21 +309,23 @@ export const getUserId = async (): Promise<string | null> => {
 };
 
 // Extract and save userId from accessToken
-export const extractAndSaveUserId = async (accessToken: string): Promise<string> => {
+export const extractAndSaveUserId = async (
+  accessToken: string
+): Promise<string> => {
   try {
     const decoded = decodeJWT(accessToken);
-    
+
     // Extract userId from JWT payload
     // Based on your token structure: "UserId": "12"
     const userId = decoded.UserId || decoded.userId || decoded.sub;
-    
+
     if (!userId) {
-      throw new Error('UserId not found in token');
+      throw new Error("UserId not found in token");
     }
 
     // Save userId to AsyncStorage
     await saveUserId(userId);
-    
+
     // console.log("✅ UserId extracted and saved:", userId);
     return userId;
   } catch (error) {

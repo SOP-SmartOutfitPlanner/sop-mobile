@@ -14,16 +14,16 @@ import { stringToGender } from "../../utils/genderUtils";
 
 interface OnboardingData {
   // Note: goals from Step 0 is UI only, not saved to API
-  gender?: Gender;         // Gender enum: MALE=0, FEMALE=1, OTHER=2
-  dob?: string;            // Date of birth in format "YYYY-MM-DD"
-  location?: string;       // Location string
-  styleIds?: string[];     // Array of style IDs
-  otherStyles?: string[];  // Array of custom styles
-  jobId?: string;          // Job ID as string
-  otherJob?: string;       // Custom job title
-  preferedColor?: string[];  // Preferred colors array
-  avoidedColor?: string[];   // Avoided colors array
-  bio?: string;            // User bio
+  gender?: Gender; // Gender enum: MALE=0, FEMALE=1, OTHER=2
+  dob?: string; // Date of birth in format "YYYY-MM-DD"
+  location?: string; // Location string
+  styleIds?: string[]; // Array of style IDs
+  otherStyles?: string[]; // Array of custom styles
+  jobId?: string; // Job ID as string
+  otherJob?: string; // Custom job title
+  preferedColor?: string[]; // Preferred colors array
+  avoidedColor?: string[]; // Avoided colors array
+  bio?: string; // User bio
 }
 
 interface OnboardingScreenProps {
@@ -60,7 +60,10 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   };
 
   // Step 2: Style Selection (styleIds and otherStyles)
-  const handleStep2Next = (data: { styleIds: string[], otherStyles: string[] }) => {
+  const handleStep2Next = (data: {
+    styleIds: string[];
+    otherStyles: string[];
+  }) => {
     setOnboardingData((prev) => ({
       ...prev,
       styleIds: data.styleIds, // Array of style IDs as strings
@@ -70,7 +73,10 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   };
 
   // Step 3: Job Selection
-  const handleStep3Next = (data: { jobId: string | null, otherJob: string }) => {
+  const handleStep3Next = (data: {
+    jobId: string | null;
+    otherJob: string;
+  }) => {
     setOnboardingData((prev) => ({
       ...prev,
       jobId: data.jobId || undefined,
@@ -105,11 +111,12 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
     try {
       // console.log("🔍 Starting onboarding submission...");
       // console.log("📦 Current onboarding data:", JSON.stringify(onboardingData, null, 2));
-      
+
       // Validate all required data
-      const hasStyles = (onboardingData.styleIds && onboardingData.styleIds.length > 0) || 
-                       (onboardingData.otherStyles && onboardingData.otherStyles.length > 0);
-      
+      const hasStyles =
+        (onboardingData.styleIds && onboardingData.styleIds.length > 0) ||
+        (onboardingData.otherStyles && onboardingData.otherStyles.length > 0);
+
       if (
         onboardingData.gender === undefined ||
         !onboardingData.dob ||
@@ -127,11 +134,21 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
           hasDob: !!onboardingData.dob,
           hasLocation: !!onboardingData.location,
           hasStyles: hasStyles,
-          hasStyleIds: !!(onboardingData.styleIds && onboardingData.styleIds.length > 0),
-          hasOtherStyles: !!(onboardingData.otherStyles && onboardingData.otherStyles.length > 0),
+          hasStyleIds: !!(
+            onboardingData.styleIds && onboardingData.styleIds.length > 0
+          ),
+          hasOtherStyles: !!(
+            onboardingData.otherStyles && onboardingData.otherStyles.length > 0
+          ),
           hasJob: !!(onboardingData.jobId || onboardingData.otherJob),
-          hasPreferedColor: !!(onboardingData.preferedColor && onboardingData.preferedColor.length > 0),
-          hasAvoidedColor: !!(onboardingData.avoidedColor && onboardingData.avoidedColor.length > 0),
+          hasPreferedColor: !!(
+            onboardingData.preferedColor &&
+            onboardingData.preferedColor.length > 0
+          ),
+          hasAvoidedColor: !!(
+            onboardingData.avoidedColor &&
+            onboardingData.avoidedColor.length > 0
+          ),
         });
         showNotification({
           type: "error",
@@ -141,13 +158,13 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
         });
         return;
       }
-      
+
       console.log("✅ Validation passed!");
 
       // Helper function to convert color to lowercase name
       const formatColorName = (color: string): string => {
         // If it's a hex code, convert to descriptive name
-        if (color.startsWith('#')) {
+        if (color.startsWith("#")) {
           return `custom color ${color}`;
         }
         // Otherwise, just lowercase the name
@@ -176,7 +193,9 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
 
       // Only include styleIds if user selected predefined styles
       if (onboardingData.styleIds && onboardingData.styleIds.length > 0) {
-        requestData.styleIds = onboardingData.styleIds.map((id: string) => parseInt(id));
+        requestData.styleIds = onboardingData.styleIds.map((id: string) =>
+          parseInt(id)
+        );
       }
 
       // Only include otherStyles if user entered custom styles
@@ -184,16 +203,19 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
         requestData.otherStyles = onboardingData.otherStyles;
       }
 
-      console.log("📤 Submitting onboarding data:", JSON.stringify(requestData, null, 2));
+      console.log(
+        "📤 Submitting onboarding data:",
+        JSON.stringify(requestData, null, 2)
+      );
 
       // Submit to backend
       const result = await submitOnboarding(requestData);
-      
-      console.log("📥 API response:", result);
+
+      // console.log("📥 API response:", result);
 
       if (result.success) {
         console.log("✅ Onboarding completed successfully:", result.data);
-        
+
         // Show success notification
         showNotification({
           type: "success",
@@ -201,7 +223,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
           message: "Your profile has been created successfully!",
           confirmText: "Let's Start",
         });
-        
+
         // Navigate to Main screen after showing notification
         setTimeout(() => {
           console.log("🚀 Navigating to Main screen...");
@@ -220,7 +242,8 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
       showNotification({
         type: "error",
         title: "Onboarding Failed",
-        message: error?.message || "Failed to complete onboarding. Please try again.",
+        message:
+          error?.message || "Failed to complete onboarding. Please try again.",
         confirmText: "Try Again",
       });
     }

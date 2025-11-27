@@ -1,11 +1,13 @@
 // hooks/useNotification.ts
-import { useState, useCallback } from 'react';
-import { NotificationType } from '../components/notification/NotificationModal';
+import { useState, useCallback } from "react";
+import { NotificationType } from "../../components/notification/NotificationModal";
 
 interface NotificationConfig {
   type?: NotificationType;
   title?: string;
+  subtitle?: string;
   message: string;
+  timestamp?: string;
   confirmText?: string;
   cancelText?: string;
   onConfirm?: () => void;
@@ -15,11 +17,14 @@ interface NotificationConfig {
 export const useNotification = () => {
   const [visible, setVisible] = useState(false);
   const [config, setConfig] = useState<NotificationConfig>({
-    message: '',
+    message: "",
   });
 
   const showNotification = useCallback((newConfig: NotificationConfig) => {
-    setConfig(newConfig);
+    setConfig((prev) => ({
+      ...prev,
+      ...newConfig,
+    }));
     setVisible(true);
   }, []);
 
@@ -31,9 +36,9 @@ export const useNotification = () => {
   const showSuccess = useCallback(
     (message: string, title?: string, onConfirm?: () => void) => {
       showNotification({
-        type: 'success',
+        type: "success",
         message,
-        title: title || 'Success!',
+        title: title || "Success!",
         onConfirm,
       });
     },
@@ -43,9 +48,9 @@ export const useNotification = () => {
   const showError = useCallback(
     (message: string, title?: string, onConfirm?: () => void) => {
       showNotification({
-        type: 'error',
+        type: "error",
         message,
-        title: title || 'Error!',
+        title: title || "Error!",
         onConfirm,
       });
     },
@@ -55,9 +60,9 @@ export const useNotification = () => {
   const showWarning = useCallback(
     (message: string, title?: string, onConfirm?: () => void) => {
       showNotification({
-        type: 'warning',
+        type: "warning",
         message,
-        title: title || 'Warning!',
+        title: title || "Warning!",
         onConfirm,
       });
     },
@@ -67,9 +72,9 @@ export const useNotification = () => {
   const showInfo = useCallback(
     (message: string, title?: string, onConfirm?: () => void) => {
       showNotification({
-        type: 'info',
+        type: "info",
         message,
-        title: title || 'Information',
+        title: title || "Information",
         onConfirm,
       });
     },
@@ -89,11 +94,11 @@ export const useNotification = () => {
       }
     ) => {
       showNotification({
-        type: options?.type || 'warning',
+        type: options?.type || "warning",
         message,
-        title: options?.title || 'Confirm',
-        confirmText: options?.confirmText || 'Confirm',
-        cancelText: options?.cancelText || 'Cancel',
+        title: options?.title || "Confirm",
+        confirmText: options?.confirmText || "Confirm",
+        cancelText: options?.cancelText || "Cancel",
         showCancel: true,
         onConfirm,
       });

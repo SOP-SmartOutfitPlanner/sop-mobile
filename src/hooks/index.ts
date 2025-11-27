@@ -2,6 +2,7 @@ export { useWardrobe } from './useWardrobe';
 export { useCategories } from './useCategories';
 export { useImagePicker } from './useImagePicker';
 export { useNotification } from './notification/useNotification';
+export { usePushToken } from './notification/usePushToken';
 export { useOTAUpdates } from './useOTAUpdates';
 export { useOnboarding } from './onboarding';
 export { useItemMetadata } from './useItemMetadata';

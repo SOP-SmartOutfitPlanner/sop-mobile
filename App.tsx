@@ -9,6 +9,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { AIDetectionProvider } from "./src/contexts/AIDetectionContext";
 import "./src/config/google";
+import PushNotificationModalHost from "./src/components/notification/PushNotificationModalHost";
 
 export default function App() {
   // Initialize OTA updates check
@@ -23,6 +24,7 @@ export default function App() {
               <BottomSheetModalProvider>
                 <StatusBar style="auto" />
                 <AppNavigator />
+                <PushNotificationModalHost />
               </BottomSheetModalProvider>
             </NavigationContainer>
           </AIDetectionProvider>

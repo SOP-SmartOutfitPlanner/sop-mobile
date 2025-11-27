@@ -23,6 +23,15 @@
     },
     "scheme": "sop",
     "platforms": ["ios", "android"],
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/img/notification_icon.png",
+          "color": "#1E3A8A"
+        }
+      ]
+    ],
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -43,7 +52,8 @@
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
-        "READ_MEDIA_IMAGES"
+        "READ_MEDIA_IMAGES",
+        "POST_NOTIFICATIONS"
       ],
       "package": "com.minhtr.SmartOutfitPlanner",
       "googleServicesFile": "./google-services.json",

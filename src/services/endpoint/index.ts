@@ -1,6 +1,7 @@
 // Auth Endpoint Exports
 export * from "./auth";
 export { default as authApi } from "./auth";
+export * from "./device";
 
 // You can add more endpoint exports here
 // export * from "./user";
