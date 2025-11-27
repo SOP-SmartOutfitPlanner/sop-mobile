@@ -1,9 +1,16 @@
 import { getUserId } from './../services/api/apiClient';
 import { useState, useEffect, useCallback } from "react";
-import { EditItemAPI, GetItem, DeleteItemAPI } from "../services/endpoint/wardorbe";
-import { Item, ItemEdit } from "../types/item";
+import { EditItemAPI, GetItems, DeleteItemAPI } from "../services/endpoint/wardorbe";
+import { Item, ItemEdit, PaginationMeta } from "../types/item";
 
-export const useWardrobe = () => {
+interface UseWardrobeOptions {
+  takeAll?: boolean;
+  pageSize?: number;
+}
+
+export const useWardrobe = (options?: UseWardrobeOptions) => {
+  const takeAll = options?.takeAll ?? true;
+  const pageSize = options?.pageSize ?? 20;
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | undefined>();
   const [selectedSeasonId, setSelectedSeasonId] = useState<number | undefined>();
@@ -15,24 +22,32 @@ export const useWardrobe = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [pageIndex, setPageIndex] = useState(1);
+  const [hasMorePages, setHasMorePages] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [metaData, setMetaData] = useState<PaginationMeta | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
 
   // Fetch items from API with filters and search
-  const fetchItems = useCallback(async () => {
+  const fetchItems = useCallback(async (page = 1, append = false) => {
     try {
+      append ? setIsLoadingMore(true) : setLoading(true);
+
       const userId = await getUserId();
       
       if (!userId) {
         console.log("No userId found, clearing items");
         setItems([]); // Clear items when no user is logged in
         setLoading(false);
+        setIsLoadingMore(false);
         return;
       }
 
-      const response = await GetItem({
-        pageIndex: 1,
-        pageSize: 20,
+      const response = await GetItems({
+        pageIndex: page,
+        pageSize,
         userId: parseInt(userId),
-        takeAll: true,
+        takeAll,
         search: searchQuery || undefined,
         categoryId: selectedCategoryId,
         seasonId: selectedSeasonId,
@@ -43,22 +58,57 @@ export const useWardrobe = () => {
       });
 
       if (response.statusCode === 200 && response.data?.data) {
-        setItems(response.data.data);
+        const incomingItems = response.data.data;
+        let appendedCount = incomingItems.length;
+
+        setItems(prev => {
+          if (!append) {
+            return incomingItems;
+          }
+
+          const existingIds = new Set(prev.map(item => item.id));
+          const newItems = incomingItems.filter(item => !existingIds.has(item.id));
+          appendedCount = newItems.length;
+          return newItems.length ? [...prev, ...newItems] : prev;
+        });
+
+        const meta = response.data.metaData;
+        setMetaData(meta);
+
+        setTotalCount(prevTotal =>
+          meta?.totalCount ?? (append ? prevTotal + appendedCount : incomingItems.length)
+        );
+
+        setHasMorePages(Boolean(!takeAll && meta?.hasNext));
+        setPageIndex(page);
         setError(null);
-        console.log("✅ Fetched items:", response.data.data.length);
+        console.log("✅ Fetched items:", incomingItems.length);
       }
     } catch (err: any) {
       console.error("❌ Error fetching wardrobe items:", err);
       setError(err.message || "Failed to fetch items");
-      setItems([]);
+      if (!append) {
+        setItems([]);
+      }
     } finally {
-      setLoading(false);
+      append ? setIsLoadingMore(false) : setLoading(false);
     }
-  }, [searchQuery, selectedCategoryId, selectedSeasonId, selectedStyleId, selectedOccasionId, isAnalyzedFilter, sortByDate]);
+  }, [
+    searchQuery,
+    selectedCategoryId,
+    selectedSeasonId,
+    selectedStyleId,
+    selectedOccasionId,
+    isAnalyzedFilter,
+    sortByDate,
+    takeAll,
+    pageSize,
+  ]);
 
   // Initial load and refetch when filters change
   useEffect(() => {
-    fetchItems();
+    setPageIndex(1);
+    fetchItems(1, false);
   }, [fetchItems]);
 
   // Filter functions
@@ -89,13 +139,24 @@ export const useWardrobe = () => {
     setSelectedOccasionId(undefined);
     setIsAnalyzedFilter(undefined);
     setSortByDate(undefined);
+    setPageIndex(1);
+    setItems([]);
   }, []);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await fetchItems();
+    setPageIndex(1);
+    await fetchItems(1, false);
     setIsRefreshing(false);
   };
+
+  const loadMore = useCallback(async () => {
+    if (takeAll || !hasMorePages || isLoadingMore) {
+      return;
+    }
+    const nextPage = pageIndex + 1;
+    await fetchItems(nextPage, true);
+  }, [takeAll, hasMorePages, isLoadingMore, pageIndex, fetchItems]);
 
   // Edit item function
   const editItem = useCallback(async (id: number, data: Partial<ItemEdit>) => {
@@ -131,8 +192,13 @@ export const useWardrobe = () => {
     }
   }, []);
 
+  const refetch = useCallback(() => {
+    fetchItems(1, false);
+  }, [fetchItems]);
+
   return {
     items,
+    totalCount,
     searchQuery,
     setSearchQuery,
     selectedCategoryId,
@@ -151,8 +217,13 @@ export const useWardrobe = () => {
     loading,
     isRefreshing,
     handleRefresh,
+    loadMore,
+    hasMorePages,
+    isLoadingMore,
+    pageIndex,
+    metaData,
     error,
-    refetch: fetchItems,
+    refetch,
     editItem,
     deleteItem,
   };

@@ -274,15 +274,6 @@ const WardrobeScreen = ({ navigation }: any) => {
           >
             <Ionicons name="refresh" size={18} color="#e0f2fe" />
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => navigation.navigate("AllWardrobe")}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="options-outline" size={18} color="#e0f2fe" />
-          </TouchableOpacity>
-
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => setIsAddItemModalOpen(true)}
