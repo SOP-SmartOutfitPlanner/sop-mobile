@@ -1,111 +1,254 @@
-import React, { useState } from "react";
-import { View, ScrollView, StyleSheet, Alert } from "react-native";
+import React, { useMemo } from "react";
+import {
+  View,
+  StyleSheet,
+  ActivityIndicator,
+  Text,
+  FlatList,
+  RefreshControl,
+  TouchableOpacity,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { Header } from "../components/common";
 import {
   CollectionSearchBar,
-  CollectionFilters,
   CollectionCard,
   CollectionHeader,
+  CollectionTabs,
 } from "../components/collection";
+import { useCollectionsGallery, CollectionTab } from "../hooks/useCollections";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
+import { COLLECTION_COLORS } from "../constants/collectionStyles";
+import { useCallback } from "react";
 
-const CollectionScreen = ({ navigation }: any) => {
-  const [activeFilter, setActiveFilter] = useState("Filters");
+const TAB_LABELS: Record<CollectionTab, string> = {
+  all: "All collections",
+  saved: "Saved collections",
+  published: "Published collections",
+  drafts: "Draft collections",
+};
 
-  // Mock data
-  const collections = [
-    {
-      id: "1",
-      title: "Business Casual Essentials",
-      description: "Perfect outfits for the modern workplace",
-      image: require("../../assets/adaptive-icon.png"),
-      tags: ["Work", "Casual", "Smart"],
-      author: "Sarah Chen",
-      views: 1240,
-      likes: 89,
-      items: 156,
-    },
-    {
-      id: "2",
-      title: "Winter Elegance",
-      description: "Sophisticated looks for cold weather",
-      image: require("../../assets/adaptive-icon.png"),
-      tags: ["Winter", "Elegant", "Formal"],
-      author: "Maya Johnson",
-      views: 890,
-      likes: 67,
-      items: 124,
-    },
-  ];
+const CollectionScreen: React.FC = () => {
+  const navigation = useNavigation<any>();
+  const {
+    activeTab,
+    setActiveTab,
+    searchQuery,
+    setSearchQuery,
+    collections,
+    loading,
+    refreshing,
+    error,
+    count,
+    requiresAuthMessage,
+    handleRefresh,
+    isStylist,
+    isAuthenticated,
+  } = useCollectionsGallery();
 
-  // Handlers
-  const handleNotificationPress = () => {
-    navigation.navigate("Notifications");
+  const tabConfig = useMemo(
+    () => [
+      { key: "all" as CollectionTab, label: "All" },
+      {
+        key: "saved" as CollectionTab,
+        label: "Saved",
+        disabled: !isAuthenticated,
+      },
+      {
+        key: "published" as CollectionTab,
+        label: "Published",
+        disabled: !isStylist,
+      },
+      {
+        key: "drafts" as CollectionTab,
+        label: "Drafts",
+        disabled: !isStylist,
+      },
+    ],
+    [isAuthenticated, isStylist]
+  );
+
+  const navigationHandlers = {
+    onNotificationPress: () => navigation.navigate("Notifications"),
+    onMessagePress: () => navigation.navigate("Suggestion"), // placeholder
+    onProfilePress: () => navigation.navigate("Profile"),
   };
 
-  const handleMessagePress = () => {
-    Alert.alert("Messages", "No new messages");
+  const handleCollectionPress = (collectionId: number) => {
+    navigation.navigate("CollectionDetail", { collectionId });
   };
 
-  const handleProfilePress = () => {
-    navigation.navigate("Profile");
-  };
-
-  const handleCollectionPress = (id: string) => {
-    Alert.alert("Collection", `Opening collection ${id}`);
-  };
+  // Refresh when screen comes into focus (e.g., after deleting a collection)
+  useFocusEffect(
+    useCallback(() => {
+      handleRefresh();
+    }, [handleRefresh])
+  );
 
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
-      <Header
-        title="Collections"
-        showBackButton={false}
-        showNotification={true}
-        showMessage={true}
-        showProfile={true}
-        onNotificationPress={handleNotificationPress}
-        onMessagePress={handleMessagePress}
-        onProfilePress={handleProfilePress}
-      />
-
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-      >
-        <CollectionSearchBar />
-        <CollectionFilters
-          activeFilter={activeFilter}
-          onFilterChange={setActiveFilter}
+    <LinearGradient
+      colors={COLLECTION_COLORS.background.gradient}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.gradientContainer}
+    >
+      <SafeAreaView style={styles.container} edges={["bottom"]}>
+        <Header
+          title="Collections"
+          showBackButton={false}
+          showNotification={true}
+          showMessage={true}
+          showProfile={true}
+          onNotificationPress={navigationHandlers.onNotificationPress}
+          onMessagePress={navigationHandlers.onMessagePress}
+          onProfilePress={navigationHandlers.onProfilePress}
         />
-        <CollectionHeader count={collections.length} showTrending={true} />
 
-        {collections.map((collection) => (
-          <CollectionCard
-            key={collection.id}
-            id={collection.id}
-            title={collection.title}
-            description={collection.description}
-            image={collection.image}
-            tags={collection.tags}
-            author={collection.author}
-            views={collection.views}
-            likes={collection.likes}
-            items={collection.items}
-            onPress={() => handleCollectionPress(collection.id)}
+        <View style={styles.content}>
+        <CollectionSearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        <CollectionTabs
+          tabs={tabConfig}
+          activeTab={activeTab}
+          onChange={setActiveTab}
+        />
+        <View style={styles.headerRow}>
+          <CollectionHeader
+            count={count}
+            label={TAB_LABELS[activeTab]}
+            showTrending={activeTab === "all"}
           />
-        ))}
-      </ScrollView>
+          {isStylist && (
+            <TouchableOpacity
+              style={styles.createButton}
+              onPress={() => navigation.navigate("CreateCollection")}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="add-circle" size={24} color="#2563EB" />
+              <Text style={styles.createButtonText}>Create</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {requiresAuthMessage ? (
+          <View style={styles.messageCard}>
+            <Text style={styles.messageText}>{requiresAuthMessage}</Text>
+          </View>
+        ) : loading && !refreshing ? (
+          <View style={styles.loader}>
+            <ActivityIndicator size="large" color="#2563EB" />
+          </View>
+        ) : (
+          <FlatList
+            data={collections}
+            keyExtractor={(item) => String(item.id)}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                tintColor="#2563EB"
+              />
+            }
+            renderItem={({ item }) => (
+              <CollectionCard
+                collection={item}
+                onPress={() => handleCollectionPress(item.id)}
+              />
+            )}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyTitle}>No collections yet</Text>
+                <Text style={styles.emptySubtitle}>
+                  {error
+                    ? error
+                    : "Try a different tab or come back later for fresh inspiration."}
+                </Text>
+              </View>
+            }
+            contentContainerStyle={
+              collections.length === 0 ? styles.flatListEmpty : undefined
+            }
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+      </View>
     </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "transparent",
   },
-  scrollView: {
+  content: {
     flex: 1,
+  },
+  loader: {
+    marginTop: 32,
+  },
+  messageCard: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: `${COLLECTION_COLORS.accent.cyan}40`,
+    backgroundColor: COLLECTION_COLORS.glass.card,
+  },
+  messageText: {
+    color: COLLECTION_COLORS.accent.cyan,
+    fontWeight: "500",
+    textAlign: "center",
+  },
+  emptyState: {
+    marginTop: 48,
+    alignItems: "center",
+    paddingHorizontal: 24,
+    gap: 8,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: COLLECTION_COLORS.text.primary,
+  },
+  emptySubtitle: {
+    textAlign: "center",
+    color: COLLECTION_COLORS.text.muted,
+  },
+  flatListEmpty: {
+    flexGrow: 1,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  createButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: COLLECTION_COLORS.glass.light,
+    borderWidth: 1,
+    borderColor: `${COLLECTION_COLORS.accent.cyan}40`,
+  },
+  createButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLLECTION_COLORS.accent.cyan,
   },
 });
 
