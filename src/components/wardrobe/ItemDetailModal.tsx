@@ -102,24 +102,29 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
       <Modal
         visible={visible}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle="fullScreen"
       >
-        <View style={styles.container}>
-          <DetailHeader onClose={onClose} isFavorite={false} />
+        <View style={styles.fullscreenContainer}>
+          <DetailHeader 
+            onClose={onClose} 
+            onEdit={handleEdit}
+            isFavorite={false} 
+          />
 
           <ScrollView
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            <DetailImage imageUrl={item.imgUrl} />
+            <DetailImage 
+              imageUrl={item.imgUrl} 
+              isAnalyzed={item.isAnalyzed}
+            />
 
-            <DetailInfo name={item.name} brand={item.brand} />
-
-            <DetailMetadata
-              stylesList={itemStyles}
-              occasions={itemOccasions}
-              seasons={itemSeasons}
+            <DetailInfo 
+              name={item.name} 
+              brand={item.brand}
+              color={item.color}
             />
 
             <DetailProperties
@@ -128,6 +133,15 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
               weather={item.weatherSuitable ? [item.weatherSuitable] : []}
               fabric={item.fabric}
               pattern={item.pattern}
+              condition={item.condition}
+              frequencyWorn={item.frequencyWorn}
+              brand={item.brand}
+            />
+
+            <DetailMetadata
+              stylesList={itemStyles}
+              occasions={itemOccasions}
+              seasons={itemSeasons}
             />
 
             <DetailActions
@@ -167,14 +181,14 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
+  fullscreenContainer: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#030617",
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
 });

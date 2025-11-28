@@ -1,6 +1,5 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { ColorDisplay } from "../ColorDisplay";
 
 interface DetailPropertiesProps {
   category?: string;
@@ -8,54 +7,49 @@ interface DetailPropertiesProps {
   weather?: string[];
   fabric?: string;
   pattern?: string;
+  condition?: string;
+  frequencyWorn?: string;
+  brand?: string;
 }
+
+interface PropertyCardProps {
+  label: string;
+  value: string;
+}
+
+const PropertyCard: React.FC<PropertyCardProps> = ({ label, value }) => (
+  <View style={styles.propertyCard}>
+    <Text style={styles.propertyLabel}>{label}</Text>
+    <Text style={styles.propertyValue}>{value}</Text>
+  </View>
+);
 
 export const DetailProperties: React.FC<DetailPropertiesProps> = ({
   category,
-  color,
   weather = [],
   fabric,
   pattern,
+  condition,
+  frequencyWorn,
+  brand,
 }) => {
+  const properties = [
+    { label: "CATEGORY", value: category || "N/A" },
+    { label: "BRAND", value: brand || "N/A" },
+    { label: "FREQUENCY WORN", value: frequencyWorn || "N/A" },
+    { label: "FABRIC", value: fabric || "N/A" },
+    { label: "PATTERN", value: pattern || "N/A" },
+    { label: "CONDITION", value: condition || "N/A" },
+    { label: "WEATHER SUITABLE", value: weather.length > 0 ? weather.join(", ") : "N/A" },
+  ].filter(prop => prop.value !== "N/A" || prop.label === "BRAND" || prop.label === "FREQUENCY WORN");
+
+  if (properties.length === 0) return null;
+
   return (
     <View style={styles.detailsContainer}>
-      <Text style={styles.sectionTitle}>Details</Text>
-
-      {category && (
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Category:</Text>
-          <Text style={styles.detailValue}>{category}</Text>
-        </View>
-      )}
-
-      {color && (
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Color:</Text>
-          <ColorDisplay colorString={color} size="small" />
-        </View>
-      )}
-
-      {weather.length > 0 && (
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Weather:</Text>
-          <Text style={styles.detailValue}>{weather.join(", ")}</Text>
-        </View>
-      )}
-
-      {fabric && (
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Fabric:</Text>
-          <Text style={styles.detailValue}>{fabric}</Text>
-        </View>
-      )}
-
-      {pattern && (
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Pattern:</Text>
-          <Text style={styles.detailValue}>{pattern}</Text>
-        </View>
-      )}
-
+      {properties.map((prop, index) => (
+        <PropertyCard key={index} label={prop.label} value={prop.value} />
+      ))}
     </View>
   );
 };
@@ -63,41 +57,27 @@ export const DetailProperties: React.FC<DetailPropertiesProps> = ({
 const styles = StyleSheet.create({
   detailsContainer: {
     padding: 16,
-    backgroundColor: "#fff",
+    backgroundColor: "#050b1d",
+    gap: 12,
   },
-  sectionTitle: {
-    fontSize: 18,
+  propertyCard: {
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    borderRadius: 16,
+    padding: 16,
+  },
+  propertyLabel: {
+    fontSize: 12,
     fontWeight: "600",
-    color: "#1f2937",
-    marginBottom: 16,
+    color: "#94a3b8",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 8,
   },
-  detailRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f3f4f6",
-  },
-  detailLabel: {
+  propertyValue: {
     fontSize: 14,
-    color: "#6b7280",
     fontWeight: "500",
-  },
-  detailValue: {
-    fontSize: 14,
-    color: "#1f2937",
-    fontWeight: "400",
-  },
-  descriptionContainer: {
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
-  },
-  description: {
-    fontSize: 14,
-    color: "#4b5563",
-    lineHeight: 20,
+    color: "#f8fafc",
   },
 });

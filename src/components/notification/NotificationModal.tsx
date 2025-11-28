@@ -7,6 +7,7 @@ import {
   ViewStyle,
 } from "react-native";
 import Modal from "react-native-modal";
+import { LinearGradient } from "expo-linear-gradient";
 
 // Import icon từ lucide-react-native
 import { CheckCircle, XCircle, AlertTriangle, Info } from "lucide-react-native";
@@ -82,63 +83,63 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
       isVisible={isVisible}
       onBackdropPress={onClose}
       onBackButtonPress={onClose}
-      animationIn="fadeIn"
-      animationOut="fadeOut"
-      backdropOpacity={0.5}
+      animationIn="fadeInUp"
+      animationOut="fadeOutDown"
+      backdropOpacity={0.6}
       useNativeDriver
       hideModalContentWhileAnimating
     >
-      <View style={[styles.container, typeProps.containerStyle]}>
-        <View
-          style={[styles.iconContainer, { backgroundColor: typeProps.iconBg }]}
+      <View style={styles.cardWrapper}>
+        <LinearGradient
+          colors={["rgba(59,130,246,0.15)", "rgba(147,51,234,0.15)"]}
+          style={[styles.container, typeProps.containerStyle]}
         >
-          {typeProps.icon}
-        </View>
-
-        <View style={styles.content}>
-          {title && <Text style={styles.title}>{title}</Text>}
-          <Text style={styles.message}>{message}</Text>
-        </View>
-
-        <View style={styles.buttonContainer}>
-          {showCancel && (
-            <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
-              onPress={onClose}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.cancelButtonText}>{cancelText}</Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity
-            style={[
-              styles.button,
-              styles.confirmButton,
-              { backgroundColor: typeProps.iconBg },
-              showCancel && styles.buttonFlex,
-            ]}
-            onPress={handleConfirm}
-            activeOpacity={0.7}
+          <View
+            style={[styles.iconContainer, { backgroundColor: typeProps.iconBg }]}
           >
-            <Text style={styles.confirmButtonText}>{confirmText}</Text>
-          </TouchableOpacity>
-        </View>
+            {typeProps.icon}
+          </View>
+
+          <View style={styles.content}>
+            {title && <Text style={styles.title}>{title}</Text>}
+            <Text style={styles.message}>{message}</Text>
+          </View>
+
+          <View style={styles.buttonContainer}>
+            {showCancel && (
+              <TouchableOpacity
+                style={[styles.button, styles.cancelButton]}
+                onPress={onClose}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.cancelButtonText}>{cancelText}</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={[styles.button, styles.confirmButton, { backgroundColor: typeProps.iconBg }]}
+              onPress={handleConfirm}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.confirmButtonText}>{confirmText}</Text>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
       </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
+  cardWrapper: {
+    width: "90%",
+    alignSelf: "center",
+  },
   container: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 20,
-    borderTopWidth: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    borderRadius: 20,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    backgroundColor: "rgba(15,23,42,0.95)",
   },
   iconContainer: {
     width: 60,
@@ -170,29 +171,27 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   button: {
+    flex: 1,
     paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
-  buttonFlex: {
-    flex: 1,
-  },
   confirmButton: {
-    flex: 1,
+    backgroundColor: "#3B82F6",
   },
   confirmButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   cancelButton: {
-    flex: 1,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "rgba(148,163,184,0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.3)",
   },
   cancelButtonText: {
-    color: "#6B7280",
+    color: "#cbd5f5",
     fontSize: 16,
     fontWeight: "600",
   },

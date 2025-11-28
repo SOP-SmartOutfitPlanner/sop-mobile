@@ -1,7 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 
 interface DetailActionsProps {
   onUseInOutfit?: () => void;
@@ -10,42 +9,27 @@ interface DetailActionsProps {
 }
 
 export const DetailActions: React.FC<DetailActionsProps> = ({
-  onUseInOutfit,
   onEdit,
   onDelete,
 }) => {
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.actionButton}
-        onPress={onUseInOutfit}
-        activeOpacity={0.8}
-      >
-        <LinearGradient
-          colors={["#30cfd0", "#330867"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.primaryButton}
-        >
-          <Ionicons name="shirt" size={20} color="#fff" />
-          <Text style={styles.primaryButtonText}>Use in Outfit</Text>
-        </LinearGradient>
-      </TouchableOpacity>
-
-      <View style={styles.actionButtons}>
+      <View style={styles.actionRow}>
         <TouchableOpacity
-          style={[styles.actionButton, styles.secondaryButton]}
+          style={[styles.secondaryButton, styles.editButton]}
           onPress={onEdit}
+          activeOpacity={0.8}
         >
-          <Ionicons name="create-outline" size={20} color="#330867" />
-          <Text style={styles.secondaryButtonText}>Edit</Text>
+          <Ionicons name="create-outline" size={18} color="#60a5fa" />
+          <Text style={styles.editButtonText}>Edit</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.actionButton, styles.deleteButton]}
+          style={[styles.secondaryButton, styles.deleteButton]}
           onPress={onDelete}
+          activeOpacity={0.8}
         >
-          <Ionicons name="trash-outline" size={20} color="#dc2626" />
+          <Ionicons name="trash-outline" size={18} color="#f87171" />
           <Text style={styles.deleteButtonText}>Delete</Text>
         </TouchableOpacity>
       </View>
@@ -56,58 +40,40 @@ export const DetailActions: React.FC<DetailActionsProps> = ({
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    backgroundColor: "#fff",
+    backgroundColor: "#050b1d",
     gap: 12,
+    paddingBottom: 40,
   },
-  actionButtons: {
+  actionRow: {
     flexDirection: "row",
     gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    borderRadius: 12,
-    overflow: "hidden",
-  },
-  primaryButton: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 14,
-    gap: 8,
   },
   secondaryButton: {
-    backgroundColor: "#f3f4f6",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
+    flex: 1,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: 14,
     gap: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  editButton: {
+    backgroundColor: "rgba(59,130,246,0.15)",
+    borderColor: "rgba(59,130,246,0.3)",
+  },
+  editButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#60a5fa",
   },
   deleteButton: {
-    backgroundColor: "#fee2e2",
-    borderWidth: 1,
-    borderColor: "#fecaca",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 14,
-    gap: 8,
-  },
-  primaryButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#fff",
-  },
-  secondaryButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#330867",
+    backgroundColor: "rgba(239,68,68,0.15)",
+    borderColor: "rgba(239,68,68,0.3)",
   },
   deleteButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
-    color: "#dc2626",
+    color: "#f87171",
   },
 });
