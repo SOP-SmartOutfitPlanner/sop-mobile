@@ -1,8 +1,7 @@
-import React, { useMemo, useEffect, useRef, useCallback } from "react";
+import React, { useEffect, useMemo, useRef, useCallback } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
   useColorScheme,
   Image,
@@ -10,6 +9,7 @@ import {
   Animated,
   ScrollView,
 } from "react-native";
+import type { ViewStyle } from "react-native";
 import Modal from "react-native-modal";
 
 import { Info, X } from "lucide-react-native";
@@ -19,6 +19,15 @@ import { themeBase } from "react-native-notificated/lib/commonjs/defaultConfig/c
 import { LinearGradient } from "expo-linear-gradient";
 
 export type NotificationType = "success" | "error" | "warning" | "info";
+
+type NotificatedTheme = "regular" | "dark";
+
+const TYPE_LABELS: Record<NotificationType, string> = {
+  success: "Success",
+  error: "Error",
+  warning: "Warning",
+  info: "Info",
+};
 
 interface NotificationModalProps {
   isVisible: boolean;
@@ -36,15 +45,6 @@ interface NotificationModalProps {
   onAutoDismiss?: () => void;
   maxContentHeight?: number;
 }
-
-type NotificatedTheme = "regular" | "dark";
-
-const TYPE_LABELS: Record<NotificationType, string> = {
-  success: "Success",
-  error: "Error",
-  warning: "Warning",
-  info: "Info",
-};
 
 const hexToRgba = (hex?: string, alpha = 1) => {
   if (!hex) {
@@ -84,6 +84,7 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
   const colorScheme = useColorScheme();
   const themeMode: NotificatedTheme =
     colorScheme === "dark" ? "dark" : "regular";
+
   const autoDismissDuration = autoDismissMs ?? 0;
   const progress = useRef(new Animated.Value(0)).current;
   const showProgressBar = autoDismissDuration >= 1500;
@@ -117,7 +118,7 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
         animation.stop();
       };
     }
-  }, [autoDismissMs, handleAutoDismiss, isVisible, progress, showProgressBar]);
+  }, [autoDismissDuration, handleAutoDismiss, isVisible, progress, showProgressBar]);
 
   useEffect(() => {
     if (isVisible && autoDismissDuration && !showProgressBar) {
@@ -139,10 +140,10 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
       iconSource: iconSource as ImageSourcePropType | undefined,
       iconBg:
         hexToRgba(accent, themeMode === "dark" ? 0.35 : 0.15) ??
-        "rgba(59, 130, 246, 0.1)",
+        "rgba(59,130,246,0.1)",
       badgeBg:
         hexToRgba(accent, themeMode === "dark" ? 0.3 : 0.12) ??
-        "rgba(59, 130, 246, 0.12)",
+        "rgba(59,130,246,0.12)",
       badgeTextColor: themeMode === "dark" ? "#E2E8F0" : accent || "#1D4ED8",
     };
   }, [themeMode, type]);
@@ -162,9 +163,38 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
   const dividerColor =
     themeMode === "dark" ? "rgba(148,163,184,0.35)" : "rgba(148,163,184,0.2)";
 
+  const containerStyle = useMemo(
+    () => ({
+      borderTopColor: typeProps.accent,
+      backgroundColor,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: themeMode === "dark" ? 0.05 : 0.15,
+      shadowRadius: 18,
+      elevation: 5,
+    }),
+    [backgroundColor, themeMode, typeProps.accent]
+  );
+
+  const iconContainerStyle = useMemo<ViewStyle>(
+    () => ({
+      width: 56,
+      height: 56,
+      borderRadius: themeBase.borderRadius.rounded,
+      alignItems: "center",
+      justifyContent: "center",
+    }),
+    []
+  );
+
   const renderIcon = () => {
     if (typeProps.iconSource) {
-      return <Image source={typeProps.iconSource} style={styles.icon} />;
+      return (
+        <Image
+          source={typeProps.iconSource}
+          style={{ width: 34, height: 34, resizeMode: "contain" }}
+        />
+      );
     }
 
     return <Info color={typeProps.accent} size={32} />;
@@ -182,17 +212,10 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
       hideModalContentWhileAnimating
     >
       <View
-        style={[
-          styles.container,
-          styles.shadow,
-          {
-            borderTopColor: typeProps.accent,
-            backgroundColor,
-          },
-          themeMode === "dark" && styles.shadowDark,
-        ]}
+        className="space-y-4 rounded-3xl border-t-4 p-6"
+        style={containerStyle}
       >
-        <View style={styles.header}>
+        <View className="flex-row items-center gap-4">
           <LinearGradient
             colors={[
               typeProps.iconBg,
@@ -200,47 +223,46 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
             ]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.iconContainer}
+            style={iconContainerStyle}
           >
             {renderIcon()}
           </LinearGradient>
 
-          <View style={styles.headerText}>
-            {title && (
-              <Text style={[styles.title, { color: primaryTextColor }]}>
+          <View className="flex-1 gap-1">
+            {!!title && (
+              <Text
+                className="text-lg font-bold"
+                style={{ color: primaryTextColor }}
+              >
                 {title}
               </Text>
             )}
-            {subtitle && (
-              <Text style={[styles.subtitle, { color: secondaryTextColor }]}>
+            {!!subtitle && (
+              <Text className="text-sm" style={{ color: secondaryTextColor }}>
                 {subtitle}
               </Text>
             )}
 
-            <View style={styles.metaRow}>
+            <View className="mt-1.5 flex-row flex-wrap items-center gap-2">
               <View
-                style={[
-                  styles.typeBadge,
-                  {
-                    backgroundColor: typeProps.badgeBg,
-                    borderColor:
-                      themeMode === "dark"
-                        ? "rgba(255,255,255,0.08)"
-                        : "transparent",
-                  },
-                ]}
+                className="rounded-full border px-3 py-1"
+                style={{
+                  backgroundColor: typeProps.badgeBg,
+                  borderColor:
+                    themeMode === "dark"
+                      ? "rgba(255,255,255,0.08)"
+                      : "transparent",
+                }}
               >
                 <Text
-                  style={[
-                    styles.typeBadgeText,
-                    { color: typeProps.badgeTextColor },
-                  ]}
+                  className="text-xs font-semibold uppercase tracking-wide"
+                  style={{ color: typeProps.badgeTextColor }}
                 >
                   {TYPE_LABELS[type]}
                 </Text>
               </View>
-              {timestamp && (
-                <Text style={[styles.timestamp, { color: timestampColor }]}>
+              {!!timestamp && (
+                <Text className="text-xs" style={{ color: timestampColor }}>
                   {timestamp}
                 </Text>
               )}
@@ -248,7 +270,8 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
           </View>
 
           <TouchableOpacity
-            style={[styles.closeButton, { backgroundColor: closeButtonBg }]}
+            className="size-9 items-center justify-center rounded-full"
+            style={{ backgroundColor: closeButtonBg }}
             onPress={onClose}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
@@ -256,74 +279,79 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.divider, { backgroundColor: dividerColor }]} />
+        <View
+          className="w-full"
+          style={{ backgroundColor: dividerColor, height: 1 }}
+        />
 
-        <View style={styles.content}>
+        <View className="w-full pb-1">
           <ScrollView
             style={{ maxHeight: maxContentHeight }}
-            contentContainerStyle={styles.messageContainer}
+            contentContainerStyle={{ paddingBottom: themeBase.spacing.xs }}
             showsVerticalScrollIndicator={false}
           >
-            <Text style={[styles.message, { color: secondaryTextColor }]}>
+            <Text
+              className="text-base font-medium leading-6"
+              style={{ color: secondaryTextColor }}
+            >
               {message}
             </Text>
           </ScrollView>
         </View>
 
-        <View style={styles.buttonContainer}>
+        <View className="flex-row gap-3">
           {showCancel && (
             <TouchableOpacity
-              style={[
-                styles.button,
-                {
-                  backgroundColor: cancelBackground,
-                  borderWidth: themeMode === "dark" ? 1 : 0,
-                  borderColor:
-                    themeMode === "dark"
-                      ? "rgba(255,255,255,0.12)"
-                      : "transparent",
-                },
-              ]}
+              className="flex-1 items-center justify-center rounded-2xl px-6 py-3"
+              style={{
+                backgroundColor: cancelBackground,
+                borderWidth: themeMode === "dark" ? 1 : 0,
+                borderColor:
+                  themeMode === "dark"
+                    ? "rgba(255,255,255,0.12)"
+                    : "transparent",
+              }}
               onPress={onClose}
               activeOpacity={0.7}
             >
               <Text
-                style={[styles.cancelButtonText, { color: cancelTextColor }]}
+                className="text-base font-semibold"
+                style={{ color: cancelTextColor }}
               >
                 {cancelText}
               </Text>
             </TouchableOpacity>
           )}
           <TouchableOpacity
-            style={[
-              styles.button,
-              { backgroundColor: typeProps.accent },
-              showCancel && styles.buttonFlex,
-            ]}
+            className="flex-1 items-center justify-center rounded-2xl px-6 py-3"
+            style={{ backgroundColor: typeProps.accent }}
             onPress={handleConfirm}
             activeOpacity={0.7}
           >
-            <Text style={styles.confirmButtonText}>{confirmText}</Text>
+            <Text
+              className="text-base font-semibold text-white"
+              style={{ textTransform: "capitalize" }}
+            >
+              {confirmText}
+            </Text>
           </TouchableOpacity>
         </View>
+
         {showProgressBar && (
           <View
-            style={[
-              styles.progressTrack,
-              { backgroundColor: hexToRgba(typeProps.accent, 0.15) },
-            ]}
+            className="-mt-1 h-1 w-full overflow-hidden rounded-full"
+            style={{ backgroundColor: hexToRgba(typeProps.accent, 0.15) }}
           >
             <Animated.View
-              style={[
-                styles.progressBar,
-                {
-                  backgroundColor: typeProps.accent,
-                  width: progress.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ["0%", "100%"],
-                  }),
-                },
-              ]}
+              style={{
+                height: "100%",
+                borderRadius: 999,
+                backgroundColor: typeProps.accent,
+                width: progress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ["0%", "100%"],
+                }),
+              }}
             />
           </View>
         )}
@@ -332,133 +360,5 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    borderRadius: themeBase.borderRadius.regular,
-    padding: themeBase.spacing.l,
-    borderTopWidth: 4,
-    gap: themeBase.spacing.m,
-  },
-  shadow: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 18,
-    elevation: 5,
-  },
-  shadowDark: {
-    shadowOpacity: 0.05,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: themeBase.spacing.s,
-  },
-  headerText: {
-    flex: 1,
-    gap: 4,
-  },
-  iconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: themeBase.borderRadius.rounded,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  icon: {
-    width: 34,
-    height: 34,
-    resizeMode: "contain",
-  },
-  content: {
-    marginBottom: 4,
-    width: "100%",
-  },
-  messageContainer: {
-    paddingBottom: themeBase.spacing.xs,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  subtitle: {
-    fontSize: 14,
-    marginTop: 4,
-  },
-  timestamp: {
-    fontSize: 12,
-  },
-  message: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: "500",
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    gap: themeBase.spacing.s,
-  },
-  button: {
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: themeBase.borderRadius.regular,
-    alignItems: "center",
-    justifyContent: "center",
-    flex: 1,
-  },
-  buttonFlex: {
-    flex: 1,
-  },
-  confirmButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-    textTransform: "capitalize",
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  metaRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 6,
-    alignItems: "center",
-  },
-  typeBadge: {
-    paddingHorizontal: themeBase.spacing.s,
-    paddingVertical: 4,
-    borderRadius: themeBase.borderRadius.rounded,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  typeBadgeText: {
-    fontSize: 12,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    width: "100%",
-  },
-  progressTrack: {
-    height: 4,
-    width: "100%",
-    borderRadius: 999,
-    overflow: "hidden",
-    marginTop: -4,
-  },
-  progressBar: {
-    height: "100%",
-    borderRadius: 999,
-  },
-});
-
 export default NotificationModal;
+

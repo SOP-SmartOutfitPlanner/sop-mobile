@@ -1,30 +1,38 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  SafeAreaView,
-  View,
-  StyleSheet,
-  FlatList,
-  RefreshControl,
-  Text,
   Linking,
+  Modal,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import {
+  ArrowLeft,
+  Bell,
+  ChevronRight,
+  Clock,
+  Filter,
+  Settings2,
+} from "lucide-react-native";
 import { useAuth } from "../hooks/auth";
-import NotificationHero from "../components/notification/NotificationHero";
-import NotificationFilters, {
-  NotificationFilterKey,
-} from "../components/notification/NotificationFilters";
 import NotificationCard from "../components/notification/NotificationCard";
-import { Button } from "@/components/ui/button";
-import { Text as UIButtonText } from "@/components/ui/text";
-import { Card, CardContent } from "@/components/ui/card";
+import { NotificationFilterKey } from "../components/notification/NotificationFilters";
 import { NotificationItem, NotificationMeta } from "../types/notification";
 import {
+  deleteNotifications,
   fetchUnreadNotificationCount,
   fetchUserNotifications,
   markAllNotificationsAsRead,
   markNotificationAsRead,
 } from "../services/endpoint/notification";
+import { cn } from "@/lib/utils";
+import { formatRelativeTime } from "../utils/dateUtils";
 
 const PAGE_SIZE = 10;
 
@@ -40,8 +48,6 @@ export const NotificationScreen: React.FC = () => {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-
-  const heroItem = notifications[0];
 
   const typeFilterParam = useMemo(() => {
     switch (filter) {
@@ -120,12 +126,6 @@ export const NotificationScreen: React.FC = () => {
     fetchNotifications(true);
   };
 
-  const loadMore = () => {
-    if (meta?.hasNext && !loading) {
-      fetchNotifications();
-    }
-  };
-
   const toggleSelectionMode = () => {
     setSelectionMode((prev) => !prev);
     setSelectedIds([]);
@@ -152,18 +152,33 @@ export const NotificationScreen: React.FC = () => {
     });
   };
 
-  const deleteSelected = () => {
+  const deleteSelected = useCallback(async () => {
+    if (selectedIds.length === 0) {
+      return;
+    }
+
+    const idsToDelete = [...selectedIds];
     setNotifications((prev) =>
-      prev.filter((item) => !selectedIds.includes(item.id))
+      prev.filter((item) => !idsToDelete.includes(item.id))
     );
     setSelectedIds([]);
     setSelectionMode(false);
-  };
+
+    try {
+      await deleteNotifications(idsToDelete);
+    } catch (error) {
+      console.error("Failed to delete notifications:", error);
+      fetchNotifications(true);
+    }
+  }, [fetchNotifications, selectedIds]);
+
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [activeNotification, setActiveNotification] =
+    useState<NotificationItem | null>(null);
 
   const handleOpenNotification = async (item: NotificationItem) => {
-    if (item.href && item.href !== "string") {
-      Linking.openURL(item.href).catch(() => {});
-    }
+    setActiveNotification(item);
+    setDetailOpen(true);
     try {
       await markNotificationAsRead(item.id);
     } catch (error) {
@@ -178,62 +193,16 @@ export const NotificationScreen: React.FC = () => {
     }
   };
 
-  const renderHeader = () => (
-    <View style={styles.header}>
-      <View style={styles.topRow}>
-        <View>
-          <Text style={styles.title}>Notifications</Text>
-          <Text style={styles.subtitle}>
-            You have {unreadCount} unread updates
-          </Text>
-        </View>
-        <Button
-          variant="secondary"
-          size="sm"
-          className="bg-white/10 px-4"
-          onPress={async () => {
-            if (!user) return;
-            try {
-              await markAllNotificationsAsRead(user.id);
-            } catch (error) {
-              console.error("Failed to mark all read:", error);
-            } finally {
-              setNotifications((prev) =>
-                prev.map((item) => ({ ...item, isRead: true }))
-              );
-              loadUnreadCount();
-            }
-          }}
-        >
-          <UIButtonText className="text-sm font-semibold text-white">
-            Mark all read
-          </UIButtonText>
-        </Button>
-      </View>
-      <NotificationHero
-        item={heroItem}
-        onPrimaryAction={() => heroItem && handleOpenNotification(heroItem)}
-        onSecondaryAction={() => (heroItem ? toggleSelect(heroItem.id) : null)}
-      />
-      <View style={styles.filterHeader}>
-        <Text style={styles.filterLabel}>Filter feed</Text>
-        <Button
-          variant={selectionMode ? "outline" : "ghost"}
-          size="sm"
-          className="px-4"
-          onPress={toggleSelectionMode}
-        >
-          <UIButtonText className="text-sm font-semibold text-white">
-            {selectionMode ? "Exit select" : "Select"}
-          </UIButtonText>
-        </Button>
-      </View>
-      <NotificationFilters
-        activeFilter={filter}
-        onChange={(value) => setFilter(value)}
-      />
-    </View>
-  );
+  const filterOptions: Array<{
+    key: NotificationFilterKey;
+    label: string;
+    description: string;
+  }> = [
+    { key: "all", label: "All", description: "Every notification" },
+    { key: "unread", label: "Unread", description: "Needs attention" },
+    { key: "system", label: "System", description: "Product updates" },
+    { key: "user", label: "User", description: "Direct mentions" },
+  ];
 
   const renderSelectionToolbar = () => {
     if (!selectionMode || selectedIds.length === 0) {
@@ -241,185 +210,282 @@ export const NotificationScreen: React.FC = () => {
     }
 
     return (
-      <Card className="mx-4 mt-4 border-primary/40 bg-primary/10">
-        <CardContent className="flex-row items-center justify-between gap-4 py-4">
-          <Text style={styles.selectionText}>
-            {selectedIds.length} selected
-          </Text>
-          <View style={styles.selectionActions}>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="px-4"
-              onPress={markSelectedAsRead}
-            >
-              <UIButtonText className="text-sm font-semibold text-white">
-                Mark read
-              </UIButtonText>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="px-4"
-              onPress={deleteSelected}
-            >
-              <UIButtonText className="text-sm font-semibold text-white">
-                Delete
-              </UIButtonText>
-            </Button>
-          </View>
-        </CardContent>
-      </Card>
+      <View className="mx-5 mt-4 rounded-2xl border border-primary/40 bg-primary/10 p-4">
+        <Text className="text-base font-semibold text-white/90">
+          {selectedIds.length} selected
+        </Text>
+        <View className="mt-3 flex-row gap-3">
+          <TouchableOpacity
+            className="flex-1 rounded-2xl bg-white/15 px-4 py-3"
+            onPress={markSelectedAsRead}
+            activeOpacity={0.85}
+          >
+            <Text className="text-center text-sm font-semibold text-white">
+              Mark read
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            className="flex-1 rounded-2xl border border-white/20 px-4 py-3"
+            onPress={deleteSelected}
+            activeOpacity={0.85}
+          >
+            <Text className="text-center text-sm font-semibold text-white">
+              Delete
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     );
   };
 
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, contentSize, layoutMeasurement } =
+        event.nativeEvent;
+      const distanceFromBottom =
+        contentSize.height - (layoutMeasurement.height + contentOffset.y);
+      if (distanceFromBottom < 120 && meta?.hasNext && !loading) {
+        fetchNotifications();
+      }
+    },
+    [fetchNotifications, loading, meta?.hasNext]
+  );
+
   if (isGuest) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={[styles.emptyState, { paddingHorizontal: 32 }]}>
-          <Text style={styles.emptyTitle}>Sign in to stay updated</Text>
-          <Text style={styles.emptySubtitle}>
+      <SafeAreaView className="flex-1 bg-[#020617]">
+        <View className="flex-1 items-center justify-center gap-5 px-8">
+          <Text className="text-center text-2xl font-bold text-white">
+            Sign in to stay updated
+          </Text>
+          <Text className="text-center text-base text-white/70">
             Create an account or log in to receive personalized notifications.
           </Text>
-          <Button
-            size="lg"
-            className="px-6"
+          <TouchableOpacity
+            className="w-full rounded-2xl bg-primary px-6 py-3"
             onPress={() => navigation.navigate("Auth" as never)}
           >
-            <UIButtonText className="text-base font-semibold text-white">
+            <Text className="text-center text-base font-semibold text-white">
               Go to Login
-            </UIButtonText>
-          </Button>
+            </Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      {renderSelectionToolbar()}
-      <FlatList
-        data={notifications}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <NotificationCard
-            item={item}
-            selectionMode={selectionMode}
-            selected={selectedIds.includes(item.id)}
-            onToggleSelect={toggleSelect}
-            onPress={handleOpenNotification}
-            onDelete={(id) =>
-              setNotifications((prev) =>
-                prev.filter((notification) => notification.id !== id)
-              )
-            }
-            onMarkRead={(id) =>
-              markNotificationAsRead(id)
-                .catch(() => {})
-                .finally(() => {
+    <SafeAreaView className="flex-1 bg-[#020617]">
+      <View className="flex-1">
+        <View className="gap-4 px-5 py-4">
+          <View className="flex-row items-center justify-between">
+            <TouchableOpacity
+              className="rounded-full border border-white/20 p-2"
+              onPress={() => navigation.goBack()}
+            >
+              <ArrowLeft size={18} color="#e2e8f0" />
+            </TouchableOpacity>
+            <Text className="text-xl font-bold text-white">Notifications</Text>
+            <TouchableOpacity
+              className="rounded-full border border-white/20 p-2"
+              onPress={toggleSelectionMode}
+            >
+              {selectionMode ? (
+                <Filter size={18} color="#e2e8f0" />
+              ) : (
+                <Settings2 size={18} color="#e2e8f0" />
+              )}
+            </TouchableOpacity>
+          </View>
+          <View className="flex-row items-center justify-between">
+            <Text className="text-sm text-white/70">
+              Showing {notifications.length} notifications
+            </Text>
+            <TouchableOpacity
+              className="flex-row items-center gap-2 rounded-2xl border border-white/20 px-3 py-2"
+              onPress={async () => {
+                if (!user) return;
+                try {
+                  await markAllNotificationsAsRead(user.id);
+                } catch (error) {
+                  console.error("Failed to mark all read:", error);
+                } finally {
                   setNotifications((prev) =>
-                    prev.map((notification) =>
-                      notification.id === id
-                        ? { ...notification, isRead: true }
-                        : notification
-                    )
+                    prev.map((item) => ({ ...item, isRead: true }))
                   );
                   loadUnreadCount();
-                })
-            }
-          />
-        )}
-        ListHeaderComponent={renderHeader}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        onEndReachedThreshold={0.2}
-        onEndReached={loadMore}
-        ListEmptyComponent={
-          !loading && (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>All caught up!</Text>
-              <Text style={styles.emptySubtitle}>
-                You&apos;ll see new updates here as soon as we have them.
+                }
+              }}
+            >
+              <ChevronRight size={16} color="#e2e8f0" />
+              <Text className="text-sm font-semibold text-white">
+                Mark all read
               </Text>
+            </TouchableOpacity>
+          </View>
+          <View className="flex-row items-center justify-between">
+            <Text className="text-sm font-semibold text-white/80">
+              Filter feed ({unreadCount} unread)
+            </Text>
+            <TouchableOpacity
+              className={cn(
+                "rounded-2xl px-4 py-2",
+                selectionMode
+                  ? "bg-primary/20"
+                  : "border border-white/20 bg-transparent"
+              )}
+              onPress={toggleSelectionMode}
+            >
+              <Text className="text-sm font-semibold text-white">
+                {selectionMode ? "Exit select" : "Select"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingVertical: 4 }}
+          >
+            <View className="flex-row gap-3">
+              {filterOptions.map((option) => (
+                <TouchableOpacity
+                  key={option.key}
+                  onPress={() => setFilter(option.key)}
+                  className={cn(
+                    "min-w-[130px] rounded-2xl border px-4 py-3",
+                    option.key === filter
+                      ? "border-primary bg-primary/15"
+                      : "border-white/15 bg-white/5"
+                  )}
+                >
+                  <Text className="text-base font-semibold text-white">
+                    {option.label}
+                  </Text>
+                  <Text className="text-xs text-white/70">
+                    {option.description}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
-          )
-        }
-      />
+          </ScrollView>
+        </View>
+        {renderSelectionToolbar()}
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 72 }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+        >
+          <View className="gap-4">
+            {notifications.map((item) => (
+              <NotificationCard
+                key={item.id}
+                item={item}
+                selectionMode={selectionMode}
+                selected={selectedIds.includes(item.id)}
+                onToggleSelect={toggleSelect}
+                onPress={handleOpenNotification}
+                onDelete={async (id) => {
+                  setNotifications((prev) =>
+                    prev.filter((notification) => notification.id !== id)
+                  );
+                  try {
+                    await deleteNotifications([id]);
+                  } catch (error) {
+                    console.error("Failed to delete notification:", error);
+                    fetchNotifications(true);
+                  }
+                }}
+                onMarkRead={(id) =>
+                  markNotificationAsRead(id)
+                    .catch(() => {})
+                    .finally(() => {
+                      setNotifications((prev) =>
+                        prev.map((notification) =>
+                          notification.id === id
+                            ? { ...notification, isRead: true }
+                            : notification
+                        )
+                      );
+                      loadUnreadCount();
+                    })
+                }
+              />
+            ))}
+            {!loading && notifications.length === 0 && (
+              <View className="items-center gap-3 py-20">
+                <Bell size={32} color="rgba(226,232,240,0.7)" />
+                <Text className="text-xl font-semibold text-white">
+                  All caught up!
+                </Text>
+                <Text className="text-center text-base text-white/70">
+                  You&apos;ll see new updates here as soon as we have them.
+                </Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </View>
+      <Modal
+        visible={detailOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setDetailOpen(false)}
+      >
+        <View className="flex-1 justify-end bg-black/60">
+          <View className="rounded-t-3xl bg-[#0f172a] p-5">
+            {activeNotification && (
+              <View className="gap-4">
+                <View className="flex-row items-center gap-3">
+                  <View className="rounded-full border border-white/20 p-2">
+                    <Bell size={18} color="#e2e8f0" />
+                  </View>
+                  <Text className="flex-1 text-lg font-semibold text-white">
+                    {activeNotification.title}
+                  </Text>
+                </View>
+                <View className="flex-row items-center gap-2">
+                  <Clock size={16} color="rgba(226,232,240,0.7)" />
+                  <Text className="text-sm text-white/70">
+                    {formatRelativeTime(activeNotification.createdAt)}
+                  </Text>
+                </View>
+                <Text className="text-base leading-6 text-white/80">
+                  {activeNotification.message}
+                </Text>
+                {activeNotification.href &&
+                  activeNotification.href !== "string" && (
+                    <TouchableOpacity
+                      className="rounded-2xl bg-primary px-4 py-3"
+                      onPress={() =>
+                        Linking.openURL(activeNotification.href!).catch(
+                          () => {}
+                        )
+                      }
+                    >
+                      <Text className="text-center text-sm font-semibold text-white">
+                        Open related link
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                <TouchableOpacity
+                  className="rounded-2xl border border-white/20 px-4 py-3"
+                  onPress={() => setDetailOpen(false)}
+                >
+                  <Text className="text-center text-sm font-semibold text-white">
+                    Dismiss
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#020617",
-  },
-  listContent: {
-    padding: 18,
-    paddingBottom: 48,
-    gap: 16,
-  },
-  header: {
-    gap: 24,
-    marginBottom: 12,
-  },
-  topRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: "#e0f2fe",
-  },
-  subtitle: {
-    color: "rgba(226,232,240,0.75)",
-  },
-  filterHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  filterLabel: {
-    color: "rgba(186,230,253,0.9)",
-    fontWeight: "600",
-  },
-  selectionContainer: {
-    margin: 16,
-  },
-  selectionBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-  },
-  selectionText: {
-    color: "#dbeafe",
-    fontWeight: "600",
-  },
-  selectionActions: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  emptyState: {
-    paddingVertical: 48,
-    alignItems: "center",
-    gap: 12,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#e0f2fe",
-  },
-  emptySubtitle: {
-    color: "rgba(226,232,240,0.75)",
-    textAlign: "center",
-    paddingHorizontal: 32,
-  },
-});
 
 export default NotificationScreen;

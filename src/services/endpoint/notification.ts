@@ -60,3 +60,17 @@ export const markAllNotificationsAsRead = async (
   await apiClient.put(`/notifications/user/${userId}/read-all`);
 };
 
+export const deleteNotifications = async (
+  notificationIds: number[]
+): Promise<void> => {
+  if (!Array.isArray(notificationIds) || notificationIds.length === 0) {
+    return;
+  }
+
+  await apiClient.delete("/notifications", {
+    data: {
+      notificationIds,
+    },
+  });
+};
+
