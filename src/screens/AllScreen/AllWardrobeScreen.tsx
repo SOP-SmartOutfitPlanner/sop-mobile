@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   Text,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -25,11 +26,15 @@ const AllWardrobeScreen = ({ navigation }: any) => {
 
   const {
     items,
+    totalCount,
     searchQuery,
     setSearchQuery,
     loading,
     isRefreshing,
     handleRefresh,
+    loadMore,
+    hasMorePages,
+    isLoadingMore,
     editItem,
     deleteItem,
     clearFilters,
@@ -43,7 +48,7 @@ const AllWardrobeScreen = ({ navigation }: any) => {
     setStyleFilter,
     setOccasionFilter,
     setAnalyzedFilter,
-  } = useWardrobe();
+  } = useWardrobe({ takeAll: false, pageSize: 10 });
 
   const handleItemClick = (item: Item) => {
     setSelectedItem(item);
@@ -89,6 +94,8 @@ const AllWardrobeScreen = ({ navigation }: any) => {
       }).length,
     [items]
   );
+
+  const totalItems = totalCount || items.length;
 
   if (loading) {
     return (
@@ -146,7 +153,7 @@ const AllWardrobeScreen = ({ navigation }: any) => {
 
             <View style={styles.heroStatsRow}>
               <View style={styles.heroStat}>
-                <Text style={styles.heroStatValue}>{items.length}</Text>
+                <Text style={styles.heroStatValue}>{totalItems}</Text>
                 <Text style={styles.heroStatLabel}>Total</Text>
               </View>
               <View style={styles.heroStat}>
@@ -196,7 +203,7 @@ const AllWardrobeScreen = ({ navigation }: any) => {
 
         <View style={styles.itemCountContainer}>
           <Text style={styles.itemCountText}>
-            {items.length} curated items
+            Showing {items.length} / {totalItems} items
           </Text>
           <TouchableOpacity onPress={clearFilters}>
             <Text style={styles.clearFiltersText}>Clear filters</Text>
@@ -222,6 +229,25 @@ const AllWardrobeScreen = ({ navigation }: any) => {
                 : "No items in wardrobe. Add some!"}
             </Text>
           </View>
+        )}
+
+        {/* Load more */}
+        {hasMorePages && (
+          <TouchableOpacity
+            style={styles.loadMoreButton}
+            onPress={loadMore}
+            disabled={isLoadingMore}
+            activeOpacity={0.85}
+          >
+            {isLoadingMore ? (
+              <>
+                <ActivityIndicator color="#0f172a" size="small" />
+                <Text style={styles.loadMoreText}>Loading...</Text>
+              </>
+            ) : (
+              <Text style={styles.loadMoreText}>Load more</Text>
+            )}
+          </TouchableOpacity>
         )}
 
         {/* Bottom spacing */}
@@ -331,6 +357,21 @@ const styles = StyleSheet.create({
   clearFiltersText: {
     fontSize: 13,
     color: "#94a3b8",
+  },
+  loadMoreButton: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    borderRadius: 16,
+    backgroundColor: "#38bdf8",
+    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
+  },
+  loadMoreText: {
+    color: "#0f172a",
+    fontWeight: "600",
   },
   emptyContainer: {
     alignItems: "center",

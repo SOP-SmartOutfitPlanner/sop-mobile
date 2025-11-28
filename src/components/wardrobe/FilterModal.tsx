@@ -49,8 +49,24 @@ export const FilterModal: React.FC<FilterModalProps> = ({
   const [childCategories, setChildCategories] = useState<Category[]>([]);
   const [isLoadingChildren, setIsLoadingChildren] = useState(false);
 
+  const [pendingCategoryId, setPendingCategoryId] = useState<number | undefined>(selectedCategoryId);
+  const [pendingSeasonId, setPendingSeasonId] = useState<number | undefined>(selectedSeasonId);
+  const [pendingStyleId, setPendingStyleId] = useState<number | undefined>(selectedStyleId);
+  const [pendingOccasionId, setPendingOccasionId] = useState<number | undefined>(selectedOccasionId);
+  const [pendingAnalyzed, setPendingAnalyzed] = useState<boolean | undefined>(isAnalyzed);
+
   // Cache for child categories to avoid re-fetching
   const [categoryCache, setCategoryCache] = useState<Record<number, Category[]>>({});
+
+  useEffect(() => {
+    if (visible) {
+      setPendingCategoryId(selectedCategoryId);
+      setPendingSeasonId(selectedSeasonId);
+      setPendingStyleId(selectedStyleId);
+      setPendingOccasionId(selectedOccasionId);
+      setPendingAnalyzed(isAnalyzed);
+    }
+  }, [visible, selectedCategoryId, selectedSeasonId, selectedStyleId, selectedOccasionId, isAnalyzed]);
 
   // Fetch parent categories on mount
   useEffect(() => {
@@ -103,13 +119,13 @@ export const FilterModal: React.FC<FilterModalProps> = ({
   // Memoize active filters count
   const activeFiltersCount = useMemo(() => 
     [
-      selectedCategoryId,
-      selectedSeasonId,
-      selectedStyleId,
-      selectedOccasionId,
-      isAnalyzed,
+      pendingCategoryId,
+      pendingSeasonId,
+      pendingStyleId,
+      pendingOccasionId,
+      pendingAnalyzed,
     ].filter((filter) => filter !== undefined).length,
-    [selectedCategoryId, selectedSeasonId, selectedStyleId, selectedOccasionId, isAnalyzed]
+    [pendingCategoryId, pendingSeasonId, pendingStyleId, pendingOccasionId, pendingAnalyzed]
   );
 
   // Memoize handlers
@@ -120,8 +136,34 @@ export const FilterModal: React.FC<FilterModalProps> = ({
   const handleClearFilters = useCallback(() => {
     setSelectedParentId(undefined);
     setChildCategories([]);
+    setPendingCategoryId(undefined);
+    setPendingSeasonId(undefined);
+    setPendingStyleId(undefined);
+    setPendingOccasionId(undefined);
+    setPendingAnalyzed(undefined);
     onClearFilters();
   }, [onClearFilters]);
+
+  const handleApplyFilters = useCallback(() => {
+    onCategorySelect(pendingCategoryId);
+    onSeasonSelect(pendingSeasonId);
+    onStyleSelect(pendingStyleId);
+    onOccasionSelect(pendingOccasionId);
+    onAnalyzedToggle(pendingAnalyzed);
+    onClose();
+  }, [
+    pendingCategoryId,
+    pendingSeasonId,
+    pendingStyleId,
+    pendingOccasionId,
+    pendingAnalyzed,
+    onCategorySelect,
+    onSeasonSelect,
+    onStyleSelect,
+    onOccasionSelect,
+    onAnalyzedToggle,
+    onClose,
+  ]);
 
   // Memoize filter section renderer
   const renderFilterSection = useCallback((
@@ -172,21 +214,21 @@ export const FilterModal: React.FC<FilterModalProps> = ({
         <TouchableOpacity
           style={[
             styles.filterChip,
-            isAnalyzed === true && styles.filterChipSelected,
+            pendingAnalyzed === true && styles.filterChipSelected,
           ]}
-          onPress={() => onAnalyzedToggle(isAnalyzed === true ? undefined : true)}
+          onPress={() => setPendingAnalyzed(pendingAnalyzed === true ? undefined : true)}
           activeOpacity={0.7}
         >
           <Ionicons 
             name="checkmark-circle" 
             size={16} 
-            color={isAnalyzed === true ? "#fff" : "#10b981"} 
+            color={pendingAnalyzed === true ? "#fff" : "#10b981"} 
             style={{ marginRight: 4 }}
           />
           <Text
             style={[
               styles.filterChipText,
-              isAnalyzed === true && styles.filterChipTextSelected,
+              pendingAnalyzed === true && styles.filterChipTextSelected,
             ]}
           >
             Analyzed
@@ -195,21 +237,21 @@ export const FilterModal: React.FC<FilterModalProps> = ({
         <TouchableOpacity
           style={[
             styles.filterChip,
-            isAnalyzed === false && styles.filterChipSelected,
+            pendingAnalyzed === false && styles.filterChipSelected,
           ]}
-          onPress={() => onAnalyzedToggle(isAnalyzed === false ? undefined : false)}
+          onPress={() => setPendingAnalyzed(pendingAnalyzed === false ? undefined : false)}
           activeOpacity={0.7}
         >
           <Ionicons 
             name="alert-circle" 
             size={16} 
-            color={isAnalyzed === false ? "#fff" : "#f59e0b"} 
+            color={pendingAnalyzed === false ? "#fff" : "#f59e0b"} 
             style={{ marginRight: 4 }}
           />
           <Text
             style={[
               styles.filterChipText,
-              isAnalyzed === false && styles.filterChipTextSelected,
+              pendingAnalyzed === false && styles.filterChipTextSelected,
             ]}
           >
             Not Analyzed
@@ -217,7 +259,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
         </TouchableOpacity>
       </View>
     </View>
-  ), [isAnalyzed, onAnalyzedToggle]);
+  ), [pendingAnalyzed]);
 
   // Memoize categories section renderer
   const renderCategoriesSection = useCallback(() => (
@@ -275,15 +317,15 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                   style={[
                     styles.filterChip,
                     styles.childFilterChip,
-                    selectedCategoryId === child.id && styles.filterChipSelected,
+                    pendingCategoryId === child.id && styles.filterChipSelected,
                   ]}
-                  onPress={() => onCategorySelect(selectedCategoryId === child.id ? undefined : child.id)}
+                  onPress={() => setPendingCategoryId(pendingCategoryId === child.id ? undefined : child.id)}
                   activeOpacity={0.7}
                 >
                   <Text
                     style={[
                       styles.filterChipText,
-                      selectedCategoryId === child.id && styles.filterChipTextSelected,
+                      pendingCategoryId === child.id && styles.filterChipTextSelected,
                     ]}
                   >
                     {child.name}
@@ -302,8 +344,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
     handleParentToggle,
     isLoadingChildren,
     childCategories,
-    selectedCategoryId,
-    onCategorySelect
+    pendingCategoryId,
   ]);
 
   return (
@@ -333,22 +374,22 @@ export const FilterModal: React.FC<FilterModalProps> = ({
           {renderFilterSection(
             "Seasons",
             seasonsList,
-            selectedSeasonId,
-            onSeasonSelect,
+            pendingSeasonId,
+            setPendingSeasonId,
             isMetadataLoading
           )}
           {renderFilterSection(
             "Styles",
             stylesList,
-            selectedStyleId,
-            onStyleSelect,
+            pendingStyleId,
+            setPendingStyleId,
             isMetadataLoading
           )}
           {renderFilterSection(
             "Occasions",
             occasionsList,
-            selectedOccasionId,
-            onOccasionSelect,
+            pendingOccasionId,
+            setPendingOccasionId,
             isMetadataLoading
           )}
           {renderAnalyzedFilter()}
@@ -356,7 +397,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
 
         {/* Apply Button */}
         <View style={styles.footer}>
-          <TouchableOpacity style={styles.applyButton} onPress={onClose}>
+          <TouchableOpacity style={styles.applyButton} onPress={handleApplyFilters}>
             <Text style={styles.applyButtonText}>
               Apply Filters {activeFiltersCount > 0 ? `(${activeFiltersCount})` : ''}
             </Text>

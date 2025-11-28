@@ -61,19 +61,21 @@ export interface AnalyzeItemResponse {
        confidence: number;
     };
 }
+export interface PaginationMeta {
+    totalCount: number;
+    pageSize: number;
+    currentPage: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
+}
+
 export interface GetItemResponse {
     statusCode: number;
     message: string;
     data: {
         data: Item[];
-        metaData: {
-            totalCount: number;
-            pageSize: number;
-            currentPage: number;
-            totalPages: number;
-            hasNext: boolean;
-            hasPrevious: boolean;
-        }
+        metaData: PaginationMeta;
     };
 }
 export interface EditItemRequest {
