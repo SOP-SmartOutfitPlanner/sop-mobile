@@ -145,7 +145,7 @@ const OutfitScreen = ({ navigation }: any) => {
   };
 
   const handleNotificationPress = () => {
-    // Handle notification
+    navigation.navigate("Notifications");
   };
 
   const handleMessagePress = () => {

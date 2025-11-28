@@ -47,13 +47,12 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
   selectionMode,
   selected,
 }) => {
-  const { normalizedHref, canOpenLink, titleText, messageText } = useMemo(() => {
+  const { normalizedHref, canOpenLink, titleText } = useMemo(() => {
     if (typeof item.href !== "string") {
       return {
         normalizedHref: "",
         canOpenLink: false,
         titleText: sanitizeText(item.title, "Notification"),
-        messageText: sanitizeText(item.message, "No details provided"),
       };
     }
     const trimmed = item.href.trim();
@@ -61,7 +60,6 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
       normalizedHref: trimmed,
       canOpenLink: trimmed.length > 0 && trimmed !== "string",
       titleText: sanitizeText(item.title, "Notification"),
-      messageText: sanitizeText(item.message, "No details provided"),
     };
   }, [item.href, item.title, item.message]);
 
@@ -80,7 +78,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
     Linking.openURL(normalizedHref).catch(() => {});
   }, [canOpenLink, normalizedHref]);
 
-  const gradientColors = item.isRead
+  const gradientColors: [string, string] = item.isRead
     ? ["#0b1224", "#090f1c"]
     : ["#162a63", "#0a142d"];
 
@@ -134,63 +132,65 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
   return (
     <LinearGradient colors={gradientColors} style={styles.gradientShell}>
       <Pressable style={cardStyle} onPress={handlePress}>
-      <View className="flex-row items-start gap-4">
-        <View className="flex-1 gap-3">
-          <View className="flex-row items-start justify-between gap-3">
-            <View className="flex-1">
-              <Text
-                numberOfLines={2}
-                className="text-base font-semibold text-white"
-              >
-                {titleText}
-              </Text>
-            </View>
-            {selectionMode ? (
-              <View
-                className={cn(
-                  "size-7 items-center justify-center rounded-full border",
-                  selected ? "border-primary bg-primary/20" : "border-white/25"
-                )}
-              >
-                {selected && <CheckCircle size={18} color="#34d399" />}
+        <View className="flex-row items-start gap-4">
+          <View className="flex-1 gap-3">
+            <View className="flex-row items-start justify-between gap-3">
+              <View className="flex-1">
+                <Text
+                  numberOfLines={2}
+                  className="text-base font-semibold text-white"
+                >
+                  {titleText}
+                </Text>
               </View>
-            ) : (
-              <TouchableOpacity
-                onPress={(event) => {
-                  event?.stopPropagation?.();
-                  onDelete?.(item.id);
-                }}
-                className="rounded-full border border-white/15 bg-white/5 p-2"
-              >
-                <Trash2 size={16} color="#f87171" />
-              </TouchableOpacity>
-            )}
+              {selectionMode ? (
+                <View
+                  className={cn(
+                    "size-7 items-center justify-center rounded-full border",
+                    selected
+                      ? "border-primary bg-primary/20"
+                      : "border-white/25"
+                  )}
+                >
+                  {selected && <CheckCircle size={18} color="#34d399" />}
+                </View>
+              ) : (
+                <TouchableOpacity
+                  onPress={(event) => {
+                    event?.stopPropagation?.();
+                    onDelete?.(item.id);
+                  }}
+                  className="rounded-full border border-white/15 bg-white/5 p-2"
+                >
+                  <Trash2 size={16} color="#f87171" />
+                </TouchableOpacity>
+              )}
+            </View>
+            <View className="flex-row flex-wrap gap-2">
+              <Badge>{item.type.toLowerCase()}</Badge>
+              {!item.isRead && <Badge tone="accent">New</Badge>}
+            </View>
+            <Text className="text-sm leading-5 text-white/80" numberOfLines={3}>
+              {item.message}
+            </Text>
+          </View>
+        </View>
+        <View className="mt-4 flex-row flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
+          <View className="flex-row items-center gap-2">
+            <Clock size={16} color="rgba(226,232,240,0.75)" />
+            <Text className="text-xs uppercase tracking-wide text-white/70">
+              {formatRelativeTime(item.createdAt)}
+            </Text>
           </View>
           <View className="flex-row flex-wrap gap-2">
-            <Badge>{item.type.toLowerCase()}</Badge>
-            {!item.isRead && <Badge tone="accent">New</Badge>}
+            {canOpenLink && (
+              <ActionButton tone="ghost" onPress={handleOpenLink}>
+                <Link2 size={16} color="#bae6fd" />
+                <Text className="text-xs font-semibold text-white">Open</Text>
+              </ActionButton>
+            )}
           </View>
-          <Text className="text-sm leading-5 text-white/80" numberOfLines={3}>
-            {messageText}
-          </Text>
         </View>
-      </View>
-      <View className="mt-4 flex-row flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
-        <View className="flex-row items-center gap-2">
-          <Clock size={16} color="rgba(226,232,240,0.75)" />
-          <Text className="text-xs uppercase tracking-wide text-white/70">
-            {formatRelativeTime(item.createdAt)}
-          </Text>
-        </View>
-        <View className="flex-row flex-wrap gap-2">
-          {canOpenLink && (
-            <ActionButton tone="ghost" onPress={handleOpenLink}>
-              <Link2 size={16} color="#bae6fd" />
-              <Text className="text-xs font-semibold text-white">Open</Text>
-            </ActionButton>
-          )}
-        </View>
-      </View>
       </Pressable>
     </LinearGradient>
   );

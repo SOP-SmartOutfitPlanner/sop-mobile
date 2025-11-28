@@ -101,7 +101,9 @@ const WardrobeScreen = ({ navigation }: any) => {
 
   // Empty handlers for Header props (not used in this screen)
   const handleBackPress = useCallback(() => {}, []);
-  const handleNotificationPress = useCallback(() => {}, []);
+  const handleNotificationPress = useCallback(() => {
+    navigation.navigate("Notifications");
+  }, [navigation]);
   const handleMessagePress = useCallback(() => {}, []);
 
   const favoriteItems = useMemo(

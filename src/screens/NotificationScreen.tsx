@@ -380,9 +380,9 @@ export const NotificationScreen: React.FC = () => {
           scrollEventThrottle={16}
         >
           <View className="gap-4">
-            {notifications.map((item) => (
+            {notifications.map((item, index) => (
               <NotificationCard
-                key={item.id}
+                key={`${item.id}-${item.createdAt}-${index}`}
                 item={item}
                 selectionMode={selectionMode}
                 selected={selectedIds.includes(item.id)}

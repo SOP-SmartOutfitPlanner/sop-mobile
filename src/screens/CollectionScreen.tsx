@@ -40,7 +40,7 @@ const CollectionScreen = ({ navigation }: any) => {
 
   // Handlers
   const handleNotificationPress = () => {
-    Alert.alert("Notifications", "You have new notifications");
+    navigation.navigate("Notifications");
   };
 
   const handleMessagePress = () => {

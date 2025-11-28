@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -56,6 +56,10 @@ const AllOutfitScreen = ({ navigation }: any) => {
     navigation?.goBack?.();
   };
 
+  const handleNotificationPress = useCallback(() => {
+    navigation.navigate("Notifications");
+  }, [navigation]);
+
   const handleViewOutfit = (outfitId: string) => {
     const found = outfitPool.get(Number(outfitId));
     if (found) {
@@ -106,7 +110,7 @@ const AllOutfitScreen = ({ navigation }: any) => {
         title="All Outfits"
         showBackButton
         onBackPress={handleBack}
-        onNotificationPress={() => {}}
+        onNotificationPress={handleNotificationPress}
         onMessagePress={() => {}}
         onProfilePress={() => navigation.navigate("Profile")}
       />
