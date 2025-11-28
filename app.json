@@ -23,6 +23,7 @@
     },
     "scheme": "sop",
     "platforms": ["ios", "android"],
+    "useExpoRouter": false,
     "plugins": [
       [
         "expo-notifications",
@@ -67,6 +68,7 @@
       }
     },
     "web": {
+      "bundler": "metro",
       "favicon": "./assets/favicon.png"
     },
     "extra": {

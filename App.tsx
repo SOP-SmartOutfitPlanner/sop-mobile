@@ -8,6 +8,7 @@ import { useOTAUpdates } from "./src/hooks/useOTAUpdates";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { AIDetectionProvider } from "./src/contexts/AIDetectionContext";
+import "./global.css";
 import "./src/config/google";
 import PushNotificationModalHost from "./src/components/notification/PushNotificationModalHost";
 

@@ -9,6 +9,7 @@ import { AuthNavigator } from "./AuthNavigator";
 import AllWardrobeScreen from "../screens/AllScreen/AllWardrobeScreen";
 import AllOutfitScreen from "../screens/AllScreen/AllOutfitScreen";
 import SuggestionScreen from "../screens/SuggestionScreen";
+import NotificationScreen from "../screens/NotificationScreen";
 
 export type RootStackParamList = {
   Auth: undefined;
@@ -20,6 +21,7 @@ export type RootStackParamList = {
   AllWardrobe: undefined;
   AllOutfit: undefined;
   Suggestion: undefined;
+  Notifications: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -40,6 +42,7 @@ export const AppNavigator: React.FC = () => {
       <Stack.Screen name="AllWardrobe" component={AllWardrobeScreen} />
       <Stack.Screen name="AllOutfit" component={AllOutfitScreen} />
       <Stack.Screen name="Suggestion" component={SuggestionScreen} />
+      <Stack.Screen name="Notifications" component={NotificationScreen} />
     </Stack.Navigator>
   );
 };

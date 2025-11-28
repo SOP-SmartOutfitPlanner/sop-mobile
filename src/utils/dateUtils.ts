@@ -52,3 +52,45 @@ export const isValidDate = (dateString: string): boolean => {
 export const getCurrentISODate = (): string => {
   return new Date().toISOString();
 };
+
+/**
+ * Convert ISO date to relative time string ("1m ago")
+ */
+export const formatRelativeTime = (isoDate: string): string => {
+  try {
+    const target = new Date(isoDate).getTime();
+    const now = Date.now();
+    if (Number.isNaN(target)) {
+      return isoDate;
+    }
+    const diff = Math.max(now - target, 0);
+    const seconds = Math.floor(diff / 1000);
+    if (seconds < 60) {
+      return `${seconds || 1}s ago`;
+    }
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) {
+      return `${minutes}m ago`;
+    }
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) {
+      return `${hours}h ago`;
+    }
+    const days = Math.floor(hours / 24);
+    if (days < 7) {
+      return `${days}d ago`;
+    }
+    const weeks = Math.floor(days / 7);
+    if (weeks < 4) {
+      return `${weeks}w ago`;
+    }
+    const months = Math.floor(days / 30);
+    if (months < 12) {
+      return `${months}mo ago`;
+    }
+    const years = Math.floor(days / 365);
+    return `${years}y ago`;
+  } catch {
+    return isoDate;
+  }
+};

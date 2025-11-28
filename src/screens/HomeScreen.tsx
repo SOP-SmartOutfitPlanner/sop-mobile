@@ -29,7 +29,7 @@ export default function HomeScreen({ navigation }: any) {
     if (isGuest) {
       showGuestPrompt("notifications");
     } else {
-      console.log("Notification pressed");
+      navigation.navigate("Notifications");
     }
   };
 
