@@ -205,9 +205,9 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
       isVisible={isVisible}
       onBackdropPress={onClose}
       onBackButtonPress={onClose}
-      animationIn="fadeIn"
-      animationOut="fadeOut"
-      backdropOpacity={0.5}
+      animationIn="fadeInUp"
+      animationOut="fadeOutDown"
+      backdropOpacity={0.6}
       useNativeDriver
       hideModalContentWhileAnimating
     >

@@ -16,7 +16,8 @@ export const DetailMetadata: React.FC<DetailMetadataProps> = ({
     title: string,
     items: string[],
     backgroundColor: string,
-    textColor: string = "#1f2937"
+    textColor: string,
+    borderColor: string
   ) => {
     if (items.length === 0) return null;
 
@@ -27,7 +28,13 @@ export const DetailMetadata: React.FC<DetailMetadataProps> = ({
           {items.map((item, index) => (
             <View
               key={index}
-              style={[styles.tag, { backgroundColor }]}
+              style={[
+                styles.tag,
+                { 
+                  backgroundColor,
+                  borderColor,
+                }
+              ]}
             >
               <Text style={[styles.tagText, { color: textColor }]}>
                 {item}
@@ -46,9 +53,27 @@ export const DetailMetadata: React.FC<DetailMetadataProps> = ({
 
   return (
     <View style={styles.container}>
-      {renderTags("STYLES", stylesList, "#e0e7ff", "#4338ca")}
-      {renderTags("OCCASIONS", occasions, "#fef3c7", "#92400e")}
-      {renderTags("SEASONS", seasons, "#dbeafe", "#1e40af")}
+      {renderTags(
+        "STYLES", 
+        stylesList, 
+        "rgba(59,130,246,0.2)", 
+        "#3b82f6",
+        "rgba(59,130,246,0.3)"
+      )}
+      {renderTags(
+        "OCCASIONS", 
+        occasions, 
+        "rgba(147,51,234,0.2)", 
+        "#f8fafc",
+        "rgba(147,51,234,0.3)"
+      )}
+      {renderTags(
+        "SEASONS", 
+        seasons, 
+        "rgba(59,130,246,0.2)", 
+        "#3b82f6",
+        "rgba(59,130,246,0.3)"
+      )}
     </View>
   );
 };
@@ -56,33 +81,32 @@ export const DetailMetadata: React.FC<DetailMetadataProps> = ({
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    backgroundColor: "#fff",
-    borderBottomWidth: 8,
-    borderBottomColor: "#f9fafb",
+    backgroundColor: "#050b1d",
+    gap: 20,
   },
   section: {
-    marginBottom: 16,
+    gap: 12,
   },
   sectionLabel: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#6b7280",
+    color: "#94a3b8",
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    marginBottom: 8,
   },
   tagContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: 10,
   },
   tag: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
   },
   tagText: {
-    fontSize: 12,
-    fontWeight: "500",
+    fontSize: 13,
+    fontWeight: "600",
   },
 });

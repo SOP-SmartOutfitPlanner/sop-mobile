@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -12,7 +12,9 @@ import {
 } from "react-native";
 import type { Category } from "../../../types/category";
 import type { ColorItem } from "../../../types/item";
-import { useItemMetadata } from "../../../hooks/useItemMetadata";
+import type { Style } from "../../../types/style";
+import type { Occasion } from "../../../types/occasion";
+import type { Season } from "../../../types/seasons";
 import { ColorSelector } from "../ColorSelector";
 
 interface ItemDetailsStepProps {
@@ -35,6 +37,8 @@ interface ItemDetailsStepProps {
   onBrandChange: (text: string) => void;
   onCategorySelect: (categoryId: number, categoryName: string) => void;
   onFetchChildCategories: (parentId: number) => Promise<Category[]>;
+  selectedParentId: number | null;
+  onParentSelect: (parentId: number) => void;
   onColorToggle: (color: ColorItem) => void;
   onWeatherSuitableChange: (text: string) => void;
   onConditionChange: (text: string) => void;
@@ -43,6 +47,10 @@ interface ItemDetailsStepProps {
   onStyleToggle: (styleId: number) => void;
   onOccasionToggle: (occasionId: number) => void;
   onSeasonToggle: (seasonId: number) => void;
+  stylesData: Style[];
+  occasionsData: Occasion[];
+  seasonsData: Season[];
+  isMetadataLoading: boolean;
 }
 
 export const ItemDetailsStep: React.FC<ItemDetailsStepProps> = ({
@@ -65,6 +73,8 @@ export const ItemDetailsStep: React.FC<ItemDetailsStepProps> = ({
   onBrandChange,
   onCategorySelect,
   onFetchChildCategories,
+  selectedParentId,
+  onParentSelect,
   onColorToggle,
   onWeatherSuitableChange,
   onConditionChange,
@@ -73,24 +83,12 @@ export const ItemDetailsStep: React.FC<ItemDetailsStepProps> = ({
   onStyleToggle,
   onOccasionToggle,
   onSeasonToggle,
+  stylesData,
+  occasionsData,
+  seasonsData,
+  isMetadataLoading,
 }) => {
-  const [selectedParentId, setSelectedParentId] = useState<number | null>(null);
   const scrollViewRef = React.useRef<ScrollView>(null);
-
-  // Fetch metadata from API
-  const { 
-    styles: stylesData, 
-    occasions: occasionsData, 
-    seasons: seasonsData, 
-    isLoading: isMetadataLoading 
-  } = useItemMetadata();
-
-  // Helper function to scroll to bottom when keyboard appears
-  const scrollToBottom = useCallback(() => {
-    setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 100);
-  }, []);
 
   return (
     <KeyboardAvoidingView
@@ -153,7 +151,7 @@ export const ItemDetailsStep: React.FC<ItemDetailsStepProps> = ({
                     selectedParentId === parent.id && styles.typeChipSelected,
                   ]}
                   onPress={async () => {
-                    setSelectedParentId(parent.id);
+                    onParentSelect(parent.id);
                     await onFetchChildCategories(parent.id);
                   }}
                 >
@@ -376,26 +374,31 @@ export const ItemDetailsStep: React.FC<ItemDetailsStepProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
   inputGroup: {
-    marginBottom: 20,
+    borderRadius: 20,
+    padding: 16,
+    backgroundColor: "rgba(255,255,255,0.02)",
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.15)",
   },
   label: {
     fontSize: 16,
-    fontWeight: "500",
-    color: "#1f2937",
+    fontWeight: "600",
+    color: "#dbeafe",
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 12,
+    borderColor: "rgba(148,163,184,0.3)",
+    borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    color: "#1f2937",
-    backgroundColor: "#fff",
+    color: "#f8fafc",
+    backgroundColor: "rgba(15,23,42,0.8)",
   },
   textArea: {
     height: 80,
@@ -404,7 +407,7 @@ const styles = StyleSheet.create({
   },
   helperText: {
     fontSize: 12,
-    color: "#6b7280",
+    color: "#94a3b8",
     marginTop: 4,
   },
   labelRow: {
@@ -455,18 +458,22 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   section: {
-    marginBottom: 24,
+    borderRadius: 24,
+    padding: 18,
+    backgroundColor: "rgba(255,255,255,0.015)",
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.12)",
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#1f2937",
+    fontWeight: "700",
+    color: "#f8fafc",
     marginBottom: 8,
   },
   subSectionTitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#4b5563",
+    color: "#cbd5f5",
     marginBottom: 12,
   },
   typeGrid: {
@@ -476,10 +483,10 @@ const styles = StyleSheet.create({
   },
   typeChip: {
     width: "48%",
-    backgroundColor: "#f9fafb",
+    backgroundColor: "rgba(255,255,255,0.05)",
     borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 12,
+    borderColor: "rgba(148,163,184,0.25)",
+    borderRadius: 16,
     paddingVertical: 16,
     alignItems: "center",
   },
@@ -489,8 +496,8 @@ const styles = StyleSheet.create({
   },
   typeChipText: {
     fontSize: 16,
-    fontWeight: "500",
-    color: "#6b7280",
+    fontWeight: "600",
+    color: "#9ca3af",
     textTransform: "capitalize",
   },
   typeChipTextSelected: {
@@ -589,9 +596,9 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   chip: {
-    backgroundColor: "#f9fafb",
+    backgroundColor: "rgba(255,255,255,0.05)",
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "rgba(148,163,184,0.25)",
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -604,8 +611,8 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontSize: 14,
-    fontWeight: "500",
-    color: "#6b7280",
+    fontWeight: "600",
+    color: "#cbd5f5",
   },
   chipTextSelected: {
     color: "#fff",

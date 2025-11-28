@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from "expo-linear-gradient";
 import { useItemUpload } from "../../../hooks/useItemUpload";
 import { UploadProgressModal } from "../UploadProgressModal";
 import { ManualCategoryModal } from "../ManualCategoryModal";
@@ -187,98 +188,161 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     }
   }, [uploadProgress.phase, showManualCategoryModal]);
 
+  const multiHighlights = useMemo(
+    () => [
+      { icon: "sparkles", text: "AI auto-tags each piece" },
+      { icon: "images-outline", text: "Bulk upload up to 10" },
+      { icon: "shield-checkmark", text: "Keeps photo quality" },
+    ],
+    []
+  );
+
+  const outfitHighlights = useMemo(
+    () => [
+      { icon: "cut", text: "Smart outfit segmentation" },
+      { icon: "timer-outline", text: "Takes ~15 seconds" },
+      { icon: "color-palette-outline", text: "Background cleaned" },
+    ],
+    []
+  );
+
+  const renderHighlights = (items: { icon: any; text: string }[]) => (
+    <View style={styles.highlightGrid}>
+      {items.map((item) => (
+        <View key={item.text} style={styles.highlightChip}>
+          <Ionicons name={item.icon} size={14} color="#cbd5f5" />
+          <Text style={styles.highlightText}>{item.text}</Text>
+        </View>
+      ))}
+    </View>
+  );
+
   return (
     <>
       <Modal
         visible={visible}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle="fullScreen"
       >
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color="#1f2937" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Add Items</Text>
-            <View style={styles.placeholder} />
-          </View>
-
-          <ScrollView style={styles.content}>
-            <View style={styles.infoCard}>
-              <Ionicons name="information-circle" size={20} color="#3b82f6" />
-              <Text style={styles.infoText}>
-                Upload up to 10 images or send one full-body outfit photo for AI splitting. Items will be automatically classified and added to your wardrobe.
-              </Text>
-            </View>
-
-            {/* Selected Images Grid */}
-            {selectedImages.length > 0 && (
-              <View style={styles.imagesGrid}>
-                {selectedImages.map((image, index) => (
-                  <View key={index} style={styles.imageCard}>
-                    <Image source={{ uri: image.uri }} style={styles.selectedImage} />
-                    <TouchableOpacity
-                      style={styles.removeButton}
-                      onPress={() => handleRemoveImage(index)}
-                    >
-                      <Ionicons name="close-circle" size={24} color="#ef4444" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
+        <View style={styles.fullscreenContainer}>
+          <LinearGradient
+            colors={["rgba(56,189,248,0.25)", "rgba(124,58,237,0.2)"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.heroCard}
+          >
+            <View style={styles.header}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.title}>Add Items to Wardrobe</Text>
+                <Text style={styles.subtitle}>Choose how you want to add items</Text>
               </View>
-            )}
-
-            {/* Image count */}
-            {selectedImages.length > 0 && (
-              <Text style={styles.imageCount}>
-                {selectedImages.length} / 10 images selected
-              </Text>
-            )}
-
-            {/* Action Buttons */}
-            <View style={styles.actionButtons}>
-              <TouchableOpacity
-                style={[styles.actionButton, styles.cameraButton]}
-                onPress={() => handlePickImage(true)}
-                disabled={selectedImages.length >= 10}
-              >
-                <Ionicons name="camera" size={24} color="#fff" />
-                <Text style={styles.actionButtonText}>Camera</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionButton, styles.galleryButton]}
-                onPress={() => handlePickImage(false)}
-                disabled={selectedImages.length >= 10}
-              >
-                <Ionicons name="images" size={24} color="#fff" />
-                <Text style={styles.actionButtonText}>Gallery</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionButton, styles.splitButton]}
-                onPress={handleSplitOutfitUpload}
-                disabled={isUploading}
-              >
-                <Ionicons name="shirt" size={24} color="#fff" />
-                <Text style={styles.actionButtonText}>AI Split Outfit</Text>
+              <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+                <Ionicons name="close" size={22} color="#e2e8f0" />
               </TouchableOpacity>
             </View>
+          </LinearGradient>
 
-            {/* Upload Button */}
-            {selectedImages.length > 0 && (
-              <TouchableOpacity
-                style={styles.uploadButton}
-                onPress={handleUpload}
-                disabled={isUploading}
-              >
-                <Ionicons name="cloud-upload" size={20} color="#fff" />
-                <Text style={styles.uploadButtonText}>
-                  {isUploading ? 'Uploading...' : `Upload ${selectedImages.length} Image${selectedImages.length > 1 ? 's' : ''}`}
+          <View style={styles.sheet}>
+            <ScrollView
+              style={styles.content}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.contentContainer}
+            >
+              <View style={styles.card}>
+                <View style={styles.cardHeaderRow}>
+                  <Ionicons name="images" size={28} color="#38bdf8" />
+                  <Text style={styles.cardLabel}>Multiple Items</Text>
+                </View>
+                <Text style={styles.cardTitle}>Upload up to 10 items</Text>
+                <Text style={styles.cardDescription}>
+                  Pick photos from camera or gallery. We'll auto-classify each piece.
                 </Text>
-              </TouchableOpacity>
-            )}
-          </ScrollView>
+                {renderHighlights(multiHighlights)}
+                <View style={styles.actionButtons}>
+                  <TouchableOpacity
+                    style={[styles.actionButton, styles.cameraButton]}
+                    onPress={() => handlePickImage(true)}
+                    disabled={selectedImages.length >= 10}
+                  >
+                    <Ionicons name="camera" size={22} color="#fff" />
+                    <Text style={styles.actionButtonText}>Camera</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.actionButton, styles.galleryButton]}
+                    onPress={() => handlePickImage(false)}
+                    disabled={selectedImages.length >= 10}
+                  >
+                    <Ionicons name="images" size={22} color="#fff" />
+                    <Text style={styles.actionButtonText}>Gallery</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {selectedImages.length > 0 && (
+                  <>
+                    <View style={styles.previewHeader}>
+                      <Text style={styles.previewTitle}>Selected ({selectedImages.length}/10)</Text>
+                      <TouchableOpacity onPress={() => setSelectedImages([])}>
+                        <Text style={styles.clearPreview}>Clear all</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <View style={styles.imagesGrid}>
+                      {selectedImages.map((image, index) => (
+                        <View key={`${image.uri}-${index}`} style={styles.imageCard}>
+                          <Image source={{ uri: image.uri }} style={styles.selectedImage} />
+                          <TouchableOpacity
+                            style={styles.removeButton}
+                            onPress={() => handleRemoveImage(index)}
+                          >
+                            <Ionicons name="close" size={14} color="#0f172a" />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </View>
+                  </>
+                )}
+
+                {selectedImages.length > 0 && (
+                  <TouchableOpacity
+                    style={styles.uploadButton}
+                    onPress={handleUpload}
+                    disabled={isUploading}
+                  >
+                    <Ionicons name="cloud-upload" size={20} color="#0f172a" />
+                    <Text style={styles.uploadButtonText}>
+                      {isUploading ? "Uploading..." : `Upload ${selectedImages.length} item${selectedImages.length > 1 ? "s" : ""}`}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <View style={styles.card}>
+                <View style={styles.cardHeaderRow}>
+                  <Ionicons name="sparkles" size={28} color="#c084fc" />
+                  <Text style={styles.cardLabel}>Outfit Image</Text>
+                </View>
+                <Text style={styles.cardTitle}>AI Outfit Split</Text>
+                <Text style={styles.cardDescription}>
+                  Upload a single outfit photo. We'll split the look into individual items automatically.
+                </Text>
+                {renderHighlights(outfitHighlights)}
+                <View style={styles.tipCard}>
+                  <Ionicons name="information-circle-outline" size={16} color="#fcd34d" />
+                  <Text style={styles.tipText}>
+                    Tip: Use full-body photos with good lighting for best splits.
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.splitButton]}
+                  onPress={handleSplitOutfitUpload}
+                  disabled={isUploading}
+                >
+                  <Ionicons name="shirt" size={22} color="#fff" />
+                  <Text style={styles.actionButtonText}>Choose Outfit Photo</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
         </View>
       </Modal>
 
@@ -297,120 +361,223 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
+  fullscreenContainer: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#040816",
+  },
+  sheet: {
+    flex: 1,
+    backgroundColor: "#050818",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+    paddingTop: 12,
+  },
+  heroCard: {
+    paddingTop: 56,
+    paddingHorizontal: 24,
+    paddingBottom: 20,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingTop: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#f8fafc",
+  },
+  subtitle: {
+    fontSize: 14,
+    color: "#cbd5f5",
+    marginTop: 4,
   },
   closeButton: {
     padding: 8,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1f2937",
+  heroStats: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 14,
   },
-  placeholder: {
-    width: 40,
+  heroStat: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(255,255,255,0.35)",
+    borderRadius: 999,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  heroStatText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#0f172a",
   },
   content: {
     flex: 1,
-    padding: 20,
+    marginTop: 8,
   },
-  infoCard: {
-    flexDirection: "row",
-    backgroundColor: "#eff6ff",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 24,
+  contentContainer: {
+    paddingBottom: 16,
+    gap: 16,
+  },
+  card: {
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 20,
     gap: 12,
   },
-  infoText: {
-    flex: 1,
+  cardHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  cardLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#cbd5f5",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  cardTitle: {
+    color: "#f8fafc",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  cardDescription: {
+    color: "#cbd5f5",
     fontSize: 14,
-    color: "#1e40af",
     lineHeight: 20,
   },
   imagesGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    gap: 10,
     marginBottom: 16,
   },
   imageCard: {
-    width: '31%',
+    width: "30%",
     aspectRatio: 1,
+    borderRadius: 18,
     position: "relative",
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
   },
   selectedImage: {
     width: "100%",
     height: "100%",
-    borderRadius: 12,
-    backgroundColor: "#f1f5f9",
+    borderRadius: 18,
+    backgroundColor: "#11173a",
   },
   removeButton: {
     position: "absolute",
-    top: -8,
-    right: -8,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-  },
-  imageCount: {
-    fontSize: 14,
-    color: "#64748b",
-    textAlign: "center",
-    marginBottom: 24,
+    top: 6,
+    right: 6,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    borderRadius: 999,
+    padding: 4,
   },
   actionButtons: {
     flexDirection: "row",
     gap: 12,
-    marginBottom: 24,
+    marginTop: 12,
   },
   actionButton: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    padding: 16,
-    borderRadius: 12,
+    paddingVertical: 14,
+    borderRadius: 16,
     gap: 8,
   },
   cameraButton: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: "#2563eb",
   },
   galleryButton: {
-    backgroundColor: "#8b5cf6",
+    backgroundColor: "#7c3aed",
   },
   splitButton: {
     backgroundColor: "#f97316",
   },
   actionButtonText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
   },
   uploadButton: {
+    marginTop: 12,
+    backgroundColor: "#38bdf8",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#10b981",
-    padding: 18,
-    borderRadius: 12,
     gap: 8,
+    borderRadius: 18,
+    paddingVertical: 18,
   },
   uploadButtonText: {
-    color: "#fff",
+    color: "#0f172a",
     fontSize: 16,
+    fontWeight: "700",
+  },
+  previewHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  previewTitle: {
+    color: "#f8fafc",
+    fontSize: 15,
     fontWeight: "600",
   },
+  clearPreview: {
+    color: "#38bdf8",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  highlightGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  highlightChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    backgroundColor: "rgba(148,163,184,0.15)",
+  },
+  highlightText: {
+    color: "#e2e8f0",
+    fontSize: 12,
+  },
+  tipCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    backgroundColor: "rgba(250,204,21,0.12)",
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "rgba(250,204,21,0.2)",
+  },
+  tipText: {
+    color: "#fef3c7",
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+  },
 });
+
 

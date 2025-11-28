@@ -8,15 +8,13 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { StepIndicator } from "../wizard/StepIndicator";
-import { ItemDetailsStep } from "../wizard/ItemDetailsStep";
-import { ReviewStep } from "../wizard/ReviewStep";
 import type { Item, ItemEdit, ColorItem } from "../../../types/item";
 import NotificationModal from "../../notification/NotificationModal";
 import { useCategories } from "../../../hooks/useCategories";
 import { useItemMetadata } from "../../../hooks/useItemMetadata";
 import { useNotification } from "../../../hooks";
 import { parseColors, toggleColor } from "../../../utils/colorUtils";
+import { ItemDetailsStep } from "../wizard/ItemDetailsStep";
 
 interface EditItemModalProps {
   visible: boolean;
@@ -27,11 +25,6 @@ interface EditItemModalProps {
 }
 
 // Constants
-const STEPS = [
-  { id: 1, title: "Item", subtitle: "Details" },
-  { id: 2, title: "Review", subtitle: "& Save" },
-];
-
 const GRADIENT_COLORS = {
   primary: ["#30cfd0", "#330867"],
   disabled: ["#9ca3af", "#9ca3af"],
@@ -106,14 +99,12 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
   item,
   editItem,
 }) => {
-  // Step navigation (only 2 steps for edit)
-  const [currentStep, setCurrentStep] = useState(1);
-
   // Form state
   const [itemName, setItemName] = useState("");
   const [brand, setBrand] = useState("");
   const [categoryId, setCategoryId] = useState(0);
   const [categoryName, setCategoryName] = useState("");
+  const [selectedParentId, setSelectedParentId] = useState<number | null>(null);
   const [selectedColors, setSelectedColors] = useState<ColorItem[]>([]);
   const [weatherSuitable, setWeatherSuitable] = useState("");
   const [condition, setCondition] = useState("");
@@ -137,7 +128,12 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
     fetchParentCategories,
     fetchChildCategories,
   } = useCategories();
-  const { styles: stylesList, occasions: occasionsList, seasons: seasonsList } = useItemMetadata();
+  const {
+    styles: stylesList,
+    occasions: occasionsList,
+    seasons: seasonsList,
+    isLoading: isMetadataLoading,
+  } = useItemMetadata();
 
   // Fetch parent categories on mount
   useEffect(() => {
@@ -168,37 +164,49 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
   // Auto-fetch child categories when item category is loaded - optimized
   useEffect(() => {
     const autoFetchChildCategories = async () => {
-      if (!item?.categoryId || !visible || parentCategories.length === 0) return;
-
-      // Check if categoryId is a parent category
-      const parentCategory = parentCategories.find(cat => cat.id === item.categoryId);
-      
-      if (parentCategory) {
-        // This is a parent category, fetch its children
-        await fetchChildCategories(item.categoryId);
+      if (
+        !item?.categoryId ||
+        !visible ||
+        parentCategories.length === 0 ||
+        selectedParentId
+      ) {
         return;
       }
 
-      // categoryId might be a child - find its parent by checking all parents
-      // Only fetch until we find the matching child
+      const parentCategory = parentCategories.find(
+        (cat) => cat.id === item.categoryId
+      );
+
+      if (parentCategory) {
+        setSelectedParentId(parentCategory.id);
+        await fetchChildCategories(parentCategory.id);
+        return;
+      }
+
       for (const parent of parentCategories) {
         const children = await fetchChildCategories(parent.id);
-        if (children.some(child => child.id === item.categoryId)) {
-          // Found the parent, stop searching
+        if (children.some((child) => child.id === item.categoryId)) {
+          setSelectedParentId(parent.id);
           break;
         }
       }
     };
 
     autoFetchChildCategories();
-  }, [item?.categoryId, visible, parentCategories.length]); // Only re-run when these change
+  }, [
+    item?.categoryId,
+    visible,
+    parentCategories,
+    selectedParentId,
+    fetchChildCategories,
+  ]);
 
   const resetForm = useCallback(() => {
-    setCurrentStep(1);
     setItemName("");
     setBrand("");
     setCategoryId(0);
     setCategoryName("");
+    setSelectedParentId(null);
     setSelectedColors([]);
     setWeatherSuitable("");
     setCondition("");
@@ -210,54 +218,19 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
     setSelectedSeasons([]);
   }, []);
 
-  const handleClose = useCallback(() => {
-    resetForm();
-    onClose();
-  }, [resetForm, onClose]);
-
   // Handle category selection
   const handleCategorySelect = useCallback((id: number, name: string) => {
     setCategoryId(id);
     setCategoryName(name);
   }, []);
 
+  const handleParentSelect = useCallback((parentId: number) => {
+    setSelectedParentId(parentId);
+    setCategoryId(0);
+    setCategoryName("");
+  }, []);
+
   // Step validation - memoized
-  const canProceed = useMemo(() => {
-    switch (currentStep) {
-      case 1:
-        return !!itemName.trim() && categoryId > 0;
-      case 2:
-        return true;
-      default:
-        return false;
-    }
-  }, [currentStep, itemName, categoryId]);
-
-  // Validation messages
-  const validationMessage = useMemo(() => {
-    const messages: Record<number, string> = {
-      1: "Please fill in item name and category",
-    };
-    return messages[currentStep] || "";
-  }, [currentStep]);
-
-  // Step navigation handlers
-  const handleNext = useCallback(() => {
-    if (currentStep < 2) {
-      if (canProceed) {
-        setCurrentStep(currentStep + 1);
-      } else {
-        notification.showWarning(validationMessage, "Required Fields");
-      }
-    }
-  }, [currentStep, canProceed, validationMessage, notification]);
-
-  const handleBack = useCallback(() => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  }, [currentStep]);
-
   // Validation helper - memoized
   const validateForm = useCallback(() => {
     if (!itemName.trim()) {
@@ -272,6 +245,11 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
 
     return true;
   }, [itemName, categoryId, notification]);
+
+  const handleClose = useCallback(() => {
+    resetForm();
+    onClose();
+  }, [resetForm, onClose]);
 
   const handleSave = useCallback(async () => {
     if (isSaving || !item) return;
@@ -373,116 +351,10 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
     setSelectedColors((prev) => toggleColor(prev, color));
   }, []);
 
-  // Memoize review data separately to avoid recalculation
-  const reviewData = useMemo(() => ({
-    name: itemName,
-    brand,
-    type: categoryName,
-    colors: selectedColors,
-    weatherSuitable,
-    condition,
-    pattern,
-    fabric,
-    imageUri: imageUrl,
-    styles: selectedStyles
-      .map((id) => stylesList.find((s) => s.id === id)?.name)
-      .filter((name): name is string => !!name),
-    occasions: selectedOccasions
-      .map((id) => occasionsList.find((o) => o.id === id)?.name)
-      .filter((name): name is string => !!name),
-    seasons: selectedSeasons
-      .map((id) => seasonsList.find((s) => s.id === id)?.name)
-      .filter((name): name is string => !!name),
-  }), [
-    itemName,
-    brand,
-    categoryName,
-    selectedColors,
-    weatherSuitable,
-    condition,
-    pattern,
-    fabric,
-    imageUrl,
-    selectedStyles,
-    selectedOccasions,
-    selectedSeasons,
-    stylesList,
-    occasionsList,
-    seasonsList,
-  ]);
-
-  // Memoized step components
-  const stepContent = useMemo(() => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <ItemDetailsStep
-            itemName={itemName}
-            brand={brand}
-            categoryId={categoryId}
-            selectedColors={selectedColors}
-            weatherSuitable={weatherSuitable}
-            condition={condition}
-            pattern={pattern}
-            fabric={fabric}
-            parentCategories={parentCategories}
-            childCategories={childCategories}
-            isCategoriesLoading={isCategoriesLoading}
-            isLoadingChildren={isLoadingChildren}
-            onFetchChildCategories={fetchChildCategories}
-            selectedStyles={selectedStyles}
-            selectedOccasions={selectedOccasions}
-            selectedSeasons={selectedSeasons}
-            onStyleToggle={handleStyleToggle}
-            onOccasionToggle={handleOccasionToggle}
-            onSeasonToggle={handleSeasonToggle}
-            onItemNameChange={setItemName}
-            onBrandChange={setBrand}
-            onCategorySelect={handleCategorySelect}
-            onColorToggle={handleColorToggle}
-            onWeatherSuitableChange={setWeatherSuitable}
-            onConditionChange={setCondition}
-            onPatternChange={setPattern}
-            onFabricChange={setFabric}
-          />
-        );
-      case 2:
-        return <ReviewStep data={reviewData} />;
-      default:
-        return null;
-    }
-  }, [
-    currentStep,
-    itemName,
-    brand,
-    categoryId,
-    selectedColors,
-    weatherSuitable,
-    condition,
-    pattern,
-    fabric,
-    parentCategories,
-    childCategories,
-    isCategoriesLoading,
-    isLoadingChildren,
-    fetchChildCategories,
-    selectedStyles,
-    selectedOccasions,
-    selectedSeasons,
-    reviewData,
-    handleStyleToggle,
-    handleOccasionToggle,
-    handleSeasonToggle,
-    handleCategorySelect,
-    handleColorToggle,
-  ]);
-
   // Button colors - memoized
   const buttonColors = useMemo(() => {
-    return (!canProceed || isSaving)
-      ? GRADIENT_COLORS.disabled
-      : GRADIENT_COLORS.primary;
-  }, [canProceed, isSaving]);
+    return isSaving ? GRADIENT_COLORS.disabled : GRADIENT_COLORS.primary;
+  }, [isSaving]);
 
   if (!item) return null;
 
@@ -491,64 +363,88 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
       <Modal
         visible={visible}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle="fullScreen"
       >
-        <View style={styles.container}>
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color="#1f2937" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Edit Item</Text>
-            <View style={styles.placeholder} />
-          </View>
+        <View style={styles.fullscreenContainer}>
+          <LinearGradient
+            colors={["rgba(59,130,246,0.35)", "rgba(147,51,234,0.25)"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.heroCard}
+          >
+            <View style={styles.header}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.title}>Edit Item</Text>
+                <Text style={styles.subtitle}>Update your wardrobe item details</Text>
+              </View>
+              <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+                <Ionicons name="close" size={22} color="#e5edff" />
+              </TouchableOpacity>
+            </View>
+          </LinearGradient>
 
-          {/* Step Indicator */}
-          <StepIndicator steps={STEPS} currentStep={currentStep} />
+          <View style={styles.sheet}>
+            <View style={styles.stepContent}>
+              <ItemDetailsStep
+                itemName={itemName}
+                brand={brand}
+                categoryId={categoryId}
+                selectedColors={selectedColors}
+                weatherSuitable={weatherSuitable}
+                condition={condition}
+                pattern={pattern}
+                fabric={fabric}
+                parentCategories={parentCategories}
+                childCategories={childCategories}
+                isCategoriesLoading={isCategoriesLoading}
+                isLoadingChildren={isLoadingChildren}
+                onFetchChildCategories={fetchChildCategories}
+                selectedParentId={selectedParentId}
+                onParentSelect={handleParentSelect}
+                selectedStyles={selectedStyles}
+                selectedOccasions={selectedOccasions}
+                selectedSeasons={selectedSeasons}
+                onStyleToggle={handleStyleToggle}
+                onOccasionToggle={handleOccasionToggle}
+                onSeasonToggle={handleSeasonToggle}
+                onItemNameChange={setItemName}
+                onBrandChange={setBrand}
+                onCategorySelect={handleCategorySelect}
+                onColorToggle={handleColorToggle}
+                onWeatherSuitableChange={setWeatherSuitable}
+                onConditionChange={setCondition}
+                onPatternChange={setPattern}
+                onFabricChange={setFabric}
+                stylesData={stylesList}
+                occasionsData={occasionsList}
+                seasonsData={seasonsList}
+                isMetadataLoading={isMetadataLoading}
+              />
+            </View>
 
-          {/* Step Content */}
-          <View style={styles.stepContent}>{stepContent}</View>
+            <View style={styles.stepFooter}>
+              <View style={styles.footerRow}>
 
-          {/* Step Footer */}
-          <View style={styles.stepFooter}>
-            <Text style={styles.stepText}>
-              Step {currentStep} of {STEPS.length}
-            </Text>
-
-            <View style={styles.buttonContainer}>
-              {currentStep > 1 && (
-                <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-                  <Ionicons name="chevron-back" size={20} color="#6b7280" />
-                  <Text style={styles.backButtonText}>Back</Text>
-                </TouchableOpacity>
-              )}
-              
-              <TouchableOpacity
-                style={styles.nextButtonWrapper}
-                onPress={currentStep === 2 ? handleSave : handleNext}
-                disabled={!canProceed || isSaving}
-              >
-                <LinearGradient
-                  colors={buttonColors}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.nextButton}
-                >
-                  {currentStep === 2 ? (
-                    <>
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity
+                    style={styles.nextButtonWrapper}
+                    onPress={handleSave}
+                    disabled={isSaving}
+                  >
+                    <LinearGradient
+                      colors={buttonColors}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.nextButton}
+                    >
                       <Ionicons name="checkmark" size={20} color="#fff" />
                       <Text style={styles.nextButtonText}>
-                        {isSaving ? "Updating..." : "Update Item"}
+                        {isSaving ? "Updating..." : "Save Changes"}
                       </Text>
-                    </>
-                  ) : (
-                    <>
-                      <Text style={styles.nextButtonText}>Next</Text>
-                      <Ionicons name="chevron-forward" size={20} color="#fff" />
-                    </>
-                  )}
-                </LinearGradient>
-              </TouchableOpacity>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
           </View>
         </View>
@@ -571,83 +467,100 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
+  fullscreenContainer: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#030617",
+  },
+  heroCard: {
+    paddingTop: 56,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingTop: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#f8fafc",
+  },
+  subtitle: {
+    fontSize: 14,
+    color: "#cbd5f5",
+    marginTop: 4,
   },
   closeButton: {
     padding: 8,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1f2937",
-  },
-  placeholder: {
-    width: 40,
+  sheet: {
+    flex: 1,
+    backgroundColor: "#050b1d",
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
   },
   stepContent: {
     flex: 1,
+    marginTop: 12,
   },
   stepFooter: {
-    backgroundColor: "#fff",
     borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
-    paddingHorizontal: 20,
-    paddingVertical: 25,
+    borderTopColor: "rgba(148,163,184,0.25)",
+    paddingTop: 16,
+    marginTop: 12,
+  },
+  footerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   stepText: {
     fontSize: 14,
-    color: "#6b7280",
-    textAlign: "center",
-    marginBottom: 16,
+    fontWeight: "600",
+    color: "#dbeafe",
+  },
+  stepHint: {
+    fontSize: 12,
+    color: "#94a3b8",
+    marginTop: 4,
   },
   buttonContainer: {
     flexDirection: "row",
-    gap: 12,
+    gap: 10,
   },
   backButton: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#f9fafb",
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 12,
-    paddingVertical: 16,
-    gap: 8,
+    borderColor: "rgba(148,163,184,0.4)",
+    backgroundColor: "rgba(148,163,184,0.15)",
   },
   backButtonText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#6b7280",
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#cbd5f5",
   },
   nextButtonWrapper: {
-    flex: 2,
-    borderRadius: 12,
+    flex: 1,
+    borderRadius: 16,
     overflow: "hidden",
   },
   nextButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 12,
-    paddingVertical: 16,
+    paddingVertical: 14,
     gap: 8,
   },
   nextButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
     color: "#fff",
   },

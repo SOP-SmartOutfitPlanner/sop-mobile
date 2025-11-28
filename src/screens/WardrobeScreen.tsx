@@ -30,7 +30,7 @@ const WardrobeScreen = ({ navigation }: any) => {
   const [isEditItemModalOpen, setIsEditItemModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { user } = useAuth(); // Track auth state
+  // const { user } = useAuth(); 
   const { shouldOpenModal, setShouldOpenModal, hasCompletedDetection, createdItem, clearDetection, setOnItemCreated } = useAIDetection();
   const {
     items,
@@ -128,8 +128,6 @@ const WardrobeScreen = ({ navigation }: any) => {
     [favoriteItems]
   );
 
-  const displayName =
-    user?.displayName || user?.email?.split("@")[0] || "there";
 
   // Memoize modal handlers
   const handleCloseItemDetail = useCallback(() => {
@@ -208,17 +206,11 @@ const WardrobeScreen = ({ navigation }: any) => {
             <View style={styles.heroHeaderRow}>
               <View>
                 <Text style={styles.heroBadge}>Wardrobe AI</Text>
-                <Text style={styles.heroGreeting}>Hi {displayName},</Text>
+                <Text style={styles.heroGreeting}>Hi there,</Text>
                 <Text style={styles.heroSubtitle}>
                   Curate today’s outfit with smart insights.
                 </Text>
               </View>
-              {/* <TouchableOpacity
-                onPress={handleProfilePress}
-                style={styles.heroAvatar}
-              >
-                <Ionicons name="person-outline" size={20} color="#e0f2fe" />
-              </TouchableOpacity> */}
             </View>
 
             <View style={styles.heroStatsRow}>
@@ -293,7 +285,7 @@ const WardrobeScreen = ({ navigation }: any) => {
           onViewMore={() => navigation.navigate("AllWardrobe")}
         >
           {filteredItems.length === 0 ? (
-            <EmptyWardrobe onCreateWardrobe={() => setIsAddItemModalOpen(true)} />
+            <EmptyWardrobe onCreateWardrobe={() => navigation.navigate("Auth", { screen: "Login" })} />
           ) : (
             <WardrobeItemGrid
               items={filteredItems}
