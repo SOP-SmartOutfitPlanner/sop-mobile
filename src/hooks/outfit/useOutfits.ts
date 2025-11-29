@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import {  CreateOutfitAPI, DeleteOutfitAPI, GetOutFitsAPI, SaveFavoriteOutfitAPI } from "../../services/endpoint/outfit";
+import {  CreateOutfitAPI, DeleteOutfitAPI, EditOutfitAPI, GetOutFitsAPI, SaveFavoriteOutfitAPI } from "../../services/endpoint/outfit";
 import { 
   Outfit, 
   GetOutfitsRequest, 
@@ -103,7 +103,7 @@ export const useOutfits = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showSuccess, showError]);
 
   // Toggle favorite status
   const toggleFavorite = useCallback(async (outfitId: number) => {
@@ -132,6 +132,44 @@ export const useOutfits = () => {
       return false;
     }
   }, [fetchFavoriteOutfits, showError]);
+
+  // Edit outfit
+  const editOutfit = useCallback(async (outfitId: number, data: Partial<CreateOutfitRequest>) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await EditOutfitAPI(outfitId, data);
+      
+      if (response.statusCode === 200 && response.data) {
+        // Update outfit in list
+        setOutfits((prev) =>
+          prev.map((outfit) =>
+            outfit.id === outfitId ? response.data : outfit
+          )
+        );
+        
+        // Update favorite outfits if needed
+        setFavoriteOutfits((prev) =>
+          prev.map((outfit) =>
+            outfit.id === outfitId ? response.data : outfit
+          )
+        );
+        
+        showSuccess("Outfit updated successfully!");
+        return response.data;
+      } else {
+        throw new Error(response.message || "Failed to update outfit");
+      }
+    } catch (err: any) {
+      const errorMessage = err.message || "Failed to update outfit";
+      setError(errorMessage);
+      showError(errorMessage);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [showError, showSuccess]);
 
   const deleteOutfit = useCallback(async (outfitId: number) => {
     try {
@@ -178,6 +216,7 @@ export const useOutfits = () => {
     fetchOutfits,
     fetchFavoriteOutfits,
     createOutfit,
+    editOutfit,
     toggleFavorite,
     deleteOutfit,
     handleRefresh,

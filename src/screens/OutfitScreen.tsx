@@ -6,6 +6,8 @@ import { OutfitCalendar } from "../components/outfit/OutfitCalendar";
 import { OutfitBookSection } from "../components/outfit/OutfitBookSection";
 import { FavoriteOutfitsSection } from "../components/outfit/FavoriteOutfitsSection";
 import { OutfitDetailModal } from "../components/outfit/OutfitDetailModal";
+import { CreateOutfitModal } from "../components/outfit/modal/CreateOutfitModal";
+import { EditOutfitModal } from "../components/outfit/modal/EditOutfitModal";
 import NotificationModal from "../components/notification/NotificationModal";
 import { useOutfits } from "../hooks/outfit/useOutfits";
 import { Outfit } from "../types/outfit";
@@ -14,6 +16,9 @@ const OutfitScreen = ({ navigation }: any) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null);
   const [isDetailVisible, setIsDetailVisible] = useState(false);
+  const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [editingOutfit, setEditingOutfit] = useState<Outfit | null>(null);
   
   // Use custom hook for outfit management
   const {
@@ -22,6 +27,7 @@ const OutfitScreen = ({ navigation }: any) => {
     loading,
     isRefreshing,
     createOutfit,
+    editOutfit,
     toggleFavorite,
     deleteOutfit,
     handleRefresh,
@@ -79,9 +85,7 @@ const OutfitScreen = ({ navigation }: any) => {
   }, [outfits, favoriteOutfits]);
 
   const handleCreateOutfit = () => {
-    console.log("Create outfit");
-    // Navigate to outfit builder
-    // You can implement navigation to outfit creation screen here
+    setIsCreateModalVisible(true);
   };
 
   const handleAddToCalendar = () => {
@@ -131,8 +135,23 @@ const OutfitScreen = ({ navigation }: any) => {
   };
 
   const handleEditOutfit = (outfitId: number) => {
-    console.log("Edit outfit", outfitId);
-    showError("Edit outfit feature will be available soon.");
+    const outfitToEdit = allOutfitPool.get(outfitId);
+    if (outfitToEdit) {
+      setEditingOutfit(outfitToEdit);
+      setIsEditModalVisible(true);
+      setIsDetailVisible(false); // Close detail modal when opening edit
+    } else {
+      showError("Unable to find outfit information. Please try again.");
+    }
+  };
+
+  const handleCreateOutfitSuccess = async () => {
+    await handleRefresh();
+  };
+
+  const handleEditOutfitSuccess = async () => {
+    await handleRefresh();
+    setEditingOutfit(null);
   };
 
   const handleViewCalendar = () => {
@@ -248,6 +267,38 @@ const OutfitScreen = ({ navigation }: any) => {
         onToggleFavorite={handleFavoriteToggle}
         onDeleteOutfit={handleDeleteOutfit}
         onEditOutfit={handleEditOutfit}
+      />
+
+      <CreateOutfitModal
+        visible={isCreateModalVisible}
+        onClose={() => setIsCreateModalVisible(false)}
+        onCreateOutfit={async (data) => {
+          const result = await createOutfit(data);
+          if (result) {
+            handleCreateOutfitSuccess();
+          }
+          return result;
+        }}
+      />
+
+      <EditOutfitModal
+        visible={isEditModalVisible}
+        outfit={editingOutfit}
+        onClose={() => {
+          setIsEditModalVisible(false);
+          setEditingOutfit(null);
+        }}
+        onEditOutfit={async (id, data) => {
+          const result = await editOutfit(id, data);
+          if (result) {
+            handleEditOutfitSuccess();
+            // Update selected outfit if it's the one being edited
+            if (selectedOutfit && selectedOutfit.id === id) {
+              setSelectedOutfit(result);
+            }
+          }
+          return result;
+        }}
       />
     </View>
   );

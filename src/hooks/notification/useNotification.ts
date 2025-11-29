@@ -21,15 +21,20 @@ export const useNotification = () => {
   });
 
   const showNotification = useCallback((newConfig: NotificationConfig) => {
-    setConfig((prev) => ({
-      ...prev,
+    // Reset config to default before setting new config to avoid stale values
+    setConfig({
+      message: "",
       ...newConfig,
-    }));
+    });
     setVisible(true);
   }, []);
 
   const hideNotification = useCallback(() => {
     setVisible(false);
+    // Reset config when hiding to avoid stale values
+    setConfig({
+      message: "",
+    });
   }, []);
 
   // Shortcut methods

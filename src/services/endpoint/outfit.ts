@@ -2,6 +2,7 @@ import {
 CreateOutfitRequest, 
 CreateOutfitResponse, 
 DeleteOutfitResponse,
+EditOutfitResponse,
 GetOutfitResponse, 
 GetOutfitsFavoriteResponse, 
 GetOutfitsRequest, 
@@ -22,6 +23,10 @@ export const CreateOutfitAPI = async(data: CreateOutfitRequest): Promise<CreateO
     return response.data;
 }
 
+export const EditOutfitAPI = async(id: number, data: Partial<CreateOutfitRequest>): Promise<EditOutfitResponse> => {
+    const response = await apiClient.put<EditOutfitResponse>(`/outfits/${id}`, data);
+    return response.data;
+}
 export const SaveFavoriteOutfitAPI = async(id: number): Promise<GetOutfitsFavoriteResponse> => {
     const response = await apiClient.put<GetOutfitsFavoriteResponse>(`/outfits/${id}/favorite`);
     return response.data;

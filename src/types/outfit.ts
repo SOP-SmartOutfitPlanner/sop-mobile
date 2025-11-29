@@ -10,7 +10,7 @@ export interface GetOutfitsRequest {
 
 export interface CreateOutfitRequest {
     name: string;
-    description: string;
+    description?: string;
     itemIds: number[];
 }
 //=====================Response=========================//
@@ -47,6 +47,11 @@ export interface GetOutfitsFavoriteResponse {
     statusCode: number;
     message: string;
     data: Outfit[];
+}
+export interface EditOutfitResponse {
+    statusCode: number;
+    message: string;
+    data: Outfit;
 }
 
 export interface DeleteOutfitResponse {
