@@ -69,12 +69,17 @@ apiClient.interceptors.request.use(
 
     // Log request in development
     if (__DEV__) {
-      // console.log("🚀 API Request:", {
-      //   method: config.method?.toUpperCase(),
-      //   url: config.url,
-      //   data: config.data,
-      //   hasToken: !!config.headers?.Authorization,
-      // });
+      // Log for suggestion endpoint to debug 403
+      if (config.url?.includes("/outfits/suggestion")) {
+        console.log("🚀 [API Client] Request Details:", {
+          method: config.method?.toUpperCase(),
+          url: config.url,
+          params: config.params,
+          hasToken: !!config.headers?.Authorization,
+          tokenPreview: config.headers?.Authorization ? 
+            (config.headers.Authorization as string).substring(0, 30) + "..." : "No token",
+        });
+      }
     }
 
     return config;

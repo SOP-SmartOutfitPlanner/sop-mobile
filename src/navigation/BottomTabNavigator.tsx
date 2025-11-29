@@ -24,9 +24,9 @@ const BottomTabNavigator = () => {
           headerShown: false,
         }}
       >
-        <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen name="Wardrobe" component={WardrobeScreen} />
         <Tab.Screen name="Suggestion" component={SuggestionScreen} />
+        <Tab.Screen name="Wardrobe" component={WardrobeScreen} />
+        <Tab.Screen name="Home" component={HomeScreen} />
         <Tab.Screen name="Outfit" component={OutfitScreen} />
         <Tab.Screen name="Collection" component={CollectionScreen} />
       </Tab.Navigator>

@@ -59,6 +59,41 @@ export interface DeleteOutfitResponse {
     message: string;
     data: null;
 }
+
+export interface SuggestedItem {
+    id: number;
+    userId: number;
+    userDisplayName: string;
+    name: string;
+    categoryId: number;
+    categoryName: string;
+    color: string;
+    aiDescription: string;
+    brand: string | null;
+    frequencyWorn: number | null;
+    lastWornAt: string | null;
+    imgUrl: string;
+    weatherSuitable: string;
+    condition: string;
+    pattern: string;
+    fabric: string;
+    isAnalyzed: boolean;
+    aiConfidence: number;
+    itemType: string;
+    occasions: Array<{ id: number; name: string }>;
+    seasons: Array<{ id: number; name: string }>;
+    styles: Array<{ id: number; name: string }>;
+}
+
+export interface OutfitSuggestionResponse {
+    statusCode: number;
+    message: string;
+    data: {
+        suggestedItems: SuggestedItem[];
+        reason: string;
+    };
+}
+
 //=====================Data Models=========================//
 export interface Outfit {
     id: number;

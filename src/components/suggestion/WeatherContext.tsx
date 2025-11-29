@@ -7,6 +7,7 @@ interface WeatherContextProps {
   description: string;
   condition: string;
   onRefresh: () => void;
+  cityName?: string;
 }
 
 const WeatherContext: React.FC<WeatherContextProps> = ({
@@ -14,6 +15,7 @@ const WeatherContext: React.FC<WeatherContextProps> = ({
   description,
   condition,
   onRefresh,
+  cityName,
 }) => {
   return (
     <View style={styles.card}>
@@ -24,6 +26,9 @@ const WeatherContext: React.FC<WeatherContextProps> = ({
           <Ionicons name="refresh" size={20} color="#64748B" />
         </TouchableOpacity>
       </View>
+      {cityName && (
+        <Text style={styles.cityName}>{cityName}</Text>
+      )}
 
       <View style={styles.content}>
         <View style={styles.temperatureContainer}>
@@ -72,6 +77,12 @@ const styles = StyleSheet.create({
     color: "#1E293B",
     flex: 1,
     marginLeft: 8,
+  },
+  cityName: {
+    fontSize: 12,
+    color: "#64748B",
+    marginBottom: 8,
+    marginLeft: 28,
   },
   content: {
     marginBottom: 16,
