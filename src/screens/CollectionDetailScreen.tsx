@@ -312,6 +312,15 @@ export const CollectionDetailScreen: React.FC = () => {
           {isOwner && (
             <View style={styles.ownerActions}>
               <TouchableOpacity
+                style={[styles.ownerButton, styles.ownerButtonEdit]}
+                onPress={() => navigation.navigate("EditCollection", { collectionId: collection.id })}
+              >
+                <Ionicons name="create-outline" size={18} color={COLLECTION_COLORS.accent.cyan} />
+                <Text style={[styles.ownerButtonText, styles.ownerButtonTextEdit]}>
+                  Edit
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
                 style={[
                   styles.ownerButton,
                   collection.isPublished && styles.ownerButtonPublished,
@@ -669,6 +678,10 @@ const styles = StyleSheet.create({
     borderColor: `${COLLECTION_COLORS.status.published}60`,
     backgroundColor: `${COLLECTION_COLORS.status.published}20`,
   },
+  ownerButtonEdit: {
+    borderColor: `${COLLECTION_COLORS.accent.cyan}60`,
+    backgroundColor: `${COLLECTION_COLORS.accent.cyan}20`,
+  },
   ownerButtonDelete: {
     borderColor: "#EF444460",
     backgroundColor: "#EF444420",
@@ -677,6 +690,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: COLLECTION_COLORS.text.secondary,
+  },
+  ownerButtonTextEdit: {
+    color: COLLECTION_COLORS.accent.cyan,
   },
   ownerButtonTextPublished: {
     color: COLLECTION_COLORS.status.published,

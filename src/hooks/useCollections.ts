@@ -1,5 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert } from "react-native";
+
+// Helper function to extract error message from API errors
+const extractErrorMessage = (err: any, defaultMessage: string): string => {
+  if (err?.response?.data?.message) {
+    return err.response.data.message;
+  }
+  if (err?.message && !err.message.includes("Network Error")) {
+    return err.message;
+  }
+  if (err?.response?.status) {
+    return `Request failed with status ${err.response.status}`;
+  }
+  return defaultMessage;
+};
 import {
   getCollectionByIdAPI,
   getCollectionsAPI,
@@ -9,6 +23,7 @@ import {
   saveCollectionAPI,
   toggleFollowStylistAPI,
   createCollectionAPI,
+  updateCollectionAPI,
   togglePublishCollectionAPI,
   deleteCollectionAPI,
 } from "../services/endpoint/collection";
@@ -197,6 +212,8 @@ interface UseCollectionDetailResult {
   toggleLike: () => Promise<void>;
   toggleSave: () => Promise<void>;
   toggleFollow: () => Promise<void>;
+  togglePublish: () => Promise<void>;
+  deleteCollection: (onSuccess?: () => void) => Promise<void>;
   refetch: () => Promise<void>;
   isOwner: boolean;
   setCommentCount: (count: number) => void;
@@ -438,16 +455,24 @@ export const useCreateCollection = () => {
         setError(null);
 
         const response = await createCollectionAPI(formData);
-        if (response.statusCode === 200 && response.data) {
+
+        const isSuccess =
+          response.statusCode >= 200 &&
+          response.statusCode < 300 &&
+          response.data;
+
+        if (isSuccess) {
           emitCollectionRecord(response.data);
           return response.data;
-        } else {
-          throw new Error(response.message || "Failed to create collection");
         }
+
+        const errorMsg =
+          response.message || `Failed to create collection (status: ${response.statusCode})`;
+        throw new Error(errorMsg);
       } catch (err: any) {
-        const errorMessage = err.message || "Failed to create collection";
+        const errorMessage = extractErrorMessage(err, "Failed to create collection");
         setError(errorMessage);
-        throw err;
+        throw new Error(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -457,6 +482,54 @@ export const useCreateCollection = () => {
 
   return {
     createCollection,
+    loading,
+    error,
+  };
+};
+
+export const useUpdateCollection = () => {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const updateCollection = useCallback(
+    async (collectionId: number, formData: FormData) => {
+      if (!user?.id) {
+        throw new Error("User not authenticated");
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await updateCollectionAPI(collectionId, formData);
+
+        const isSuccess =
+          response.statusCode >= 200 &&
+          response.statusCode < 300 &&
+          response.data;
+
+        if (isSuccess) {
+          emitCollectionRecord(response.data);
+          return response.data;
+        }
+
+        const errorMsg =
+          response.message || `Failed to update collection (status: ${response.statusCode})`;
+        throw new Error(errorMsg);
+      } catch (err: any) {
+        const errorMessage = extractErrorMessage(err, "Failed to update collection");
+        setError(errorMessage);
+        throw new Error(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user?.id]
+  );
+
+  return {
+    updateCollection,
     loading,
     error,
   };
