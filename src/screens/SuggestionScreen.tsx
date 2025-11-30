@@ -124,44 +124,12 @@ const SuggestionScreen = ({ navigation }: any) => {
         todayForecast.temperature
       )}°C, Feels like: ${Math.round(todayForecast.feelsLike)}°C`;
 
-      // Log request payload
-      const requestPayload = {
-        userId: userId,
-        totalOutfit: totalOutfit,
-        occasionId: selectedOccasionId,
-        weather: weatherString,
-      };
-      console.log(
-        "🔵 [SUGGEST OUTFIT V2] Request Payload:",
-        JSON.stringify(requestPayload, null, 2)
-      );
-
       const response = await GetOutfitSuggestionV2API(
         userId,
         totalOutfit,
         selectedOccasionId,
         weatherString
       );
-
-      // Log response
-      console.log(
-        "🟢 [SUGGEST OUTFIT V2] Response Status:",
-        response.statusCode
-      );
-      console.log("🟢 [SUGGEST OUTFIT V2] Response Message:", response.message);
-      console.log(
-        "🟢 [SUGGEST OUTFIT V2] Outfits Count:",
-        response.data?.length || 0
-      );
-
-      if (response.data) {
-        response.data.forEach((outfit, index) => {
-          console.log(`🟢 [SUGGEST OUTFIT V2] Outfit ${index + 1}:`, {
-            itemsCount: outfit.suggestedItems?.length || 0,
-            hasReason: !!outfit.reason,
-          });
-        });
-      }
 
       if (response.statusCode === 200 && response.data) {
         setSuggestionResults(response.data);

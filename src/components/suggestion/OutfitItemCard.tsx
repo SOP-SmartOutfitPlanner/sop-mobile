@@ -93,11 +93,7 @@ const OutfitItemCard: React.FC<OutfitItemCardProps> = ({
       imageUrl.startsWith("https://") ||
       imageUrl.startsWith("file://"));
 
-  // Log for debugging
   React.useEffect(() => {
-    console.log(`[OutfitItemCard] Rendering item: ${name}`);
-    console.log(`[OutfitItemCard] imageUrl: ${imageUrl}`);
-    console.log(`[OutfitItemCard] hasValidImageUrl: ${hasValidImageUrl}`);
     setImageError(false);
     setImageLoading(true);
   }, [imageUrl, name, hasValidImageUrl]);
@@ -120,15 +116,9 @@ const OutfitItemCard: React.FC<OutfitItemCardProps> = ({
               style={styles.image}
               resizeMode="cover"
               onLoadStart={() => {
-                console.log(
-                  `[OutfitItemCard] 🔄 Loading image for ${name}: ${imageUrl}`
-                );
                 setImageLoading(true);
               }}
               onLoad={() => {
-                console.log(
-                  `[OutfitItemCard] ✅ Image loaded successfully for ${name}`
-                );
                 setImageLoading(false);
                 setImageError(false);
               }}

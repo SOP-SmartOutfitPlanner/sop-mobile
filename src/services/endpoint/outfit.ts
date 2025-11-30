@@ -43,25 +43,10 @@ export const DeleteOutfitAPI = async(id: number): Promise<DeleteOutfitResponse> 
 
 export const GetOutfitSuggestionAPI = async(weather: string, userId: number): Promise<OutfitSuggestionResponse> => {
     const params = { weather, userId };
-    console.log("📤 [API] GET /outfits/suggestion - Params:", JSON.stringify(params, null, 2));
-    
-    // Check token before making request
-    const token = await getAccessToken();
-    console.log("🔑 [API] Access Token exists:", !!token);
-    if (token) {
-        console.log("🔑 [API] Token preview:", token.substring(0, 20) + "...");
-    }
     
     try {
         const response = await apiClient.get<OutfitSuggestionResponse>("/outfits/suggestion", {
             params
-        });
-        
-        console.log("📥 [API] GET /outfits/suggestion - Response:", {
-            statusCode: response.data?.statusCode,
-            message: response.data?.message,
-            hasData: !!response.data?.data,
-            itemsCount: response.data?.data?.suggestedItems?.length || 0,
         });
         
         return response.data;
@@ -113,36 +98,11 @@ export const GetOutfitSuggestionV2API = async(
         params.weather = weather;
     }
 
-    console.log("📤 [API] GET /outfits/suggestionV2 - Params:", JSON.stringify(params, null, 2));
-    
-    // Check token before making request
-    const token = await getAccessToken();
-    console.log("🔑 [API] Access Token exists:", !!token);
-    if (token) {
-        console.log("🔑 [API] Token preview:", token.substring(0, 20) + "...");
-    }
-    
     try {
         const response = await apiClient.get<OutfitSuggestionV2Response>("/outfits/suggestionV2", {
             params,
             timeout: 120000, // 120 seconds timeout for V2 API
         });
-        
-        console.log("📥 [API] GET /outfits/suggestionV2 - Response:", {
-            statusCode: response.data?.statusCode,
-            message: response.data?.message,
-            hasData: !!response.data?.data,
-            outfitsCount: response.data?.data?.length || 0,
-        });
-        
-        if (response.data?.data) {
-            response.data.data.forEach((outfit, index) => {
-                console.log(`📥 [API] Outfit ${index + 1}:`, {
-                    itemsCount: outfit.suggestedItems?.length || 0,
-                    hasReason: !!outfit.reason,
-                });
-            });
-        }
         
         return response.data;
     } catch (error: any) {
@@ -174,22 +134,9 @@ export const GetOutfitSuggestionV2API = async(
 export const MassCreateOutfitsAPI = async(
     data: MassCreateOutfitRequest
 ): Promise<MassCreateOutfitResponse> => {
-    console.log("📤 [API] POST /outfits/mass - Request:", {
-        totalOutfits: data.outfits.length,
-        outfitNames: data.outfits.map(o => o.name),
-    });
-    
     try {
         const response = await apiClient.post<MassCreateOutfitResponse>("/outfits/mass", {
             outfits: data.outfits,
-        });
-        
-        console.log("📥 [API] POST /outfits/mass - Response:", {
-            statusCode: response.data?.statusCode,
-            message: response.data?.message,
-            totalRequested: response.data?.data?.totalRequested,
-            totalCreated: response.data?.data?.totalCreated,
-            totalFailed: response.data?.data?.totalFailed,
         });
         
         return response.data;
