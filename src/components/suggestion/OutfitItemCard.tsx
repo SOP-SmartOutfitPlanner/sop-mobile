@@ -107,8 +107,8 @@ const OutfitItemCard: React.FC<OutfitItemCardProps> = ({
         {hasValidImageUrl && !imageError ? (
           <>
             {imageLoading && (
-              <View style={styles.loadingOverlay}>
-                <ActivityIndicator size="small" color="#3B82F6" />
+              <View>
+                {/* <ActivityIndicator size="small" color="#3B82F6" /> */}
               </View>
             )}
             <Image
