@@ -23,7 +23,7 @@ export default function App() {
           <AIDetectionProvider>
             <NavigationContainer>
               <BottomSheetModalProvider>
-                <StatusBar style="auto" />
+                <StatusBar style="light" />
                 <AppNavigator />
                 <PushNotificationModalHost />
               </BottomSheetModalProvider>

@@ -565,7 +565,6 @@ const SuggestionScreen = ({ navigation }: any) => {
                   isSaving={isSaving}
                   isUsingToday={isUsingToday}
                   reason={suggestionResults[currentSuggestionIndex].reason}
-                  weatherDescription={todayForecast?.description}
                 />
               </View>
             )}
@@ -581,7 +580,7 @@ const SuggestionScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#030617",
   },
   scrollView: {
     flex: 1,
