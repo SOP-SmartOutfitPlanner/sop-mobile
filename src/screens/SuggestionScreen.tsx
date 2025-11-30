@@ -565,6 +565,7 @@ const SuggestionScreen = ({ navigation }: any) => {
                   isSaving={isSaving}
                   isUsingToday={isUsingToday}
                   reason={suggestionResults[currentSuggestionIndex].reason}
+                  weatherDescription={todayForecast?.description}
                 />
               </View>
             )}
@@ -586,7 +587,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bottomSpacing: {
-    height: 20,
+    height: 60, // pb-32 equivalent (32 * 4 = 128px)
   },
   // Header Section
   headerSection: {

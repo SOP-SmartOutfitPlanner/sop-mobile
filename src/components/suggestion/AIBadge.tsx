@@ -14,7 +14,7 @@ const AIBadge: React.FC<AIBadgeProps> = ({ type = "ai", confidence }) => {
       <View style={styles.aiBadgeContainer}>
         <View style={styles.glowEffect} />
         <LinearGradient
-          colors={["#06B6D4", "#3B82F6"]}
+          colors={["#8B5CF6", "#A855F7"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.aiBadge}

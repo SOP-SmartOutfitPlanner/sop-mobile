@@ -1,11 +1,19 @@
-import React from "react";
-import { View, Image, StyleSheet, ImageSourcePropType, Text, ScrollView, TouchableOpacity } from "react-native";
+import React, { useRef, useState } from "react";
+import {
+  View,
+  StyleSheet,
+  ImageSourcePropType,
+  Text,
+  PanResponder,
+  TouchableOpacity,
+} from "react-native";
 import { Image as RNImage } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import OutfitItemCard from "./OutfitItemCard";
 import MatchBadges from "./MatchBadges";
 import ActionButtons from "./ActionButtons";
+import PaginationDots from "./PaginationDots";
 
 interface OutfitItemData {
   id: number;
@@ -51,9 +59,41 @@ const MainSuggestionCard: React.FC<MainSuggestionCardProps> = ({
   reason,
 }) => {
   // Calculate match percentage (using AI confidence if available)
-  const matchPercentage = items.length > 0 && items[0].aiConfidence
-    ? Math.round(items[0].aiConfidence * 100)
-    : 92;
+  const matchPercentage =
+    items.length > 0 && items[0].aiConfidence
+      ? Math.round(items[0].aiConfidence * 1)
+      : 92;
+
+  // Expand/collapse state for AI Recommendation
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Swipe gesture handler
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => totalSuggestions > 1,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Only respond to horizontal swipes
+        return (
+          Math.abs(gestureState.dx) > Math.abs(gestureState.dy) &&
+          Math.abs(gestureState.dx) > 10
+        );
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const SWIPE_THRESHOLD = 50; // Minimum distance to trigger swipe
+        const { dx } = gestureState;
+
+        if (Math.abs(dx) > SWIPE_THRESHOLD) {
+          if (dx > 0) {
+            // Swipe right - go to previous
+            onPrevious();
+          } else {
+            // Swipe left - go to next
+            onNext();
+          }
+        }
+      },
+    })
+  ).current;
 
   return (
     <View style={styles.card}>
@@ -73,35 +113,60 @@ const MainSuggestionCard: React.FC<MainSuggestionCardProps> = ({
         </View>
       </View>
 
+      {/* Match Badges - Moved to top to avoid clipping */}
+      {/* <MatchBadges
+        matchPercentage={matchPercentage}
+        style="AI Suggested"
+        weather="Weather-ready"
+      /> */}
+
       {reason && (
-        <View style={styles.reasonContainer}>
+        <TouchableOpacity
+          style={styles.reasonContainer}
+          onPress={() => setIsExpanded(!isExpanded)}
+          activeOpacity={0.8}
+        >
           <LinearGradient
-            colors={["rgba(139, 92, 246, 0.4)", "rgba(168, 85, 247, 0.3)", "rgba(139, 92, 246, 0.4)"]}
+            colors={[
+              "rgba(139, 92, 246, 0.4)",
+              "rgba(168, 85, 247, 0.3)",
+              "rgba(139, 92, 246, 0.4)",
+            ]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.reasonGradient}
           >
             <View style={styles.reasonHeader}>
-              <Ionicons name="sparkles" size={18} color="#FFFFFF" />
-              <Text style={styles.reasonTitle}>AI Recommendation</Text>
+              <Ionicons name="sparkles" size={16} color="#FFFFFF" />
+              <View style={styles.reasonHeaderLeft}>
+                <Text
+                  style={styles.reasonTitle}
+                  numberOfLines={isExpanded ? 0 : 1}
+                >
+                  {isExpanded
+                    ? reason
+                    : reason.length > 60
+                    ? `${reason.substring(0, 60)}...`
+                    : reason}
+                </Text>
+              </View>
+              <Ionicons
+                name={isExpanded ? "chevron-up" : "chevron-down"}
+                size={16}
+                color="#FFFFFF"
+              />
             </View>
-            <Text style={styles.reasonText}>{reason}</Text>
+            {/* {isExpanded && (
+              <Text style={styles.reasonText}>{reason}</Text>
+            )} */}
           </LinearGradient>
-        </View>
+        </TouchableOpacity>
       )}
 
-      {/* Outfit Items - Grid 2x2 */}
-      <View style={styles.itemsContainer}>
-        {totalSuggestions > 1 && (
-          <TouchableOpacity
-            style={styles.navArrow}
-            onPress={onPrevious}
-          >
-            <Ionicons name="chevron-back" size={24} color="#CBD5E1" />
-          </TouchableOpacity>
-        )}
+      {/* Outfit Items - Grid 2x2 with Swipe Gesture */}
+      <View style={styles.itemsContainer} {...panResponder.panHandlers}>
         <View style={styles.itemsGrid}>
-        {items.map((item, index) => (
+          {items.map((item, index) => (
             <View key={item.id || index} style={styles.gridItem}>
               <OutfitItemCard
                 id={item.id}
@@ -113,33 +178,24 @@ const MainSuggestionCard: React.FC<MainSuggestionCardProps> = ({
                 fabric={item.fabric}
                 weatherSuitable={item.weatherSuitable}
                 seasons={item.seasons}
-                styles={item.styles}
+                itemStyles={item.styles}
                 isAnalyzed={item.isAnalyzed}
                 aiConfidence={item.aiConfidence}
                 itemType={item.itemType}
               />
             </View>
-        ))}
-      </View>
-        {totalSuggestions > 1 && (
-          <TouchableOpacity
-            style={styles.navArrow}
-            onPress={onNext}
-          >
-            <Ionicons name="chevron-forward" size={24} color="#CBD5E1" />
-          </TouchableOpacity>
-        )}
+          ))}
+        </View>
       </View>
 
-      <MatchBadges
-        matchPercentage={92}
-        style="AI Suggested"
-        weather="Weather-ready"
-      />
+      {/* Pagination Dots */}
+      {totalSuggestions > 1 && (
+        <PaginationDots total={totalSuggestions} currentIndex={currentIndex} />
+      )}
 
-      <ActionButtons 
-        onSave={onSave} 
-        onShare={onShare} 
+      <ActionButtons
+        onSave={onSave}
+        onShare={onShare}
         onUseToday={onUseToday}
         isSaving={isSaving}
         isUsingToday={isUsingToday}
@@ -153,18 +209,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#1E293B",
     marginHorizontal: 16,
     marginVertical: 16,
-    borderRadius: 24,
-    padding: 24,
+    borderRadius: 20,
+    padding: 20,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 6,
     borderWidth: 1,
-    borderColor: "rgba(59, 130, 246, 0.3)",
+    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   optionHeader: {
-    marginBottom: 20,
+    marginBottom: 12,
   },
   optionTitleRow: {
     flexDirection: "row",
@@ -172,10 +228,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   optionTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "800",
     color: "#FFFFFF",
-    letterSpacing: -0.3,
+    letterSpacing: -0.4,
   },
   badgesRow: {
     flexDirection: "row",
@@ -189,7 +245,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FEF3C7",
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: "rgba(251, 191, 36, 0.3)",
   },
@@ -199,76 +255,73 @@ const styles = StyleSheet.create({
     color: "#92400E",
   },
   aiCuratedBadge: {
-    backgroundColor: "rgba(139, 92, 246, 0.3)",
+    backgroundColor: "rgba(139, 92, 246, 0.25)",
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "rgba(139, 92, 246, 0.5)",
+    borderColor: "rgba(139, 92, 246, 0.4)",
   },
   aiCuratedText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#C4B5FD",
+    color: "#A78BFA",
   },
   itemsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 24,
-    gap: 8,
-  },
-  navArrow: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1,
+    alignItems: "flex-start",
+    marginBottom: 16,
   },
   itemsGrid: {
-    flex: 1,
+    width: "100%",
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    gap: 10,
   },
   gridItem: {
     width: "48%",
-    minWidth: 0,
+    marginBottom: 8,
   },
   reasonContainer: {
-    marginBottom: 24,
-    borderRadius: 16,
+    marginBottom: 16,
+    borderRadius: 12,
     overflow: "hidden",
     shadowColor: "#8B5CF6",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   reasonGradient: {
-    padding: 18,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
+    borderColor: "rgba(255, 255, 255, 0.2)",
   },
   reasonHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
-    gap: 8,
+    justifyContent: "space-between",
+    gap: 6,
+  },
+  reasonHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flex: 1,
   },
   reasonTitle: {
-    fontSize: 15,
-    fontWeight: "700",
+    fontSize: 12,
+    fontWeight: "600",
     color: "#FFFFFF",
-    letterSpacing: 0.2,
+    letterSpacing: 0,
+    flex: 1,
   },
   reasonText: {
-    fontSize: 13,
-    color: "rgba(255, 255, 255, 0.95)",
-    lineHeight: 20,
-    letterSpacing: 0.1,
+    fontSize: 12,
+    color: "rgba(255, 255, 255, 0.9)",
+    lineHeight: 18,
+    letterSpacing: 0,
+    marginTop: 8,
   },
 });
 

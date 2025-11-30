@@ -41,27 +41,27 @@ const ColorDots: React.FC<ColorDotsProps> = ({ colors, maxDisplay = 6 }) => {
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 6,
+    marginVertical: 4,
   },
   dotsContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 3,
   },
   dot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    borderWidth: 2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 1.5,
     borderColor: "rgba(255, 255, 255, 0.8)",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   remainingText: {
-    fontSize: 10,
+    fontSize: 9,
     color: "#94A3B8",
     marginLeft: 2,
   },

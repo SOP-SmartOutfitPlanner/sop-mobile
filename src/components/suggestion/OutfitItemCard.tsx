@@ -1,10 +1,16 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ImageSourcePropType, Image, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ImageSourcePropType,
+  Image,
+  ActivityIndicator,
+} from "react-native";
 import { Image as RNImage } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import AIBadge from "./AIBadge";
 import ColorDots from "./ColorDots";
-import ItemBadges from "./ItemBadges";
 
 interface Season {
   id: number;
@@ -31,7 +37,7 @@ interface OutfitItemCardProps {
   fabric?: string;
   weatherSuitable?: string;
   seasons?: Season[];
-  styles?: Style[];
+  itemStyles?: Style[];
   isAnalyzed?: boolean;
   aiConfidence?: number;
   itemType?: string;
@@ -47,7 +53,7 @@ const OutfitItemCard: React.FC<OutfitItemCardProps> = ({
   fabric,
   weatherSuitable,
   seasons,
-  styles,
+  itemStyles,
   isAnalyzed,
   aiConfidence,
   itemType,
@@ -77,13 +83,16 @@ const OutfitItemCard: React.FC<OutfitItemCardProps> = ({
   const [imageLoading, setImageLoading] = useState(true);
 
   // Validate imageUrl
-  const hasValidImageUrl = imageUrl && 
-    typeof imageUrl === "string" && 
-    imageUrl.trim() !== "" && 
-    imageUrl !== "null" && 
+  const hasValidImageUrl =
+    imageUrl &&
+    typeof imageUrl === "string" &&
+    imageUrl.trim() !== "" &&
+    imageUrl !== "null" &&
     imageUrl !== "undefined" &&
-    (imageUrl.startsWith("http://") || imageUrl.startsWith("https://") || imageUrl.startsWith("file://"));
-  
+    (imageUrl.startsWith("http://") ||
+      imageUrl.startsWith("https://") ||
+      imageUrl.startsWith("file://"));
+
   // Log for debugging
   React.useEffect(() => {
     console.log(`[OutfitItemCard] Rendering item: ${name}`);
@@ -97,10 +106,10 @@ const OutfitItemCard: React.FC<OutfitItemCardProps> = ({
     <View style={styles.container}>
       <View style={styles.imageContainer}>
         {showAIBadge && <AIBadge type="ai" confidence={aiConfidence} />}
-        {showSuggestBadge && <AIBadge type="suggest" />}
-        
+        {/* {showSuggestBadge && <AIBadge type="suggest" />} */}
+
         {hasValidImageUrl && !imageError ? (
-          <View style={styles.imageWrapper}>
+          <>
             {imageLoading && (
               <View style={styles.loadingOverlay}>
                 <ActivityIndicator size="small" color="#3B82F6" />
@@ -111,62 +120,79 @@ const OutfitItemCard: React.FC<OutfitItemCardProps> = ({
               style={styles.image}
               resizeMode="cover"
               onLoadStart={() => {
-                console.log(`[OutfitItemCard] 🔄 Loading image for ${name}: ${imageUrl}`);
+                console.log(
+                  `[OutfitItemCard] 🔄 Loading image for ${name}: ${imageUrl}`
+                );
                 setImageLoading(true);
               }}
               onLoad={() => {
-                console.log(`[OutfitItemCard] ✅ Image loaded successfully for ${name}`);
+                console.log(
+                  `[OutfitItemCard] ✅ Image loaded successfully for ${name}`
+                );
                 setImageLoading(false);
                 setImageError(false);
               }}
               onError={(error) => {
-                console.error(`[OutfitItemCard] ❌ Image load error for ${name}:`, {
-                  imageUrl,
-                  error: error.nativeEvent?.error || error,
-                });
+                console.error(
+                  `[OutfitItemCard] ❌ Image load error for ${name}:`,
+                  {
+                    imageUrl,
+                    error: error.nativeEvent?.error || error,
+                  }
+                );
                 setImageError(true);
                 setImageLoading(false);
               }}
             />
-          </View>
+          </>
         ) : image ? (
           <Image source={image} style={styles.image} resizeMode="cover" />
         ) : (
-          <View style={[styles.image, styles.placeholder]}>
+          <View style={styles.placeholder}>
             <Ionicons name="shirt-outline" size={48} color="#94A3B8" />
             <Text style={styles.placeholderText}>No Image</Text>
-            {imageUrl && (
-              <Text style={styles.placeholderSubtext} numberOfLines={1}>
-                {imageUrl.substring(0, 30)}...
-              </Text>
-            )}
           </View>
         )}
       </View>
 
       <View style={styles.content}>
-        {/* Name and Category */}
-        <View style={styles.header}>
-          <Text style={styles.name} numberOfLines={2}>
-            {name}
-          </Text>
-          {categoryName && (
-            <View style={styles.categoryBadge}>
-              <Text style={styles.categoryText}>{categoryName}</Text>
-            </View>
-          )}
-        </View>
+        {/* Name */}
+        <Text style={styles.name} numberOfLines={1}>
+          {name}
+        </Text>
+
+        {/* Category */}
+        {categoryName && (
+          <Text style={styles.categoryText}>{categoryName}</Text>
+        )}
 
         {/* Color Dots */}
         {colors.length > 0 && <ColorDots colors={colors} />}
 
-        {/* Badges */}
-        <ItemBadges
-          fabric={fabric}
-          weatherSuitable={weatherSuitable}
-          seasons={seasons}
-          styles={styles}
-        />
+        {/* Season Badge Only */}
+        {seasons && seasons.length > 0 && (
+          <View style={styles.seasonContainer}>
+            {seasons.slice(0, 1).map((season) => {
+              const getSeasonColor = (seasonName: string) => {
+                const s = seasonName.toLowerCase();
+                if (s === "spring") return "#EC4899";
+                if (s === "summer") return "#FCD34D";
+                if (s === "fall" || s === "autumn") return "#F97316";
+                if (s === "winter") return "#06B6D4";
+                return "#EC4899";
+              };
+              const bgColor = getSeasonColor(season.name);
+              return (
+                <View
+                  key={season.id}
+                  style={[styles.seasonBadge, { backgroundColor: bgColor }]}
+                >
+                  <Text style={styles.seasonText}>{season.name}</Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
       </View>
     </View>
   );
@@ -176,13 +202,13 @@ const styles = StyleSheet.create({
   container: {
     width: "100%",
     backgroundColor: "#1E293B",
-    borderRadius: 20,
-    padding: 16,
+    borderRadius: 14,
+    padding: 8,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)",
   },
@@ -190,28 +216,16 @@ const styles = StyleSheet.create({
     position: "relative",
     width: "100%",
     aspectRatio: 1,
-    minHeight: 160,
-    borderRadius: 16,
+    minHeight: 120,
+    borderRadius: 10,
     overflow: "hidden",
     backgroundColor: "#374151",
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-  },
-  imageWrapper: {
-    width: "100%",
-    height: "100%",
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    marginBottom: 6,
   },
   image: {
     width: "100%",
     height: "100%",
-    backgroundColor: "#F8FAFC",
-    borderRadius: 18,
+    backgroundColor: "#374151",
   },
   loadingOverlay: {
     position: "absolute",
@@ -225,12 +239,11 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   placeholder: {
+    width: "100%",
+    height: "100%",
     backgroundColor: "#374151",
     alignItems: "center",
     justifyContent: "center",
-    borderStyle: "dashed",
-    borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   placeholderText: {
     marginTop: 8,
@@ -238,44 +251,38 @@ const styles = StyleSheet.create({
     color: "#94A3B8",
     fontWeight: "500",
   },
-  placeholderSubtext: {
-    marginTop: 4,
-    fontSize: 9,
-    color: "#64748B",
-    fontWeight: "400",
-  },
   content: {
-    flex: 1,
-    minHeight: 100,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 10,
-    gap: 10,
+    gap: 3,
   },
   name: {
-    flex: 1,
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "700",
     color: "#FFFFFF",
-    lineHeight: 20,
+    lineHeight: 16,
     letterSpacing: -0.2,
-  },
-  categoryBadge: {
-    backgroundColor: "rgba(148, 163, 184, 0.15)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "rgba(148, 163, 184, 0.3)",
+    marginBottom: 2,
   },
   categoryText: {
-    fontSize: 10,
-    fontWeight: "600",
+    fontSize: 11,
+    fontWeight: "500",
     color: "#CBD5E1",
+    marginBottom: 4,
+  },
+  seasonContainer: {
+    marginTop: 2,
+  },
+  seasonBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 10,
+    alignSelf: "flex-start",
+  },
+  seasonText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    textTransform: "capitalize",
   },
 });
 
 export default OutfitItemCard;
-
