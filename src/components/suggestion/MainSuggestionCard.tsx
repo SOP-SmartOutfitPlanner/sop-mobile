@@ -1,9 +1,9 @@
 import React from "react";
-import { View, Image, StyleSheet, ImageSourcePropType, Text } from "react-native";
+import { View, Image, StyleSheet, ImageSourcePropType, Text, ScrollView, TouchableOpacity } from "react-native";
 import { Image as RNImage } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
-import SuggestionCarousel from "./SuggestionCarousel";
-import OutfitItem from "./OutfitItem";
+import { LinearGradient } from "expo-linear-gradient";
+import OutfitItemCard from "./OutfitItemCard";
 import MatchBadges from "./MatchBadges";
 import ActionButtons from "./ActionButtons";
 
@@ -50,57 +50,86 @@ const MainSuggestionCard: React.FC<MainSuggestionCardProps> = ({
   isUsingToday = false,
   reason,
 }) => {
-  // Get current item based on index
-  const currentItem = items[currentIndex] || items[0];
-  const displayItems = items.slice(0, 3); // Show first 3 items
+  // Calculate match percentage (using AI confidence if available)
+  const matchPercentage = items.length > 0 && items[0].aiConfidence
+    ? Math.round(items[0].aiConfidence * 100)
+    : 92;
 
   return (
     <View style={styles.card}>
-      <SuggestionCarousel
-        currentIndex={currentIndex}
-        totalItems={totalSuggestions}
-        onPrevious={onPrevious}
-        onNext={onNext}
-      />
+      {/* Option Header with Badges */}
+      <View style={styles.optionHeader}>
+        <View style={styles.optionTitleRow}>
+          <Text style={styles.optionTitle}>Option {currentIndex + 1}</Text>
+          <View style={styles.badgesRow}>
+            <View style={styles.matchBadge}>
+              <Ionicons name="star" size={14} color="#FCD34D" />
+              <Text style={styles.matchBadgeText}>{matchPercentage}%</Text>
+            </View>
+            <View style={styles.aiCuratedBadge}>
+              <Text style={styles.aiCuratedText}>AI Curated</Text>
+            </View>
+          </View>
+        </View>
+      </View>
 
       {reason && (
         <View style={styles.reasonContainer}>
-          <View style={styles.reasonHeader}>
-            <Ionicons name="sparkles" size={16} color="#3B82F6" />
-            <Text style={styles.reasonTitle}>AI Recommendation</Text>
-          </View>
-          <Text style={styles.reasonText}>{reason}</Text>
+          <LinearGradient
+            colors={["rgba(139, 92, 246, 0.4)", "rgba(168, 85, 247, 0.3)", "rgba(139, 92, 246, 0.4)"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.reasonGradient}
+          >
+            <View style={styles.reasonHeader}>
+              <Ionicons name="sparkles" size={18} color="#FFFFFF" />
+              <Text style={styles.reasonTitle}>AI Recommendation</Text>
+            </View>
+            <Text style={styles.reasonText}>{reason}</Text>
+          </LinearGradient>
         </View>
       )}
 
-      <View style={styles.outfitItemsRow}>
-        {displayItems.map((item, index) => (
-          <OutfitItem
-            key={item.id || index}
-            name={item.name}
-            image={item.image}
-            imageUrl={item.imageUrl}
-            categoryName={item.categoryName}
-          />
+      {/* Outfit Items - Grid 2x2 */}
+      <View style={styles.itemsContainer}>
+        {totalSuggestions > 1 && (
+          <TouchableOpacity
+            style={styles.navArrow}
+            onPress={onPrevious}
+          >
+            <Ionicons name="chevron-back" size={24} color="#CBD5E1" />
+          </TouchableOpacity>
+        )}
+        <View style={styles.itemsGrid}>
+        {items.map((item, index) => (
+            <View key={item.id || index} style={styles.gridItem}>
+              <OutfitItemCard
+                id={item.id}
+                name={item.name}
+                image={item.image}
+                imageUrl={item.imageUrl}
+                categoryName={item.categoryName}
+                color={item.color}
+                fabric={item.fabric}
+                weatherSuitable={item.weatherSuitable}
+                seasons={item.seasons}
+                styles={item.styles}
+                isAnalyzed={item.isAnalyzed}
+                aiConfidence={item.aiConfidence}
+                itemType={item.itemType}
+              />
+            </View>
         ))}
       </View>
-
-      {currentItem && (
-        <View style={styles.centerImageContainer}>
-          {currentItem.imageUrl ? (
-            <RNImage
-              source={{ uri: currentItem.imageUrl }}
-              style={styles.centerImage}
-              contentFit="cover"
-              transition={200}
-            />
-          ) : currentItem.image ? (
-            <Image source={currentItem.image} style={styles.centerImage} />
-          ) : (
-            <View style={[styles.centerImage, styles.placeholderImage]} />
-          )}
-        </View>
-      )}
+        {totalSuggestions > 1 && (
+          <TouchableOpacity
+            style={styles.navArrow}
+            onPress={onNext}
+          >
+            <Ionicons name="chevron-forward" size={24} color="#CBD5E1" />
+          </TouchableOpacity>
+        )}
+      </View>
 
       <MatchBadges
         matchPercentage={92}
@@ -121,57 +150,125 @@ const MainSuggestionCard: React.FC<MainSuggestionCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#FFFFFF",
-    margin: 16,
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  outfitItemsRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 16,
-  },
-  centerImageContainer: {
-    alignItems: "center",
+    backgroundColor: "#1E293B",
+    marginHorizontal: 16,
     marginVertical: 16,
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: "rgba(59, 130, 246, 0.3)",
   },
-  centerImage: {
-    width: 160,
-    height: 200,
-    borderRadius: 16,
-    backgroundColor: "#F1F5F9",
+  optionHeader: {
+    marginBottom: 20,
   },
-  placeholderImage: {
-    backgroundColor: "#E2E8F0",
+  optionTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
-  reasonContainer: {
-    marginBottom: 16,
-    padding: 12,
-    backgroundColor: "#F0F9FF",
+  optionTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    letterSpacing: -0.3,
+  },
+  badgesRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  matchBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#FEF3C7",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#BAE6FD",
+    borderColor: "rgba(251, 191, 36, 0.3)",
+  },
+  matchBadgeText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#92400E",
+  },
+  aiCuratedBadge: {
+    backgroundColor: "rgba(139, 92, 246, 0.3)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.5)",
+  },
+  aiCuratedText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#C4B5FD",
+  },
+  itemsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 24,
+    gap: 8,
+  },
+  navArrow: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1,
+  },
+  itemsGrid: {
+    flex: 1,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  gridItem: {
+    width: "48%",
+    minWidth: 0,
+  },
+  reasonContainer: {
+    marginBottom: 24,
+    borderRadius: 16,
+    overflow: "hidden",
+    shadowColor: "#8B5CF6",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  reasonGradient: {
+    padding: 18,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
   },
   reasonHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 12,
     gap: 8,
   },
   reasonTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#1E293B",
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    letterSpacing: 0.2,
   },
   reasonText: {
-    fontSize: 12,
-    color: "#64748B",
-    lineHeight: 18,
+    fontSize: 13,
+    color: "rgba(255, 255, 255, 0.95)",
+    lineHeight: 20,
+    letterSpacing: 0.1,
   },
 });
 

@@ -1,20 +1,32 @@
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, ScrollView, Alert, ActivityIndicator, Text, TouchableOpacity } from "react-native";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+  Text,
+  TouchableOpacity,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Header } from "../components/common";
-import {
-  MainSuggestionCard,
-  WeatherContext,
-} from "../components/suggestion";
+import { MainSuggestionCard, WeatherContext } from "../components/suggestion";
 import OccasionDropdown from "../components/suggestion/OccasionDropdown";
+import OutfitCountDropdown from "../components/suggestion/OutfitCountDropdown";
 import { useWeather } from "../hooks/useWeather";
 import { useAuth } from "../hooks/auth/useAuth";
-import { GetOutfitSuggestionAPI, CreateOutfitAPI } from "../services/endpoint/outfit";
+import {
+  GetOutfitSuggestionV2API,
+  CreateOutfitAPI,
+  MassCreateOutfitsAPI,
+} from "../services/endpoint/outfit";
 import { CreateCalendarEntryAPI } from "../services/endpoint/calendar";
 import { SuggestedItem } from "../types/outfit";
 import { useNotification } from "../hooks/notification/useNotification";
 import { getUserId } from "../services/api/apiClient";
+import { GetOccasionsAPI } from "../services/endpoint/occasion";
+import { Occasion } from "../types/occasion";
 
 const SuggestionScreen = ({ navigation }: any) => {
   const { user } = useAuth();
@@ -27,15 +39,66 @@ const SuggestionScreen = ({ navigation }: any) => {
     requestLocation,
   } = useWeather({ enabled: true });
 
+  // V2 API - Multiple outfits support
+  const [suggestionResults, setSuggestionResults] = useState<
+    Array<{
+      suggestedItems: SuggestedItem[];
+      reason: string;
+    }>
+  >([]);
   const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
-  const [suggestedItems, setSuggestedItems] = useState<SuggestedItem[]>([]);
-  const [suggestionReason, setSuggestionReason] = useState<string>("");
+  const [selectedOutfitIndexes, setSelectedOutfitIndexes] = useState<number[]>(
+    []
+  );
+  const [totalOutfit, setTotalOutfit] = useState<number>(1);
+  const [selectedOccasion, setSelectedOccasion] = useState<string>("Casual");
+  const [selectedOccasionId, setSelectedOccasionId] = useState<
+    number | undefined
+  >(undefined);
+  const [occasions, setOccasions] = useState<Occasion[]>([]);
+
   const [isLoadingSuggestion, setIsLoadingSuggestion] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUsingToday, setIsUsingToday] = useState(false);
-  const [selectedOccasion, setSelectedOccasion] = useState<string>("Casual");
+  const [isAddingMultiple, setIsAddingMultiple] = useState(false);
 
-  // Generate outfit suggestion
+  // Fetch occasions to get IDs
+  useEffect(() => {
+    const fetchOccasions = async () => {
+      try {
+        const response = await GetOccasionsAPI({
+          pageIndex: 1,
+          pageSize: 100,
+          takeAll: true,
+        });
+        if (response.statusCode === 200 && response.data?.data) {
+          setOccasions(response.data.data);
+          // Set default occasion ID
+          const defaultOccasion = response.data.data.find(
+            (o: Occasion) => o.name === "Casual"
+          );
+          if (defaultOccasion) {
+            setSelectedOccasionId(defaultOccasion.id);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch occasions:", error);
+      }
+    };
+    fetchOccasions();
+  }, []);
+
+  // Update occasion ID when name changes
+  useEffect(() => {
+    const occasion = occasions.find((o) => o.name === selectedOccasion);
+    if (occasion) {
+      setSelectedOccasionId(occasion.id);
+    } else {
+      setSelectedOccasionId(undefined);
+    }
+  }, [selectedOccasion, occasions]);
+
+  // Generate outfit suggestion using V2 API
   const handleGenerate = async () => {
     if (!todayForecast) {
       showError("Weather data not available. Please wait for weather to load.");
@@ -54,106 +117,155 @@ const SuggestionScreen = ({ navigation }: any) => {
         throw new Error("Invalid user ID");
       }
 
+      // Format weather string like web: "description, Temperature: X°C, Feels like: Y°C"
+      const weatherString = `${
+        todayForecast.description
+      }, Temperature: ${Math.round(
+        todayForecast.temperature
+      )}°C, Feels like: ${Math.round(todayForecast.feelsLike)}°C`;
+
       // Log request payload
       const requestPayload = {
-        weather: todayForecast.description,
         userId: userId,
-        occasion: selectedOccasion,
+        totalOutfit: totalOutfit,
+        occasionId: selectedOccasionId,
+        weather: weatherString,
       };
-      console.log("🔵 [SUGGEST OUTFIT] Request Payload:", JSON.stringify(requestPayload, null, 2));
+      console.log(
+        "🔵 [SUGGEST OUTFIT V2] Request Payload:",
+        JSON.stringify(requestPayload, null, 2)
+      );
 
-      const response = await GetOutfitSuggestionAPI(
-        todayForecast.description,
-        userId
+      const response = await GetOutfitSuggestionV2API(
+        userId,
+        totalOutfit,
+        selectedOccasionId,
+        weatherString
       );
 
       // Log response
-      console.log("🟢 [SUGGEST OUTFIT] Response Status:", response.statusCode);
-      console.log("🟢 [SUGGEST OUTFIT] Response Message:", response.message);
-      console.log("🟢 [SUGGEST OUTFIT] Response Data:", JSON.stringify(response.data, null, 2));
-      
-      if (response.data?.suggestedItems) {
-        console.log("🟢 [SUGGEST OUTFIT] Suggested Items Count:", response.data.suggestedItems.length);
-        response.data.suggestedItems.forEach((item, index) => {
-          console.log(`🟢 [SUGGEST OUTFIT] Item ${index + 1}:`, {
-            id: item.id,
-            name: item.name,
-            categoryName: item.categoryName,
-            color: item.color,
-            fabric: item.fabric,
-            weatherSuitable: item.weatherSuitable,
-            seasons: item.seasons?.map(s => s.name || s),
-            styles: item.styles?.map(s => s.name || s),
-            isAnalyzed: item.isAnalyzed,
-            aiConfidence: item.aiConfidence,
-            itemType: item.itemType,
+      console.log(
+        "🟢 [SUGGEST OUTFIT V2] Response Status:",
+        response.statusCode
+      );
+      console.log("🟢 [SUGGEST OUTFIT V2] Response Message:", response.message);
+      console.log(
+        "🟢 [SUGGEST OUTFIT V2] Outfits Count:",
+        response.data?.length || 0
+      );
+
+      if (response.data) {
+        response.data.forEach((outfit, index) => {
+          console.log(`🟢 [SUGGEST OUTFIT V2] Outfit ${index + 1}:`, {
+            itemsCount: outfit.suggestedItems?.length || 0,
+            hasReason: !!outfit.reason,
           });
         });
-        console.log("🟢 [SUGGEST OUTFIT] Reason:", response.data.reason);
       }
 
       if (response.statusCode === 200 && response.data) {
-        setSuggestedItems(response.data.suggestedItems);
-        setSuggestionReason(response.data.reason);
-        setCurrentSuggestionIndex(0);
-        showSuccess("Outfit suggestion generated!");
+        setSuggestionResults(response.data);
+        setCurrentSuggestionIndex(0); // Reset to first outfit
+        setSelectedOutfitIndexes([]); // Reset selections
+        showSuccess("Outfit suggestions generated!");
       } else {
-        throw new Error(response.message || "Failed to generate suggestion");
+        throw new Error(response.message || "Failed to generate suggestions");
       }
     } catch (error: any) {
-      console.error("Failed to get outfit suggestion:", error);
-      
+      console.error("Failed to get outfit suggestions:", error);
+
       // Extract error message from API response
-      let errorMessage = "Failed to generate outfit suggestion";
-      
+      let errorMessage = "Failed to generate outfit suggestions";
+
       if (error.response?.data?.message) {
-        // Server returned a specific error message
         errorMessage = error.response.data.message;
       } else if (error.response?.data?.data?.message) {
-        // Nested message structure
         errorMessage = error.response.data.data.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
-      // Check if it's a subscription limit error
-      if (errorMessage.includes("Subscription limit") || errorMessage.includes("credits remaining")) {
-        showError(errorMessage);
-      } else {
-        showError(errorMessage);
-      }
+
+      showError(errorMessage);
     } finally {
       setIsLoadingSuggestion(false);
     }
   };
 
-  // Handlers
-  const handlePreviousSuggestion = () => {
-    if (suggestedItems.length === 0) return;
-    setCurrentSuggestionIndex((prev) => 
-      prev > 0 ? prev - 1 : suggestedItems.length - 1
+  // Toggle outfit selection
+  const handleToggleOutfitSelection = (index: number) => {
+    setSelectedOutfitIndexes((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
     );
   };
 
-  const handleNextSuggestion = () => {
-    if (suggestedItems.length === 0) return;
-    setCurrentSuggestionIndex((prev) => 
-      prev < suggestedItems.length - 1 ? prev + 1 : 0
-    );
+  // Select/Deselect all outfits
+  const handleSelectAll = () => {
+    if (selectedOutfitIndexes.length === suggestionResults.length) {
+      setSelectedOutfitIndexes([]);
+    } else {
+      setSelectedOutfitIndexes(suggestionResults.map((_, index) => index));
+    }
   };
 
-  const handleSave = async () => {
-    if (suggestedItems.length === 0) {
+  // Add selected outfits using mass create API
+  const handleAddSelectedOutfits = async () => {
+    if (selectedOutfitIndexes.length === 0) {
+      showError("Please select at least one outfit");
+      return;
+    }
+
+    setIsAddingMultiple(true);
+    try {
+      const outfitsToCreate = selectedOutfitIndexes.map((index) => {
+        const suggestion = suggestionResults[index];
+        return {
+          name: `AI Suggested Outfit ${
+            index + 1
+          } - ${new Date().toLocaleDateString()}`,
+          description: suggestion.reason,
+          itemIds: suggestion.suggestedItems.map((item) => item.id),
+        };
+      });
+
+      const response = await MassCreateOutfitsAPI({ outfits: outfitsToCreate });
+
+      if (response.data.totalFailed === 0) {
+        showSuccess(
+          `Successfully added ${response.data.totalCreated} outfit(s)!`
+        );
+        setSelectedOutfitIndexes([]);
+      } else if (response.data.totalCreated > 0) {
+        // Partial success
+        showError(
+          `Added ${response.data.totalCreated} outfit(s), ${response.data.totalFailed} failed`
+        );
+        setSelectedOutfitIndexes([]);
+      } else {
+        // All failed
+        showError("Failed to add outfits");
+      }
+    } catch (error: any) {
+      console.error("Error adding multiple outfits:", error);
+      showError(error.message || "Failed to add outfits");
+    } finally {
+      setIsAddingMultiple(false);
+    }
+  };
+
+  // Save single outfit
+  const handleSave = async (outfitIndex: number) => {
+    const outfit = suggestionResults[outfitIndex];
+    if (!outfit || outfit.suggestedItems.length === 0) {
       showError("No outfit to save");
       return;
     }
 
     setIsSaving(true);
     try {
-      const itemIds = suggestedItems.map((item) => item.id);
+      const itemIds = outfit.suggestedItems.map((item) => item.id);
       const response = await CreateOutfitAPI({
         name: `AI Suggested Outfit - ${new Date().toLocaleDateString()}`,
-        description: suggestionReason || "AI-generated outfit suggestion",
+        description: outfit.reason || "AI-generated outfit suggestion",
         itemIds: itemIds,
       });
 
@@ -170,8 +282,10 @@ const SuggestionScreen = ({ navigation }: any) => {
     }
   };
 
-  const handleUseToday = async () => {
-    if (suggestedItems.length === 0) {
+  // Use outfit today
+  const handleUseToday = async (outfitIndex: number) => {
+    const outfit = suggestionResults[outfitIndex];
+    if (!outfit || outfit.suggestedItems.length === 0) {
       showError("No outfit to use");
       return;
     }
@@ -179,14 +293,17 @@ const SuggestionScreen = ({ navigation }: any) => {
     setIsUsingToday(true);
     try {
       // Step 1: Create the outfit
-      const itemIds = suggestedItems.map((item) => item.id);
+      const itemIds = outfit.suggestedItems.map((item) => item.id);
       const outfitResponse = await CreateOutfitAPI({
         name: `Today's Outfit - ${new Date().toLocaleDateString()}`,
-        description: suggestionReason || "AI-generated outfit suggestion",
+        description: outfit.reason || "AI-generated outfit suggestion",
         itemIds: itemIds,
       });
 
-      if (outfitResponse.statusCode !== 200 && outfitResponse.statusCode !== 201) {
+      if (
+        outfitResponse.statusCode !== 200 &&
+        outfitResponse.statusCode !== 201
+      ) {
         throw new Error(outfitResponse.message || "Failed to create outfit");
       }
 
@@ -194,8 +311,10 @@ const SuggestionScreen = ({ navigation }: any) => {
 
       // Step 2: Add to calendar for today
       const today = new Date();
-      const todayString = today.toISOString().split('T')[0] + 'T' + 
-        today.toTimeString().split(' ')[0]; // Format: yyyy-MM-ddTHH:mm:ss
+      const todayString =
+        today.toISOString().split("T")[0] +
+        "T" +
+        today.toTimeString().split(" ")[0]; // Format: yyyy-MM-ddTHH:mm:ss
 
       const calendarResponse = await CreateCalendarEntryAPI({
         outfitIds: [outfitId],
@@ -203,10 +322,15 @@ const SuggestionScreen = ({ navigation }: any) => {
         time: todayString,
       });
 
-      if (calendarResponse.statusCode === 200 || calendarResponse.statusCode === 201) {
+      if (
+        calendarResponse.statusCode === 200 ||
+        calendarResponse.statusCode === 201
+      ) {
         showSuccess("Outfit added and scheduled for today!");
       } else {
-        throw new Error(calendarResponse.message || "Failed to add to calendar");
+        throw new Error(
+          calendarResponse.message || "Failed to add to calendar"
+        );
       }
     } catch (error: any) {
       console.error("Error using outfit today:", error);
@@ -241,7 +365,7 @@ const SuggestionScreen = ({ navigation }: any) => {
   return (
     <SafeAreaView style={styles.container} edges={["bottom"]}>
       <Header
-        title="Outfit Suggestion"
+        title="Suggest"
         showBackButton={false}
         showNotification={true}
         showMessage={true}
@@ -254,18 +378,16 @@ const SuggestionScreen = ({ navigation }: any) => {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header Section - Similar to Web */}
+        {/* Header Section */}
         <View style={styles.headerSection}>
           <Text style={styles.headerTitle}>What to wear today?</Text>
           <Text style={styles.headerSubtitle}>
-            Get personalized outfit suggestions powered by AI
+            AI-powered outfit suggestions
           </Text>
         </View>
 
-        {/* Weather Section - Similar to Web */}
+        {/* Weather Section */}
         <View style={styles.weatherSection}>
-          <Text style={styles.sectionTitle}>Today's weather</Text>
-          
           {/* Loading State */}
           {isLoadingWeather && !todayForecast ? (
             <View style={styles.loadingContainer}>
@@ -289,33 +411,46 @@ const SuggestionScreen = ({ navigation }: any) => {
               condition={todayForecast.description}
               onRefresh={handleWeatherRefresh}
               cityName={cityName}
+              forecast={todayForecast}
             />
           ) : null}
         </View>
 
-        {/* Occasion Dropdown and Generate Button - Always visible when weather is available */}
+        {/* Occasion Dropdown, Outfit Count, and Generate Button - Always visible when weather is available */}
         {todayForecast && (
           <View style={styles.suggestSection}>
-            <View style={styles.occasionRow}>
-              <OccasionDropdown
-                value={selectedOccasion}
-                onSelect={setSelectedOccasion}
-              />
-            </View>
-            <View style={styles.generateButtonContainer}>
+            <View style={styles.controlsRow}>
+              <View style={styles.occasionContainer}>
+                <OccasionDropdown
+                  value={selectedOccasion}
+                  onSelect={setSelectedOccasion}
+                />
+              </View>
+              <View style={styles.countContainer}>
+                <OutfitCountDropdown
+                  value={totalOutfit}
+                  onSelect={setTotalOutfit}
+                />
+              </View>
               <TouchableOpacity
-                style={[styles.generateButton, (isLoadingSuggestion || !todayForecast) && styles.generateButtonDisabled]}
+                style={[
+                  styles.generateButton,
+                  (isLoadingSuggestion || !todayForecast) &&
+                    styles.generateButtonDisabled,
+                ]}
                 onPress={handleGenerate}
                 disabled={isLoadingSuggestion || !todayForecast}
               >
                 {isLoadingSuggestion ? (
                   <>
                     <ActivityIndicator size="small" color="#FFFFFF" />
-                    <Text style={styles.generateButtonText}>Generating Suggestions...</Text>
+                    <Text style={styles.generateButtonText} numberOfLines={1}>
+                      Generating...
+                    </Text>
                   </>
                 ) : (
-                  <Text style={styles.generateButtonText}>
-                    {suggestedItems.length > 0 ? "Generate New Suggestion" : "Suggest Today Outfit"}
+                  <Text style={styles.generateButtonText} numberOfLines={1}>
+                    Generate
                   </Text>
                 )}
               </TouchableOpacity>
@@ -323,55 +458,116 @@ const SuggestionScreen = ({ navigation }: any) => {
           </View>
         )}
 
-        {/* Suggestion Results - Similar to Web */}
-        {suggestedItems.length > 0 && (
+        {/* Suggestion Results - Multiple Outfits */}
+        {suggestionResults.length > 0 && (
           <View style={styles.resultsSection}>
             <View style={styles.resultsHeader}>
               <View style={styles.resultsTitleRow}>
                 <View style={styles.resultsTitleContainer}>
-                  <Text style={styles.resultsTitle}>Your Suggested Outfit</Text>
+                  <View style={styles.resultsTitleWithIndicator}>
+                    <Text style={styles.resultsTitle}>Your Outfits</Text>
+                    {suggestionResults.length > 1 && (
+                      <Text style={styles.outfitIndicator}>
+                        {currentSuggestionIndex + 1}/{suggestionResults.length}
+                      </Text>
+                    )}
+                  </View>
                   <Text style={styles.resultsSubtitle}>
-                    AI-generated outfit suggestions based on today's weather
+                    {selectedOccasion} •{" "}
+                    {todayForecast
+                      ? `${Math.round(todayForecast.temperature)}°C`
+                      : ""}
                   </Text>
                 </View>
-                <TouchableOpacity
-                  style={styles.clearButton}
-                  onPress={() => {
-                    setSuggestedItems([]);
-                    setSuggestionReason("");
-                    setCurrentSuggestionIndex(0);
-                  }}
-                >
-                  <Ionicons name="close-circle-outline" size={24} color="#64748B" />
-                </TouchableOpacity>
               </View>
+
+              {/* Mass Add Controls - Only show if multiple outfits */}
+              {suggestionResults.length > 1 && (
+                <View style={styles.massAddControls}>
+                  <TouchableOpacity
+                    style={styles.deselectAllButton}
+                    onPress={handleSelectAll}
+                  >
+                    <Text style={styles.deselectAllText}>
+                      {selectedOutfitIndexes.length === suggestionResults.length
+                        ? "Deselect All"
+                        : "Select All"}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.addSelectedButton,
+                      selectedOutfitIndexes.length === 0 &&
+                        styles.addSelectedButtonDisabled,
+                    ]}
+                    onPress={handleAddSelectedOutfits}
+                    disabled={
+                      selectedOutfitIndexes.length === 0 || isAddingMultiple
+                    }
+                  >
+                    {isAddingMultiple ? (
+                      <>
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                        <Text style={styles.addSelectedButtonText}>
+                          Adding...
+                        </Text>
+                      </>
+                    ) : (
+                      <>
+                        <Ionicons name="add-circle" size={18} color="#FFFFFF" />
+                        <Text style={styles.addSelectedButtonText}>
+                          Add Selected ({selectedOutfitIndexes.length})
+                        </Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
-            <MainSuggestionCard
-              items={suggestedItems.map((item) => ({
-                id: item.id,
-                name: item.name,
-                imageUrl: item.imgUrl,
-                categoryName: item.categoryName,
-                color: item.color,
-                fabric: item.fabric,
-                weatherSuitable: item.weatherSuitable,
-                seasons: item.seasons,
-                styles: item.styles,
-                isAnalyzed: item.isAnalyzed,
-                aiConfidence: item.aiConfidence,
-                itemType: item.itemType,
-              }))}
-              currentIndex={currentSuggestionIndex}
-              totalSuggestions={suggestedItems.length}
-              onPrevious={handlePreviousSuggestion}
-              onNext={handleNextSuggestion}
-              onSave={handleSave}
-              onShare={handleShare}
-              onUseToday={handleUseToday}
-              isSaving={isSaving}
-              isUsingToday={isUsingToday}
-              reason={suggestionReason}
-            />
+
+            {/* Display Current Outfit with Navigation */}
+            {suggestionResults.length > 0 && (
+              <View style={styles.outfitContainer}>
+                <MainSuggestionCard
+                  items={suggestionResults[
+                    currentSuggestionIndex
+                  ].suggestedItems.map((item) => {
+                    return {
+                      id: item.id,
+                      name: item.name,
+                      imageUrl: item.imgUrl || undefined,
+                      categoryName: item.categoryName,
+                      color: item.color,
+                      fabric: item.fabric,
+                      weatherSuitable: item.weatherSuitable,
+                      seasons: item.seasons,
+                      styles: item.styles,
+                      isAnalyzed: item.isAnalyzed,
+                      aiConfidence: item.aiConfidence,
+                      itemType: item.itemType,
+                    };
+                  })}
+                  currentIndex={currentSuggestionIndex}
+                  totalSuggestions={suggestionResults.length}
+                  onPrevious={() => {
+                    setCurrentSuggestionIndex((prev) =>
+                      prev > 0 ? prev - 1 : suggestionResults.length - 1
+                    );
+                  }}
+                  onNext={() => {
+                    setCurrentSuggestionIndex((prev) =>
+                      prev < suggestionResults.length - 1 ? prev + 1 : 0
+                    );
+                  }}
+                  onSave={() => handleSave(currentSuggestionIndex)}
+                  onShare={handleShare}
+                  onUseToday={() => handleUseToday(currentSuggestionIndex)}
+                  isSaving={isSaving}
+                  isUsingToday={isUsingToday}
+                  reason={suggestionResults[currentSuggestionIndex].reason}
+                />
+              </View>
+            )}
           </View>
         )}
 
@@ -384,7 +580,7 @@ const SuggestionScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#0F172A",
   },
   scrollView: {
     flex: 1,
@@ -399,38 +595,83 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#1E293B",
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#FFFFFF",
     marginBottom: 8,
+    letterSpacing: -0.5,
+    lineHeight: 34,
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: "#64748B",
+    fontSize: 15,
+    color: "rgba(255, 255, 255, 0.7)",
+    lineHeight: 22,
+    letterSpacing: 0.1,
   },
   // Weather Section
   weatherSection: {
     marginHorizontal: 16,
     marginBottom: 24,
   },
+  weatherHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#1E293B",
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    letterSpacing: -0.3,
+    lineHeight: 28,
+  },
+  chooseLocationLink: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#3B82F6",
+  },
+  locationTabs: {
+    flexDirection: "row",
+    gap: 12,
     marginBottom: 16,
+  },
+  locationTab: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: "#F1F5F9",
+    gap: 6,
+  },
+  locationTabActive: {
+    backgroundColor: "#3B82F6",
+  },
+  locationTabText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#64748B",
+  },
+  locationTabTextActive: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
   loadingContainer: {
     padding: 40,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(30, 41, 59, 0.8)",
     borderRadius: 16,
     minHeight: 200,
   },
   loadingText: {
     marginTop: 16,
     fontSize: 14,
-    color: "#64748B",
+    color: "rgba(255, 255, 255, 0.7)",
   },
   errorContainer: {
     padding: 16,
@@ -459,33 +700,44 @@ const styles = StyleSheet.create({
   suggestSection: {
     marginHorizontal: 16,
     marginBottom: 24,
-    gap: 12,
   },
-  occasionRow: {
+  controlsRow: {
     flexDirection: "row",
-    justifyContent: "flex-start",
+    gap: 12,
+    alignItems: "stretch",
   },
-  generateButtonContainer: {
-    width: "100%",
+  occasionContainer: {
+    flex: 0.4,
+    minWidth: 100,
+  },
+  countContainer: {
+    flex: 0.1,
+    minWidth: 100,
   },
   generateButton: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#06B6D4",
-    paddingVertical: 20,
-    borderRadius: 14,
+    backgroundColor: "#3B82F6",
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    minHeight: 48,
     gap: 8,
-    shadowColor: "#06B6D4",
+    shadowColor: "#3B82F6",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
   generateButtonText: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: "600",
     color: "#FFFFFF",
+    letterSpacing: 0.2,
+    includeFontPadding: false,
+    textAlignVertical: "center",
   },
   generateButtonDisabled: {
     opacity: 0.5,
@@ -506,19 +758,78 @@ const styles = StyleSheet.create({
   resultsTitleContainer: {
     flex: 1,
   },
+  resultsTitleWithIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 6,
+  },
   resultsTitle: {
-    fontSize: 20,
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    letterSpacing: -0.3,
+    lineHeight: 28,
+  },
+  outfitIndicator: {
+    fontSize: 16,
     fontWeight: "700",
-    color: "#1E293B",
-    marginBottom: 8,
+    color: "rgba(255, 255, 255, 0.6)",
   },
   resultsSubtitle: {
     fontSize: 14,
-    color: "#64748B",
+    color: "rgba(255, 255, 255, 0.7)",
+    lineHeight: 20,
+    letterSpacing: 0.1,
   },
   clearButton: {
     padding: 4,
     marginLeft: 8,
+  },
+  // Mass Add Controls
+  massAddControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#E2E8F0",
+  },
+  deselectAllButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  deselectAllText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#3B82F6",
+  },
+  addSelectedButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#10B981",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    shadowColor: "#10B981",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  addSelectedButtonDisabled: {
+    opacity: 0.5,
+  },
+  addSelectedButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  // Outfit Container
+  outfitContainer: {
+    marginTop: 8,
   },
 });
 

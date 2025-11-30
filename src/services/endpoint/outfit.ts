@@ -7,7 +7,10 @@ GetOutfitResponse,
 GetOutfitsFavoriteResponse, 
 GetOutfitsRequest, 
 GetOutfitsResponse,
-OutfitSuggestionResponse, } from "../../types/outfit";
+OutfitSuggestionResponse,
+OutfitSuggestionV2Response,
+MassCreateOutfitRequest,
+MassCreateOutfitResponse, } from "../../types/outfit";
 import apiClient, { getAccessToken } from "../api/apiClient";
 
 export const GetOutFitsAPI = async(data: GetOutfitsRequest): Promise<GetOutfitsResponse> => {
@@ -78,6 +81,127 @@ export const GetOutfitSuggestionAPI = async(weather: string, userId: number): Pr
         if (error.response?.data?.data?.message?.includes("Subscription limit")) {
             console.warn("⚠️ [API] Subscription limit reached - User needs to upgrade");
         }
+        
+        throw error;
+    }
+}
+
+/**
+ * Get AI outfit suggestion V2 - Returns multiple outfit options
+ * @param userId - User ID
+ * @param totalOutfit - Number of outfit suggestions to generate (1-4)
+ * @param occasionId - Optional occasion ID for filtering suggestions
+ * @param weather - Optional weather string (format: "description, Temperature: X°C, Feels like: Y°C")
+ * @returns Promise with array of suggested outfits
+ */
+export const GetOutfitSuggestionV2API = async(
+    userId: number,
+    totalOutfit: number,
+    occasionId?: number,
+    weather?: string
+): Promise<OutfitSuggestionV2Response> => {
+    const params: Record<string, string | number> = {
+        userId,
+        totalOutfit,
+    };
+
+    if (occasionId !== undefined) {
+        params.occasionId = occasionId;
+    }
+
+    if (weather) {
+        params.weather = weather;
+    }
+
+    console.log("📤 [API] GET /outfits/suggestionV2 - Params:", JSON.stringify(params, null, 2));
+    
+    // Check token before making request
+    const token = await getAccessToken();
+    console.log("🔑 [API] Access Token exists:", !!token);
+    if (token) {
+        console.log("🔑 [API] Token preview:", token.substring(0, 20) + "...");
+    }
+    
+    try {
+        const response = await apiClient.get<OutfitSuggestionV2Response>("/outfits/suggestionV2", {
+            params,
+            timeout: 120000, // 120 seconds timeout for V2 API
+        });
+        
+        console.log("📥 [API] GET /outfits/suggestionV2 - Response:", {
+            statusCode: response.data?.statusCode,
+            message: response.data?.message,
+            hasData: !!response.data?.data,
+            outfitsCount: response.data?.data?.length || 0,
+        });
+        
+        if (response.data?.data) {
+            response.data.data.forEach((outfit, index) => {
+                console.log(`📥 [API] Outfit ${index + 1}:`, {
+                    itemsCount: outfit.suggestedItems?.length || 0,
+                    hasReason: !!outfit.reason,
+                });
+            });
+        }
+        
+        return response.data;
+    } catch (error: any) {
+        const errorDetails = {
+            message: error.message,
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data,
+            serverMessage: error.response?.data?.message || error.response?.data?.data?.message,
+            url: error.config?.url,
+            params: error.config?.params,
+        };
+        console.error("❌ [API] GET /outfits/suggestionV2 - Error Details:", errorDetails);
+        
+        // Log subscription limit error specifically
+        if (error.response?.data?.data?.message?.includes("Subscription limit")) {
+            console.warn("⚠️ [API] Subscription limit reached - User needs to upgrade");
+        }
+        
+        throw error;
+    }
+}
+
+/**
+ * Mass create multiple outfits at once
+ * @param data - Array of outfit creation data
+ * @returns Promise with mass creation results
+ */
+export const MassCreateOutfitsAPI = async(
+    data: MassCreateOutfitRequest
+): Promise<MassCreateOutfitResponse> => {
+    console.log("📤 [API] POST /outfits/mass - Request:", {
+        totalOutfits: data.outfits.length,
+        outfitNames: data.outfits.map(o => o.name),
+    });
+    
+    try {
+        const response = await apiClient.post<MassCreateOutfitResponse>("/outfits/mass", {
+            outfits: data.outfits,
+        });
+        
+        console.log("📥 [API] POST /outfits/mass - Response:", {
+            statusCode: response.data?.statusCode,
+            message: response.data?.message,
+            totalRequested: response.data?.data?.totalRequested,
+            totalCreated: response.data?.data?.totalCreated,
+            totalFailed: response.data?.data?.totalFailed,
+        });
+        
+        return response.data;
+    } catch (error: any) {
+        const errorDetails = {
+            message: error.message,
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data,
+            serverMessage: error.response?.data?.message || error.response?.data?.data?.message,
+        };
+        console.error("❌ [API] POST /outfits/mass - Error Details:", errorDetails);
         
         throw error;
     }

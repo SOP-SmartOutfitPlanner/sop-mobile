@@ -60,10 +60,10 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         <Text style={styles.saveButtonText}>{isSaving ? "Saving..." : "Add to Wardrobe"}</Text>
       </TouchableOpacity>
       {onShare && (
-        <TouchableOpacity style={styles.shareButton} onPress={onShare}>
-          <Ionicons name="share-outline" size={20} color="#64748B" />
-          <Text style={styles.shareButtonText}>Share</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.shareButton} onPress={onShare}>
+        <Ionicons name="share-outline" size={20} color="#64748B" />
+        <Text style={styles.shareButtonText}>Share</Text>
+      </TouchableOpacity>
       )}
     </View>
   );
@@ -113,14 +113,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#0062FF",
-    paddingVertical: 14,
+    backgroundColor: "#3B82F6",
+    paddingVertical: 16,
     borderRadius: 12,
     gap: 8,
+    shadowColor: "#3B82F6",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   addToOutfitButtonText: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "600",
     color: "#FFFFFF",
   },
   useTodayButton: {
@@ -128,14 +133,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#09851C",
-    paddingVertical: 14,
+    backgroundColor: "#10B981",
+    paddingVertical: 16,
     borderRadius: 12,
     gap: 8,
+    shadowColor: "#10B981",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   useTodayButtonText: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "600",
     color: "#FFFFFF",
   },
 });

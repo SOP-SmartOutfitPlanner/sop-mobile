@@ -94,6 +94,41 @@ export interface OutfitSuggestionResponse {
     };
 }
 
+// V2 API - Multiple Outfits
+export interface OutfitSuggestionV2Response {
+    statusCode: number;
+    message: string;
+    data: Array<{
+        suggestedItems: SuggestedItem[];
+        reason: string;
+    }>;
+}
+
+// Mass Create Outfits
+export interface MassCreateOutfitRequest {
+    outfits: CreateOutfitRequest[];
+}
+
+export interface MassCreateOutfitResponse {
+    statusCode: number;
+    message: string;
+    data: {
+        totalRequested: number;
+        totalCreated: number;
+        totalFailed: number;
+        createdOutfits: Array<{
+            index: number;
+            outfitId: number;
+            name: string;
+        }>;
+        failedOutfits: Array<{
+            index: number;
+            name: string;
+            error: string;
+        }>;
+    };
+}
+
 //=====================Data Models=========================//
 export interface Outfit {
     id: number;

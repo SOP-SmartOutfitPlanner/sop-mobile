@@ -72,8 +72,11 @@ const OccasionDropdown: React.FC<OccasionDropdownProps> = ({ value, onSelect }) 
         style={styles.dropdown}
         onPress={() => setIsOpen(true)}
       >
-        <Text style={styles.dropdownText}>{value}</Text>
-        <Ionicons name="chevron-down" size={20} color="#64748B" />
+        <Ionicons name="star" size={16} color="#FCD34D" style={styles.starIcon} />
+        <Text style={styles.dropdownText} numberOfLines={1}>
+          {value}
+        </Text>
+        <Ionicons name="chevron-down" size={20} color="#FFFFFF" />
       </TouchableOpacity>
 
       <Modal
@@ -139,18 +142,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
+    backgroundColor: "#374151",
     borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    minWidth: 120,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    minHeight: 48,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+    gap: 6,
+  },
+  starIcon: {
+    marginRight: 0,
   },
   dropdownText: {
+    flex: 1,
     fontSize: 14,
-    fontWeight: "500",
-    color: "#1E293B",
+    fontWeight: "600",
+    color: "#FFFFFF",
+    includeFontPadding: false,
+    textAlignVertical: "center",
   },
   modalOverlay: {
     flex: 1,

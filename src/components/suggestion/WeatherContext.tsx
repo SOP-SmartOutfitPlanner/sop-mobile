@@ -1,6 +1,9 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { DailyForecast } from "../../types/weather";
+import WeatherDetailCard from "./WeatherDetailCard";
 
 interface WeatherContextProps {
   temperature: number;
@@ -8,6 +11,7 @@ interface WeatherContextProps {
   condition: string;
   onRefresh: () => void;
   cityName?: string;
+  forecast?: DailyForecast;
 }
 
 const WeatherContext: React.FC<WeatherContextProps> = ({
@@ -16,110 +20,179 @@ const WeatherContext: React.FC<WeatherContextProps> = ({
   condition,
   onRefresh,
   cityName,
+  forecast,
 }) => {
-  return (
-    <View style={styles.card}>
-      <View style={styles.header}>
-        <Ionicons name="cloud-outline" size={20} color="#3B82F6" />
-        <Text style={styles.title}>Weather Context</Text>
-        <TouchableOpacity onPress={onRefresh}>
-          <Ionicons name="refresh" size={20} color="#64748B" />
-        </TouchableOpacity>
-      </View>
-      {cityName && (
-        <Text style={styles.cityName}>{cityName}</Text>
-      )}
+  // Helper to get wind direction abbreviation
+  const getWindDirection = (degrees?: number): string => {
+    if (degrees === undefined) return "N/A";
+    const directions = [
+      "N",
+      "NNE",
+      "NE",
+      "ENE",
+      "E",
+      "ESE",
+      "SE",
+      "SSE",
+      "S",
+      "SSW",
+      "SW",
+      "WSW",
+      "W",
+      "WNW",
+      "NW",
+      "NNW",
+    ];
+    const index = Math.round(degrees / 22.5) % 16;
+    return directions[index];
+  };
 
-      <View style={styles.content}>
-        <View style={styles.temperatureContainer}>
-          <Text style={styles.temperature}>{temperature}°</Text>
+  // Format date
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  // Get weather icon name
+  const getWeatherIcon = (desc: string) => {
+    const d = desc.toLowerCase();
+    if (d.includes("rain") || d.includes("drizzle")) return "rainy";
+    if (d.includes("cloud")) return "cloudy";
+    if (d.includes("clear") || d.includes("sunny")) return "sunny";
+    if (d.includes("wind")) return "partly-sunny";
+    return "partly-sunny";
+  };
+
+  // Get short location name (first part before comma)
+  const getShortLocation = (fullLocation?: string) => {
+    if (!fullLocation) return "Your Location";
+    const parts = fullLocation.split(",");
+    return parts[0].trim();
+  };
+
+  return (
+    <View style={styles.container}>
+      {/* Main Weather Card - Large Purple Card - Simplified Layout */}
+      <LinearGradient
+        colors={[
+          "rgba(139, 92, 246, 0.8)",
+          "rgba(124, 58, 237, 0.7)",
+          "rgba(139, 92, 246, 0.8)",
+        ]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.mainCard}
+      >
+        <View style={styles.mainCardContent}>
+          {/* Location and Temperature Row */}
+          <View style={styles.topRow}>
+            {/* Location - Left */}
+            <View style={styles.locationRow}>
+              <Ionicons name="location" size={18} color="#FFFFFF" />
+              <Text style={styles.locationText}>
+                {getShortLocation(cityName)}
+              </Text>
+      </View>
+
+            {/* Temperature and Icon - Right */}
+            <View style={styles.tempRight}>
+              <View style={styles.weatherIconContainer}>
           <Ionicons
-            name="sunny"
-            size={24}
-            color="#FCD34D"
-            style={styles.weatherIcon}
+                  name={getWeatherIcon(description)}
+                  size={32}
+                  color="#FFFFFF"
           />
         </View>
-        <Text style={styles.description}>{description}</Text>
-      </View>
-
-      <View style={styles.details}>
-        <View style={styles.detail}>
-          <Text style={styles.detailLabel}>{condition}</Text>
+              <View style={styles.tempColumn}>
+                <Text style={styles.temperature}>{temperature}°</Text>
+                {forecast?.feelsLike && (
+                  <Text style={styles.feelsLikeText}>
+                    Feels {Math.round(forecast.feelsLike)}°
+                  </Text>
+                )}
         </View>
       </View>
+          </View>
+
+          {/* Description - Below */}
+          <Text style={styles.description}>{description}</Text>
+        </View>
+      </LinearGradient>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#FFFFFF",
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+  container: {
+    gap: 12,
   },
-  header: {
+  mainCard: {
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 12,
+    shadowColor: "#8B5CF6",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  mainCardContent: {
+    gap: 16,
+  },
+  topRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+  },
+  locationRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 16,
+    gap: 6,
+    flex: 1,
   },
-  title: {
+  locationText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1E293B",
-    flex: 1,
-    marginLeft: 8,
+    color: "#FFFFFF",
   },
-  cityName: {
-    fontSize: 12,
-    color: "#64748B",
-    marginBottom: 8,
-    marginLeft: 28,
-  },
-  content: {
-    marginBottom: 16,
-  },
-  temperatureContainer: {
+  tempRight: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
-  },
-  temperature: {
-    fontSize: 36,
-    fontWeight: "700",
-    color: "#3B82F6",
-    marginRight: 8,
-  },
-  weatherIcon: {
-    marginLeft: 8,
-  },
-  description: {
-    fontSize: 14,
-    color: "#64748B",
-    lineHeight: 20,
-  },
-  details: {
-    flexDirection: "row",
     gap: 8,
   },
-  detail: {
-    backgroundColor: "#EFF6FF",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+  weatherIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  detailLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#3B82F6",
+  tempColumn: {
+    alignItems: "flex-end",
+  },
+  temperature: {
+    fontSize: 48,
+    fontWeight: "900",
+    color: "#FFFFFF",
+    lineHeight: 56,
+  },
+  feelsLikeText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "rgba(255, 255, 255, 0.9)",
+    marginTop: 2,
+  },
+  description: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#FFFFFF",
+    textTransform: "capitalize",
   },
 });
 

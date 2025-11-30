@@ -1,8 +1,14 @@
 export { default as MainSuggestionCard } from "./MainSuggestionCard";
 export { default as QuickPreferences } from "./QuickPreferences";
 export { default as WeatherContext } from "./WeatherContext";
+export { default as WeatherDetailCard } from "./WeatherDetailCard";
 export { default as OutfitItem } from "./OutfitItem";
+export { default as OutfitItemCard } from "./OutfitItemCard";
+export { default as ColorDots } from "./ColorDots";
+export { default as ItemBadges } from "./ItemBadges";
+export { default as AIBadge } from "./AIBadge";
 export { default as SuggestionCarousel } from "./SuggestionCarousel";
 export { default as MatchBadges } from "./MatchBadges";
 export { default as ActionButtons } from "./ActionButtons";
 export { default as PreferenceDropdown } from "./PreferenceDropdown";
+export { default as OutfitCountDropdown } from "./OutfitCountDropdown";
