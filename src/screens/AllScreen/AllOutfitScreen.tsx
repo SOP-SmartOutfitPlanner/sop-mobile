@@ -20,9 +20,12 @@ const AllOutfitScreen = ({ navigation }: any) => {
 
   const {
     outfits,
+    metadata,
     loading,
+    loadingMore,
     isRefreshing,
     handleRefresh,
+    loadMoreOutfits,
     showError,
     toggleFavorite,
     deleteOutfit,
@@ -38,6 +41,7 @@ const AllOutfitScreen = ({ navigation }: any) => {
         items: outfit.items.map((item) => item.imgUrl),
         name: outfit.name,
         favoriteCount: outfit.isFavorite ? 1 : 0,
+        isFavorite: outfit.isFavorite,
         userDisplayName: outfit.userDisplayName,
         createdDate: outfit.createdDate,
         description: outfit.description,
@@ -121,13 +125,39 @@ const AllOutfitScreen = ({ navigation }: any) => {
         refreshControl={
           <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
         }
+        onScroll={({ nativeEvent }) => {
+          const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+          const paddingToBottom = 20;
+          const isCloseToBottom =
+            layoutMeasurement.height + contentOffset.y >=
+            contentSize.height - paddingToBottom;
+
+          if (
+            isCloseToBottom &&
+            metadata?.hasNext &&
+            !loadingMore &&
+            !loading &&
+            loadMoreOutfits
+          ) {
+            loadMoreOutfits();
+          }
+        }}
+        scrollEventThrottle={400}
+        showsVerticalScrollIndicator={false}
       >
         <AllOutfitsSection
           outfits={transformedOutfits}
           title="All Outfits"
           emptyMessage="You have not created any outfits yet"
           onViewOutfit={handleViewOutfit}
+          totalCount={metadata?.totalCount}
         />
+        {loadingMore && (
+          <View style={styles.loadMoreContainer}>
+            <ActivityIndicator size="small" color="#3b82f6" />
+            <Text style={styles.loadMoreText}>Loading more outfits...</Text>
+          </View>
+        )}
         <View style={styles.bottomSpacing} />
       </ScrollView>
 
@@ -169,6 +199,17 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 80,
+  },
+  loadMoreContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 20,
+    gap: 8,
+  },
+  loadMoreText: {
+    fontSize: 14,
+    color: "#64748b",
   },
   loadingContainer: {
     flex: 1,

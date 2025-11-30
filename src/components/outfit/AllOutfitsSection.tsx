@@ -8,6 +8,7 @@ interface AllOutfitsSectionProps {
   onViewOutfit: (outfitId: string) => void;
   title?: string;
   emptyMessage?: string;
+  totalCount?: number; // Total count from metadata
 }
 
 export const AllOutfitsSection: React.FC<AllOutfitsSectionProps> = ({
@@ -15,7 +16,10 @@ export const AllOutfitsSection: React.FC<AllOutfitsSectionProps> = ({
   onViewOutfit,
   title = "All Outfits",
   emptyMessage = "There are no outfits to display",
+  totalCount,
 }) => {
+  const displayCount = totalCount !== undefined ? totalCount : outfits.length;
+
   if (outfits.length === 0) {
     return (
       <View style={styles.container}>
@@ -23,7 +27,7 @@ export const AllOutfitsSection: React.FC<AllOutfitsSectionProps> = ({
           <View style={styles.headerLeft}>
             <Text style={styles.title}>{title}</Text>
           </View>
-          <Text style={styles.count}>0 outfits</Text>
+          <Text style={styles.count}>{displayCount} outfits</Text>
         </View>
         <View style={styles.emptyState}>
           <Ionicons name="heart-outline" size={32} color="#cbd5e1" />
@@ -39,12 +43,12 @@ export const AllOutfitsSection: React.FC<AllOutfitsSectionProps> = ({
         <View style={styles.headerLeft}>
           <Text style={styles.title}>{title}</Text>
         </View>
-        <Text style={styles.count}>{outfits.length} outfits</Text>
+        <Text style={styles.count}>{displayCount} outfits</Text>
       </View>
 
       <View style={styles.cardsGrid}>
-        {outfits.map((outfit) => (
-          <AllOutfitCard key={outfit.id} outfit={outfit} onPress={onViewOutfit} />
+        {outfits.map((outfit, index) => (
+          <AllOutfitCard key={`${outfit.id}-${index}`} outfit={outfit} onPress={onViewOutfit} />
         ))}
       </View>
     </View>
@@ -90,7 +94,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#e2e8f0",
     borderRadius: 16,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#ffffff",
     gap: 12,
   },
   emptyMessage: {

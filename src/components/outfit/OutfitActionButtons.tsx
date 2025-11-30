@@ -60,7 +60,7 @@ export const OutfitActionButtons: React.FC<OutfitActionButtonsProps> = ({
             <Ionicons
               name={button.icon}
               size={24}
-              color={button.isActive ? "#fff" : "#64748b"}
+              color={button.isActive ? "#ffffff" : "#94a3b8"}
             />
           </View>
           <Text
@@ -98,23 +98,36 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: "rgba(15,23,42,0.6)",
+    borderWidth: 1.5,
+    borderColor: "rgba(224,242,254,0.3)",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
   },
   iconContainerActive: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1e3a8a",
+    borderColor: "#3b82f6",
+    shadowColor: "#3b82f6",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   buttonText: {
     fontSize: 12,
-    color: "#64748b",
+    color: "rgba(226,232,240,0.7)",
     textAlign: "center",
     fontWeight: "500",
     lineHeight: 16,
   },
   buttonTextActive: {
-    color: "#1e293b",
-    fontWeight: "600",
+    color: "#ffffff",
+    fontWeight: "700",
   },
 });

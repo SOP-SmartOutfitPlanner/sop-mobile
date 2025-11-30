@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Modal,
   View,
@@ -37,6 +37,7 @@ export const CreateOutfitModal: React.FC<CreateOutfitModalProps> = ({
   const [loadingItems, setLoadingItems] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [errors, setErrors] = useState<{ name?: string; items?: string }>({});
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
 
   useEffect(() => {
     if (visible) {
@@ -60,7 +61,7 @@ export const CreateOutfitModal: React.FC<CreateOutfitModalProps> = ({
 
       const response = await GetItems({
         pageIndex: 1,
-        pageSize: 100,
+        pageSize: 10,
         userId: parseInt(userId),
         takeAll: true,
       });
@@ -89,6 +90,27 @@ export const CreateOutfitModal: React.FC<CreateOutfitModalProps> = ({
       return newIds;
     });
   };
+
+  const handleSelectAll = () => {
+    if (selectedItemIds.length === filteredItems.length) {
+      // Deselect all
+      setSelectedItemIds([]);
+    } else {
+      // Select all filtered items
+      setSelectedItemIds(filteredItems.map((item) => item.id));
+    }
+  };
+
+  // Get unique categories
+  const categories = useMemo(() => {
+    const uniqueCategories = new Map<number, string>();
+    items.forEach((item) => {
+      if (!uniqueCategories.has(item.categoryId)) {
+        uniqueCategories.set(item.categoryId, item.categoryName);
+      }
+    });
+    return Array.from(uniqueCategories.entries()).map(([id, name]) => ({ id, name }));
+  }, [items]);
 
   const handleCreate = async () => {
     if (loading) return;
@@ -130,9 +152,13 @@ export const CreateOutfitModal: React.FC<CreateOutfitModalProps> = ({
     }
   };
 
-  const filteredItems = items.filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredItems = useMemo(() => {
+    return items.filter((item) => {
+      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === null || item.categoryId === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [items, searchQuery, selectedCategory]);
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen">
@@ -199,12 +225,32 @@ export const CreateOutfitModal: React.FC<CreateOutfitModalProps> = ({
 
             {/* Item Selection */}
             <View style={styles.inputSection}>
-              <Text style={styles.label}>
-                Select Items <Text style={styles.required}>*</Text>
-              </Text>
-              <Text style={styles.subLabel}>
-                {selectedItemIds.length} item{selectedItemIds.length !== 1 ? "s" : ""} selected
-              </Text>
+              <View style={styles.itemSelectionHeader}>
+                <View>
+                  <Text style={styles.label}>
+                    Select Items <Text style={styles.required}>*</Text>
+                  </Text>
+                  <Text style={styles.subLabel}>
+                    {selectedItemIds.length} of {filteredItems.length} items selected
+                  </Text>
+                </View>
+                <View style={styles.itemSelectionActions}>
+                  <TouchableOpacity
+                    style={styles.filterButton}
+                    onPress={() => setSelectedCategory(selectedCategory === null ? (categories[0]?.id ?? null) : null)}
+                  >
+                    <Ionicons name="filter" size={16} color="#64748b" />
+                    <Text style={styles.filterButtonText}>
+                      {selectedCategory ? categories.find(c => c.id === selectedCategory)?.name : "Filter"}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.selectAllButton} onPress={handleSelectAll}>
+                    <Text style={styles.selectAllText}>
+                      {selectedItemIds.length === filteredItems.length ? "Deselect All" : "Select All"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
               {errors.items && (
                 <Text style={styles.errorText}>{errors.items}</Text>
               )}
@@ -225,6 +271,35 @@ export const CreateOutfitModal: React.FC<CreateOutfitModalProps> = ({
                   </TouchableOpacity>
                 )}
               </View>
+
+              {/* Category Filter */}
+              {selectedCategory !== null && (
+                <View style={styles.categoryFilterContainer}>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    <View style={styles.categoryChips}>
+                      <TouchableOpacity
+                        style={[styles.categoryChip, selectedCategory === null && styles.categoryChipActive]}
+                        onPress={() => setSelectedCategory(null)}
+                      >
+                        <Text style={[styles.categoryChipText, selectedCategory === null && styles.categoryChipTextActive]}>
+                          All
+                        </Text>
+                      </TouchableOpacity>
+                      {categories.map((category) => (
+                        <TouchableOpacity
+                          key={category.id}
+                          style={[styles.categoryChip, selectedCategory === category.id && styles.categoryChipActive]}
+                          onPress={() => setSelectedCategory(category.id)}
+                        >
+                          <Text style={[styles.categoryChipText, selectedCategory === category.id && styles.categoryChipTextActive]}>
+                            {category.name}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </ScrollView>
+                </View>
+              )}
 
               {/* Items Grid */}
               {loadingItems ? (
@@ -530,6 +605,74 @@ const styles = StyleSheet.create({
   createButtonText: {
     fontSize: 15,
     fontWeight: "700",
+    color: "#fff",
+  },
+  itemSelectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 8,
+  },
+  itemSelectionActions: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "center",
+  },
+  filterButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: "#f1f5f9",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  filterButtonText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#64748b",
+  },
+  selectAllButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: "#eff6ff",
+    borderWidth: 1,
+    borderColor: "#3b82f6",
+  },
+  selectAllText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#3b82f6",
+  },
+  categoryFilterContainer: {
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  categoryChips: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  categoryChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "#f1f5f9",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  categoryChipActive: {
+    backgroundColor: "#3b82f6",
+    borderColor: "#3b82f6",
+  },
+  categoryChipText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#64748b",
+  },
+  categoryChipTextActive: {
     color: "#fff",
   },
 });

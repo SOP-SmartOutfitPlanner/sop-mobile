@@ -12,6 +12,7 @@ import SuggestionScreen from "../screens/SuggestionScreen";
 import NotificationScreen from "../screens/NotificationScreen";
 import { CollectionDetailScreen } from "../screens/CollectionDetailScreen";
 import { CreateCollectionScreen } from "../screens/CreateCollectionScreen";
+import CalendarScreen from "@/screens/CalendarScreen";
 
 export type RootStackParamList = {
   Auth: undefined;
@@ -26,6 +27,7 @@ export type RootStackParamList = {
   Notifications: undefined;
   CollectionDetail: { collectionId: number };
   CreateCollection: undefined;
+  Calendar: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -49,6 +51,7 @@ export const AppNavigator: React.FC = () => {
       <Stack.Screen name="Notifications" component={NotificationScreen} />
       <Stack.Screen name="CollectionDetail" component={CollectionDetailScreen} />
       <Stack.Screen name="CreateCollection" component={CreateCollectionScreen} />
+      <Stack.Screen name="Calendar" component={CalendarScreen} />
     </Stack.Navigator>
   );
 };

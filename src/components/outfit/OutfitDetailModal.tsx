@@ -9,6 +9,7 @@ import {
   Image,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Outfit } from "../../types/outfit";
@@ -34,7 +35,10 @@ const parseColorInfo = (color?: string | null): ColorInfo[] => {
           const castEntry = entry as { name?: unknown; hex?: unknown };
           const name = typeof castEntry.name === "string" ? castEntry.name : undefined;
           const hex = typeof castEntry.hex === "string" ? castEntry.hex : undefined;
-          return name || hex ? { name, hex } : null;
+          if (name || hex) {
+            return { name, hex } as ColorInfo;
+          }
+          return null;
         })
         .filter((entry): entry is ColorInfo => entry !== null);
     }
@@ -52,6 +56,7 @@ interface OutfitDetailModalProps {
   onToggleFavorite: (outfitId: number) => void;
   onDeleteOutfit: (outfitId: number) => Promise<void> | void;
   onEditOutfit: (outfitId: number) => void;
+  onUseOutfitToday?: (outfitId: number) => void;
 }
 
 export const OutfitDetailModal: React.FC<OutfitDetailModalProps> = ({
@@ -61,6 +66,7 @@ export const OutfitDetailModal: React.FC<OutfitDetailModalProps> = ({
   onToggleFavorite,
   onDeleteOutfit,
   onEditOutfit,
+  onUseOutfitToday,
 }) => {
   if (!outfit) return null;
 
@@ -97,47 +103,57 @@ export const OutfitDetailModal: React.FC<OutfitDetailModalProps> = ({
     onEditOutfit(outfit.id);
   };
 
+  const handleUseOutfitToday = () => {
+    if (onUseOutfitToday) {
+      onUseOutfitToday(outfit.id);
+    }
+  };
+
   return (
-    <Modal visible={visible} animationType="fade" transparent>
-      <View style={styles.overlay}>
-        <View style={styles.modalContainer}>
-          <LinearGradient
-            colors={["#1f2b88", "#0e133a"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.hero}
-          >
-            <View style={styles.heroHeader}>
-              <View style={styles.heroTextWrapper}>
-                <Text style={styles.heroTitle}>{outfit.name}</Text>
-                <Text style={styles.heroSubtitle}>
-                  {outfit.description?.trim() || "Plan your day with confidence"}
-                </Text>
-              </View>
-              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                <Ionicons name="close" size={20} color="#0f172a" />
-              </TouchableOpacity>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="fullScreen"
+      onRequestClose={onClose}
+    >
+      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+        <LinearGradient
+          colors={["#1f2b88", "#0e133a"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.hero}
+        >
+          <View style={styles.heroHeader}>
+            <View style={styles.heroTextWrapper}>
+              <Text style={styles.heroTitle}>{outfit.name}</Text>
+              <Text style={styles.heroSubtitle} numberOfLines={2} ellipsizeMode="tail">
+                {outfit.description?.trim() || "Plan your day with confidence"}
+              </Text>
             </View>
+            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+              <Ionicons name="close" size={24} color="#ffffff" />
+            </TouchableOpacity>
+          </View>
 
-            <View style={styles.heroMetaRow}>
-              <View style={styles.heroBadge}>
-                <Ionicons name="person-outline" size={14} color="#bbcbff" />
-                <Text style={styles.heroBadgeText}>
-                  {outfit.userDisplayName || "Unknown creator"}
-                </Text>
-              </View>
-              <View style={styles.heroBadge}>
-                <Ionicons name="calendar-outline" size={14} color="#bbcbff" />
-                <Text style={styles.heroBadgeText}>{formatDate(outfit.createdDate)}</Text>
-              </View>
+          <View style={styles.heroMetaRow}>
+            <View style={styles.heroBadge}>
+              <Ionicons name="person-outline" size={14} color="#bbcbff" />
+              <Text style={styles.heroBadgeText}>
+                {outfit.userDisplayName || "Unknown creator"}
+              </Text>
             </View>
-          </LinearGradient>
+            <View style={styles.heroBadge}>
+              <Ionicons name="calendar-outline" size={14} color="#bbcbff" />
+              <Text style={styles.heroBadgeText}>{formatDate(outfit.createdDate)}</Text>
+            </View>
+          </View>
+        </LinearGradient>
 
-          <ScrollView
-            style={styles.scrollArea}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-          >
+        <ScrollView
+          style={styles.scrollArea}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
             <View style={styles.statusRow}>
               <View style={styles.statusCard}>
                 <Text style={styles.statusLabel}>Favorite</Text>
@@ -240,59 +256,60 @@ export const OutfitDetailModal: React.FC<OutfitDetailModalProps> = ({
                 );
               })}
             </View>
-          </ScrollView>
+        </ScrollView>
 
-          <View style={styles.actionsRow}>
+        <View style={styles.actionsRow}>
+          {onUseOutfitToday && (
             <TouchableOpacity
-              style={styles.favoriteButton}
-              onPress={handleFavoritePress}
+              style={styles.useTodayButton}
+              onPress={handleUseOutfitToday}
             >
-              <Ionicons
-                name={outfit.isFavorite ? "heart" : "heart-outline"}
-                size={18}
-                color="#fff"
-              />
-              <Text style={styles.favoriteButtonText}>
-                {outfit.isFavorite ? "Remove Favorite" : "Add to Favorites"}
-              </Text>
+              <Ionicons name="calendar" size={18} color="#fff" />
+              <Text style={styles.useTodayButtonText}>Use Outfit Today</Text>
             </TouchableOpacity>
+          )}
 
-            <TouchableOpacity style={styles.secondaryButton} onPress={handleEditPress}>
-              <Ionicons name="create-outline" size={18} color="#1e1b4b" />
-              <Text style={styles.secondaryButtonText}>Edit Outfit</Text>
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.favoriteButton}
+            onPress={handleFavoritePress}
+          >
+            <Ionicons
+              name={outfit.isFavorite ? "heart" : "heart-outline"}
+              size={18}
+              color="#fff"
+            />
+            <Text style={styles.favoriteButtonText}>
+              {outfit.isFavorite ? "Remove Favorite" : "Add to Favorites"}
+            </Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={handleDeletePress}
-            >
-              <Ionicons name="trash-outline" size={18} color="#fff" />
-              <Text style={styles.deleteButtonText}>Delete Outfit</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity style={styles.secondaryButton} onPress={handleEditPress}>
+            <Ionicons name="create-outline" size={18} color="#1e1b4b" />
+            <Text style={styles.secondaryButtonText}>Edit Outfit</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={handleDeletePress}
+          >
+            <Ionicons name="trash-outline" size={18} color="#fff" />
+            <Text style={styles.deleteButtonText}>Delete Outfit</Text>
+          </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
+  container: {
     flex: 1,
-    backgroundColor: "rgba(2, 6, 23, 0.65)",
-    justifyContent: "center",
-    padding: 16,
-  },
-  modalContainer: {
     backgroundColor: "#ffffff",
-    borderRadius: 28,
-    overflow: "hidden",
-    maxHeight: "90%",
   },
   hero: {
-    padding: 20,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+    paddingTop: 16,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
   },
   heroHeader: {
     flexDirection: "row",
@@ -333,20 +350,20 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#f8fafc",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.15)",
     alignItems: "center",
     justifyContent: "center",
   },
   scrollArea: {
-    maxHeight: "75%",
+    flex: 1,
   },
   scrollContent: {
     padding: 20,
     gap: 20,
-    paddingBottom: 140,
+    paddingBottom: 160,
   },
   statusRow: {
     flexDirection: "row",
@@ -506,19 +523,37 @@ const styles = StyleSheet.create({
     color: "#312e81",
   },
   actionsRow: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: "#fff",
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingTop: 16,
+    paddingBottom: 20,
     flexDirection: "row",
     flexWrap: "wrap",
     columnGap: 12,
     rowGap: 12,
     borderTopWidth: 1,
     borderColor: "#e2e8f0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  useTodayButton: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 16,
+    backgroundColor: "#3b82f6",
+    marginBottom: 4,
+  },
+  useTodayButtonText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#fff",
   },
   favoriteButton: {
     flex: 1,
