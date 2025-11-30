@@ -13,13 +13,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { RootStackParamList } from "../navigation/AppNavigator";
+import { CollectionStackParamList } from "../navigation/CollectionStackNavigator";
 import { useCollectionDetail } from "../hooks/useCollections";
 import { CollectionItemDetail } from "../types/collection";
 import { CollectionComments } from "../components/collection";
 import { COLLECTION_COLORS } from "../constants/collectionStyles";
 
-type CollectionDetailRoute = RouteProp<RootStackParamList, "CollectionDetail">;
+type CollectionDetailRoute = RouteProp<
+  CollectionStackParamList,
+  "CollectionDetail"
+>;
 
 const FALLBACK_IMAGE = require("../../assets/adaptive-icon.png");
 
@@ -136,7 +139,10 @@ export const CollectionDetailScreen: React.FC = () => {
         style={styles.gradientContainer}
       >
         <SafeAreaView style={styles.centered}>
-          <ActivityIndicator size="large" color={COLLECTION_COLORS.accent.cyan} />
+          <ActivityIndicator
+            size="large"
+            color={COLLECTION_COLORS.accent.cyan}
+          />
         </SafeAreaView>
       </LinearGradient>
     );
@@ -149,7 +155,9 @@ export const CollectionDetailScreen: React.FC = () => {
         style={styles.gradientContainer}
       >
         <SafeAreaView style={styles.centered}>
-          <Text style={styles.errorText}>{error ?? "Collection not found."}</Text>
+          <Text style={styles.errorText}>
+            {error ?? "Collection not found."}
+          </Text>
           <TouchableOpacity style={styles.retryButton} onPress={refetch}>
             <Text style={styles.retryText}>Try again</Text>
           </TouchableOpacity>
@@ -164,239 +172,270 @@ export const CollectionDetailScreen: React.FC = () => {
       style={styles.gradientContainer}
     >
       <SafeAreaView style={styles.container} edges={["bottom"]}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={refetch} />
-        }
-      >
-        <View style={styles.coverWrapper}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <Ionicons
-              name="chevron-back"
-              size={24}
-              color={COLLECTION_COLORS.text.primary}
-            />
-          </TouchableOpacity>
-          <Image source={coverSource} style={styles.coverImage} />
-          <LinearGradient
-            colors={["transparent", "rgba(0,0,0,0.4)", "rgba(0,0,0,0.8)"]}
-            locations={[0, 0.6, 1]}
-            style={styles.coverOverlay}
-          >
-            <Text style={styles.collectionTitle}>{collection.title}</Text>
-            {collection.shortDescription && (
-              <Text style={styles.collectionDescription}>
-                {collection.shortDescription}
-              </Text>
-            )}
-          </LinearGradient>
-        </View>
-
-        <View style={styles.glassSection}>
-          <View style={styles.authorRow}>
-            {collection.avtUrl && collection.avtUrl.length > 0 ? (
-              <Image
-                source={{ uri: collection.avtUrl }}
-                style={styles.authorAvatar}
-              />
-            ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={loading} onRefresh={refetch} />
+          }
+        >
+          <View style={styles.coverWrapper}>
+            <TouchableOpacity style={styles.backButton} onPress={handleBack}>
               <Ionicons
-                name="person-circle-outline"
-                size={32}
-                color={COLLECTION_COLORS.text.secondary}
+                name="chevron-back"
+                size={24}
+                color={COLLECTION_COLORS.text.primary}
               />
-            )}
-            <View style={{ flex: 1 }}>
-              <Text style={styles.authorName}>
-                {collection.userDisplayName}
-              </Text>
-              <Text style={styles.metaText}>
-                Updated{" "}
-                {new Date(
-                  collection.updatedDate ?? collection.createdDate
-                ).toLocaleDateString()}
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={[
-                styles.followButton,
-                collection.isFollowing && styles.followingButton,
-              ]}
-              onPress={toggleFollow}
-            >
-              <Ionicons
-                name={collection.isFollowing ? "checkmark" : "add"}
-                size={16}
-                color={
-                  collection.isFollowing
-                    ? COLLECTION_COLORS.text.secondary
-                    : COLLECTION_COLORS.text.primary
-                }
-              />
-              <Text
-                style={[
-                  styles.followText,
-                  collection.isFollowing && styles.followingText,
-                ]}
-              >
-                {collection.isFollowing ? "Following" : "Follow"}
-              </Text>
             </TouchableOpacity>
-          </View>
-
-          {weatherTags.length > 0 && (
-            <View style={styles.tagRow}>
-              {weatherTags.map((tag) => (
-                <View key={tag} style={styles.tagPill}>
-                  <Text style={styles.tagPillText}>{tag}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-
-          <View style={styles.actionRow}>
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                collection.isLiked && styles.actionButtonActive,
-              ]}
-              onPress={toggleLike}
+            <Image source={coverSource} style={styles.coverImage} />
+            <LinearGradient
+              colors={["transparent", "rgba(0,0,0,0.4)", "rgba(0,0,0,0.8)"]}
+              locations={[0, 0.6, 1]}
+              style={styles.coverOverlay}
             >
-              <Ionicons
-                name={collection.isLiked ? "heart" : "heart-outline"}
-                size={18}
-                color={
-                  collection.isLiked
-                    ? COLLECTION_COLORS.text.primary
-                    : COLLECTION_COLORS.text.secondary
-                }
-              />
-              <Text
-                style={[
-                  styles.actionText,
-                  collection.isLiked && styles.actionTextActive,
-                ]}
-              >
-                {collection.likeCount} Likes
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                collection.isSaved && styles.actionButtonActive,
-              ]}
-              onPress={toggleSave}
-            >
-              <Ionicons
-                name={collection.isSaved ? "bookmark" : "bookmark-outline"}
-                size={18}
-                color={
-                  collection.isSaved
-                    ? COLLECTION_COLORS.text.primary
-                    : COLLECTION_COLORS.text.secondary
-                }
-              />
-              <Text
-                style={[
-                  styles.actionText,
-                  collection.isSaved && styles.actionTextActive,
-                ]}
-              >
-                {collection.savedCount ?? 0} Saved
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Owner Actions */}
-          {isOwner && (
-            <View style={styles.ownerActions}>
-              <TouchableOpacity
-                style={[styles.ownerButton, styles.ownerButtonEdit]}
-                onPress={() => navigation.navigate("EditCollection", { collectionId: collection.id })}
-              >
-                <Ionicons name="create-outline" size={18} color={COLLECTION_COLORS.accent.cyan} />
-                <Text style={[styles.ownerButtonText, styles.ownerButtonTextEdit]}>
-                  Edit
+              <Text style={styles.collectionTitle}>{collection.title}</Text>
+              {collection.shortDescription && (
+                <Text style={styles.collectionDescription}>
+                  {collection.shortDescription}
                 </Text>
+              )}
+            </LinearGradient>
+          </View>
+
+          <View style={styles.glassSection}>
+            <View style={styles.authorRow}>
+              <TouchableOpacity
+                style={styles.authorInfoContainer}
+                onPress={() => {
+                  if (collection.userId) {
+                    navigation.navigate("UserCollections", {
+                      userId: collection.userId,
+                      userName: collection.userDisplayName,
+                    });
+                  }
+                }}
+                activeOpacity={0.7}
+              >
+                {collection.avtUrl && collection.avtUrl.length > 0 ? (
+                  <Image
+                    source={{ uri: collection.avtUrl }}
+                    style={styles.authorAvatar}
+                  />
+                ) : (
+                  <Ionicons
+                    name="person-circle-outline"
+                    size={32}
+                    color={COLLECTION_COLORS.text.secondary}
+                  />
+                )}
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.authorName}>
+                    {collection.userDisplayName}
+                  </Text>
+                  <Text style={styles.metaText}>
+                    Updated{" "}
+                    {new Date(
+                      collection.updatedDate ?? collection.createdDate
+                    ).toLocaleDateString()}
+                  </Text>
+                </View>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
-                  styles.ownerButton,
-                  collection.isPublished && styles.ownerButtonPublished,
+                  styles.followButton,
+                  collection.isFollowing && styles.followingButton,
                 ]}
-                onPress={togglePublish}
+                onPress={toggleFollow}
               >
                 <Ionicons
-                  name={collection.isPublished ? "globe" : "lock-closed"}
-                  size={18}
+                  name={collection.isFollowing ? "checkmark" : "add"}
+                  size={16}
                   color={
-                    collection.isPublished
-                      ? COLLECTION_COLORS.status.published
-                      : COLLECTION_COLORS.status.draft
+                    collection.isFollowing
+                      ? COLLECTION_COLORS.text.secondary
+                      : COLLECTION_COLORS.text.primary
                   }
                 />
                 <Text
                   style={[
-                    styles.ownerButtonText,
-                    collection.isPublished && styles.ownerButtonTextPublished,
+                    styles.followText,
+                    collection.isFollowing && styles.followingText,
                   ]}
                 >
-                  {collection.isPublished ? "Published" : "Draft"}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.ownerButton, styles.ownerButtonDelete]}
-                onPress={() => deleteCollection(() => navigation.goBack())}
-              >
-                <Ionicons name="trash-outline" size={18} color="#EF4444" />
-                <Text style={[styles.ownerButtonText, styles.ownerButtonTextDelete]}>
-                  Delete
+                  {collection.isFollowing ? "Following" : "Follow"}
                 </Text>
               </TouchableOpacity>
             </View>
-          )}
-        </View>
 
-        <View style={styles.glassSection}>
-          <Text style={styles.sectionTitle}>Outfits in this collection</Text>
-          {collection.outfits.length === 0 ? (
-            <Text style={styles.metaText}>No outfits have been added yet.</Text>
-          ) : (
-            collection.outfits.map((entry, index) => (
-              <View
-                key={`${entry.outfit.outfitId}-${index}`}
-                style={styles.outfitCard}
-              >
-                <View style={styles.outfitHeader}>
-                  <Text style={styles.outfitTitle}>{entry.outfit.name}</Text>
-                  <Text style={styles.metaText}>
-                    {entry.outfit.itemCount} items
-                  </Text>
-                </View>
-                {entry.description && (
-                  <Text style={styles.outfitDescription}>
-                    {entry.description}
-                  </Text>
-                )}
-                {renderItems(entry.outfit.items ?? [])}
+            {weatherTags.length > 0 && (
+              <View style={styles.tagRow}>
+                {weatherTags.map((tag) => (
+                  <View key={tag} style={styles.tagPill}>
+                    <Text style={styles.tagPillText}>{tag}</Text>
+                  </View>
+                ))}
               </View>
-            ))
-          )}
-        </View>
+            )}
 
-        <View style={styles.glassSection}>
-          <Text style={styles.sectionTitle}>
-            Comments ({collection.commentCount ?? 0})
-          </Text>
-          <CollectionComments
-            collectionId={collection.id}
-            initialCount={collection.commentCount ?? 0}
-            onCountChange={setCommentCount}
-          />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+            <View style={styles.actionRow}>
+              <TouchableOpacity
+                style={[
+                  styles.actionButton,
+                  collection.isLiked && styles.actionButtonActive,
+                ]}
+                onPress={toggleLike}
+              >
+                <Ionicons
+                  name={collection.isLiked ? "heart" : "heart-outline"}
+                  size={18}
+                  color={
+                    collection.isLiked
+                      ? COLLECTION_COLORS.text.primary
+                      : COLLECTION_COLORS.text.secondary
+                  }
+                />
+                <Text
+                  style={[
+                    styles.actionText,
+                    collection.isLiked && styles.actionTextActive,
+                  ]}
+                >
+                  {collection.likeCount} Likes
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.actionButton,
+                  collection.isSaved && styles.actionButtonActive,
+                ]}
+                onPress={toggleSave}
+              >
+                <Ionicons
+                  name={collection.isSaved ? "bookmark" : "bookmark-outline"}
+                  size={18}
+                  color={
+                    collection.isSaved
+                      ? COLLECTION_COLORS.text.primary
+                      : COLLECTION_COLORS.text.secondary
+                  }
+                />
+                <Text
+                  style={[
+                    styles.actionText,
+                    collection.isSaved && styles.actionTextActive,
+                  ]}
+                >
+                  {collection.savedCount ?? 0} Saved
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Owner Actions */}
+            {isOwner && (
+              <View style={styles.ownerActions}>
+                <TouchableOpacity
+                  style={[styles.ownerButton, styles.ownerButtonEdit]}
+                  onPress={() =>
+                    navigation.navigate("EditCollection", {
+                      collectionId: collection.id,
+                    })
+                  }
+                >
+                  <Ionicons
+                    name="create-outline"
+                    size={18}
+                    color={COLLECTION_COLORS.accent.cyan}
+                  />
+                  <Text
+                    style={[styles.ownerButtonText, styles.ownerButtonTextEdit]}
+                  >
+                    Edit
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.ownerButton,
+                    collection.isPublished && styles.ownerButtonPublished,
+                  ]}
+                  onPress={togglePublish}
+                >
+                  <Ionicons
+                    name={collection.isPublished ? "globe" : "lock-closed"}
+                    size={18}
+                    color={
+                      collection.isPublished
+                        ? COLLECTION_COLORS.status.published
+                        : COLLECTION_COLORS.status.draft
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.ownerButtonText,
+                      collection.isPublished && styles.ownerButtonTextPublished,
+                    ]}
+                  >
+                    {collection.isPublished ? "Published" : "Draft"}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.ownerButton, styles.ownerButtonDelete]}
+                  onPress={() => deleteCollection(() => navigation.goBack())}
+                >
+                  <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                  <Text
+                    style={[
+                      styles.ownerButtonText,
+                      styles.ownerButtonTextDelete,
+                    ]}
+                  >
+                    Delete
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.glassSection}>
+            <Text style={styles.sectionTitle}>Outfits in this collection</Text>
+            {collection.outfits.length === 0 ? (
+              <Text style={styles.metaText}>
+                No outfits have been added yet.
+              </Text>
+            ) : (
+              collection.outfits.map((entry, index) => (
+                <View
+                  key={`${entry.outfit.outfitId}-${index}`}
+                  style={styles.outfitCard}
+                >
+                  <View style={styles.outfitHeader}>
+                    <Text style={styles.outfitTitle}>{entry.outfit.name}</Text>
+                    <Text style={styles.metaText}>
+                      {entry.outfit.itemCount} items
+                    </Text>
+                  </View>
+                  {entry.description && (
+                    <Text style={styles.outfitDescription}>
+                      {entry.description}
+                    </Text>
+                  )}
+                  {renderItems(entry.outfit.items ?? [])}
+                </View>
+              ))
+            )}
+          </View>
+
+          <View style={styles.glassSection}>
+            <Text style={styles.sectionTitle}>
+              Comments ({collection.commentCount ?? 0})
+            </Text>
+            <CollectionComments
+              collectionId={collection.id}
+              initialCount={collection.commentCount ?? 0}
+              onCountChange={setCommentCount}
+            />
+          </View>
+        </ScrollView>
+        <View style={styles.bottomSpacing} />
+      </SafeAreaView>
     </LinearGradient>
   );
 };
@@ -404,6 +443,10 @@ export const CollectionDetailScreen: React.FC = () => {
 const styles = StyleSheet.create({
   gradientContainer: {
     flex: 1,
+  },
+
+  bottomSpacing: {
+    height: 80, // pb-32 equivalent (32 * 4 = 128px)
   },
   container: {
     flex: 1,
@@ -491,6 +534,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
+  },
+  authorInfoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
   },
   authorAvatar: {
     width: 40,

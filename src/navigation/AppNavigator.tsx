@@ -10,7 +10,6 @@ import AllWardrobeScreen from "../screens/AllScreen/AllWardrobeScreen";
 import AllOutfitScreen from "../screens/AllScreen/AllOutfitScreen";
 import SuggestionScreen from "../screens/SuggestionScreen";
 import NotificationScreen from "../screens/NotificationScreen";
-import { CollectionDetailScreen } from "../screens/CollectionDetailScreen";
 import { CreateCollectionScreen } from "../screens/CreateCollectionScreen";
 
 export type RootStackParamList = {
@@ -24,7 +23,6 @@ export type RootStackParamList = {
   AllOutfit: undefined;
   Suggestion: undefined;
   Notifications: undefined;
-  CollectionDetail: { collectionId: number };
   CreateCollection: undefined;
   EditCollection: { collectionId: number };
 };
@@ -48,8 +46,10 @@ export const AppNavigator: React.FC = () => {
       <Stack.Screen name="AllOutfit" component={AllOutfitScreen} />
       <Stack.Screen name="Suggestion" component={SuggestionScreen} />
       <Stack.Screen name="Notifications" component={NotificationScreen} />
-      <Stack.Screen name="CollectionDetail" component={CollectionDetailScreen} />
-      <Stack.Screen name="CreateCollection" component={CreateCollectionScreen} />
+      <Stack.Screen
+        name="CreateCollection"
+        component={CreateCollectionScreen}
+      />
       <Stack.Screen name="EditCollection" component={CreateCollectionScreen} />
     </Stack.Navigator>
   );

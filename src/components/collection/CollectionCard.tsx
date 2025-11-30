@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { CollectionRecord } from "../../types/collection";
 import { COLLECTION_COLORS } from "../../constants/collectionStyles";
 
@@ -23,6 +24,16 @@ const CollectionCard: React.FC<CollectionCardProps> = ({
   collection,
   onPress,
 }) => {
+  const navigation = useNavigation<any>();
+
+  const handleAuthorPress = () => {
+    if (collection.userId) {
+      navigation.navigate("UserCollections", {
+        userId: collection.userId,
+        userName: collection.userDisplayName,
+      });
+    }
+  };
   const coverSource: ImageSourcePropType = collection.thumbnailURL
     ? { uri: collection.thumbnailURL }
     : FALLBACK_IMAGE;
@@ -112,7 +123,11 @@ const CollectionCard: React.FC<CollectionCardProps> = ({
         </View>
 
         <View style={styles.footer}>
-          <View style={styles.authorContainer}>
+          <TouchableOpacity
+            style={styles.authorContainer}
+            onPress={handleAuthorPress}
+            activeOpacity={0.7}
+          >
             {avatarSource ? (
               <Image source={avatarSource} style={styles.avatar} />
             ) : (
@@ -125,7 +140,7 @@ const CollectionCard: React.FC<CollectionCardProps> = ({
             <Text style={styles.authorText} numberOfLines={1}>
               {collection.userDisplayName}
             </Text>
-          </View>
+          </TouchableOpacity>
           <View style={styles.stats}>
             <View style={styles.statItem}>
               <Ionicons

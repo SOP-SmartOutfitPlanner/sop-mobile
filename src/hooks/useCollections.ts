@@ -535,3 +535,94 @@ export const useUpdateCollection = () => {
   };
 };
 
+interface UseUserCollectionsResult {
+  collections: CollectionRecord[];
+  loading: boolean;
+  refreshing: boolean;
+  error: string | null;
+  count: number;
+  handleRefresh: () => Promise<void>;
+  refetch: () => Promise<void>;
+}
+
+export const useUserCollections = (
+  userId: number
+): UseUserCollectionsResult => {
+  const [collections, setCollections] = useState<CollectionRecord[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchCollections = useCallback(
+    async (silent = false) => {
+      silent ? setRefreshing(true) : setLoading(true);
+
+      try {
+        const response = await getCollectionsByUserAPI(userId, {
+          takeAll: true,
+        });
+        const responseData = response.data?.data ?? [];
+        
+        // Only show published collections for other users
+        const publishedCollections = responseData.filter(
+          (item) => item.isPublished
+        );
+
+        setCollections(publishedCollections);
+        setError(null);
+      } catch (err: any) {
+        console.error("❌ Error loading user collections:", err);
+        setCollections([]);
+        setError(err?.message ?? "Failed to load collections");
+      } finally {
+        silent ? setRefreshing(false) : setLoading(false);
+      }
+    },
+    [userId]
+  );
+
+  useEffect(() => {
+    fetchCollections();
+  }, [fetchCollections]);
+
+  // Subscribe to collection updates
+  useEffect(() => {
+    const unsubscribe = subscribeToCollectionUpdates((updatedCollection) => {
+      setCollections((prev) =>
+        prev.map((c) =>
+          c.id === updatedCollection.id ? updatedCollection : c
+        )
+      );
+    });
+
+    return unsubscribe;
+  }, []);
+
+  // Subscribe to collection deletes
+  useEffect(() => {
+    const unsubscribe = subscribeToCollectionDeletes((deletedId) => {
+      setCollections((prev) => prev.filter((c) => c.id !== deletedId));
+    });
+
+    return unsubscribe;
+  }, []);
+
+  const handleRefresh = useCallback(async () => {
+    await fetchCollections(true);
+  }, [fetchCollections]);
+
+  const refetch = useCallback(async () => {
+    await fetchCollections();
+  }, [fetchCollections]);
+
+  return {
+    collections,
+    loading,
+    refreshing,
+    error,
+    count: collections.length,
+    handleRefresh,
+    refetch,
+  };
+};
+

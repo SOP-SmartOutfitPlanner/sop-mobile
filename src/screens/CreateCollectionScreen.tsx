@@ -18,7 +18,7 @@ import { useCreateCollection, useUpdateCollection, useCollectionDetail } from ".
 import { useOutfits } from "../hooks/outfit/useOutfits";
 import { Outfit } from "../types/outfit";
 import { useAuth } from "../hooks/auth/useAuth";
-import { RootStackParamList } from "../navigation/AppNavigator";
+import { CollectionStackParamList } from "../navigation/CollectionStackNavigator";
 
 const FALLBACK_IMAGE = require("../../assets/adaptive-icon.png");
 
@@ -27,8 +27,8 @@ interface SelectedOutfit {
   description: string;
 }
 
-type CreateCollectionRoute = RouteProp<RootStackParamList, "CreateCollection">;
-type EditCollectionRoute = RouteProp<RootStackParamList, "EditCollection">;
+type CreateCollectionRoute = RouteProp<CollectionStackParamList, "CreateCollection">;
+type EditCollectionRoute = RouteProp<CollectionStackParamList, "EditCollection">;
 
 export const CreateCollectionScreen: React.FC = () => {
   const navigation = useNavigation<any>();
