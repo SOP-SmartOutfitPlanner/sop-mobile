@@ -12,6 +12,7 @@ export interface AllOutfitCardData {
   createdDate?: string;
   description?: string;
   totalItems?: number;
+  isFavorite?: boolean;
 }
 
 interface AllOutfitCardProps {
@@ -49,7 +50,12 @@ export const AllOutfitCard: React.FC<AllOutfitCardProps> = ({ outfit, onPress })
       activeOpacity={0.92}
       onPress={() => onPress(outfit.id)}
     >
-      <LinearGradient colors={["#193C8A", "#121F4A"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.card}>
+      <LinearGradient colors={["#1e3a8a", "#172554"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.card}>
+        {outfit.isFavorite && (
+          <View style={styles.favoriteBadge}>
+            <Ionicons name="heart" size={14} color="#fff" />
+          </View>
+        )}
         <View style={styles.imagesGrid}>
           {Array.from({ length: 4 }).map((_, index) => {
             const imageUri = itemsToDisplay[index];
@@ -112,10 +118,35 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   card: {
-    borderRadius: 24,
+    borderRadius: 20,
     padding: 16,
-    minHeight: 260,
+    minHeight: 280,
     gap: 12,
+    position: "relative",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  favoriteBadge: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(239, 68, 68, 0.9)",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
   imagesGrid: {
     flexDirection: "row",
@@ -126,11 +157,11 @@ const styles = StyleSheet.create({
   imageSlot: {
     width: "48%",
     aspectRatio: 1,
-    borderRadius: 16,
+    borderRadius: 14,
     overflow: "hidden",
-    backgroundColor: "#1C2F5C",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(15,23,42,0.4)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.15)",
   },
   image: {
     width: "100%",
@@ -190,16 +221,21 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   primaryButton: {
-    marginTop: 4,
-    borderRadius: 16,
-    backgroundColor: "#f8fafc",
-    paddingVertical: 10,
+    marginTop: 6,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.95)",
+    paddingVertical: 12,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   primaryButtonText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "700",
-    color: "#1d4ed8",
+    color: "#1e3a8a",
   },
 });
 

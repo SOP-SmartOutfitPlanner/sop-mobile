@@ -42,7 +42,7 @@ export const FavoriteOutfitsSection: React.FC<FavoriteOutfitsSectionProps> = ({
           {onViewAll && (
             <TouchableOpacity style={styles.linkButton} onPress={onViewAll}>
               <Text style={styles.linkText}>View all</Text>
-              <Ionicons name="arrow-forward" size={16} color={BRAND_COLORS.blue} />
+              <Ionicons name="arrow-forward" size={16} color="#38bdf8" />
             </TouchableOpacity>
           )}
         </View>
@@ -135,11 +135,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#1e293b",
+    color: "#ffffff",
   },
   subtitle: {
     fontSize: 13,
-    color: "#64748b",
+    color: "rgba(226,232,240,0.7)",
     marginTop: 4,
   },
   linkButton: {
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   linkText: {
     fontSize: 14,
     fontWeight: "600",
-    color: BRAND_COLORS.blue,
+    color: "#38bdf8",
   },
   cardsWrapper: {
     flexDirection: "row",
@@ -167,10 +167,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     gap: 12,
     shadowColor: "#0f172a",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 5,
   },
   cardHeader: {
     flexDirection: "row",
@@ -226,16 +226,16 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "rgba(148,163,184,0.2)",
     borderRadius: 16,
     paddingVertical: 24,
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "rgba(15,23,42,0.4)",
   },
   emptyText: {
     fontSize: 14,
-    color: "#94a3b8",
+    color: "rgba(226,232,240,0.6)",
     fontWeight: "500",
   },
 });

@@ -16,7 +16,6 @@ interface OutfitCalendarProps {
   selectedDate: Date | null;
   onSelectDate: (date: Date) => void;
   onViewAll: () => void;
-  assignedOutfits?: Record<string, number[]>; // date string -> outfit IDs
 }
 
 export const OutfitCalendar: React.FC<OutfitCalendarProps> = ({
@@ -24,11 +23,7 @@ export const OutfitCalendar: React.FC<OutfitCalendarProps> = ({
   selectedDate,
   onSelectDate,
   onViewAll,
-  assignedOutfits = {},
 }) => {
-  const formatDateKey = (date: Date) => {
-    return date.toISOString().split('T')[0]; // YYYY-MM-DD
-  };
   const getWeatherIcon = (weather?: string) => {
     if (!weather) return "calendar-outline";
     if (weather.includes("rain")) return "rainy";
@@ -42,7 +37,7 @@ export const OutfitCalendar: React.FC<OutfitCalendarProps> = ({
         <Text style={styles.title}>Outfit Calendar</Text>
         <TouchableOpacity onPress={onViewAll} style={styles.viewAllButton}>
           <Text style={styles.viewAllText}>View Calendar</Text>
-          <Ionicons name="chevron-forward" size={16} color="#94a3b8" />
+          <Ionicons name="chevron-forward" size={16} color="#64748b" />
         </TouchableOpacity>
       </View>
 
@@ -55,9 +50,6 @@ export const OutfitCalendar: React.FC<OutfitCalendarProps> = ({
           const isSelected =
             selectedDate &&
             day.fullDate.toDateString() === selectedDate.toDateString();
-          const dateKey = formatDateKey(day.fullDate);
-          const hasOutfit = assignedOutfits[dateKey] && assignedOutfits[dateKey].length > 0;
-          const outfitCount = assignedOutfits[dateKey]?.length || 0;
 
           return (
             <TouchableOpacity
@@ -66,7 +58,6 @@ export const OutfitCalendar: React.FC<OutfitCalendarProps> = ({
                 styles.dayCard,
                 isSelected && styles.dayCardSelected,
                 day.isToday && styles.dayCardToday,
-                hasOutfit && styles.dayCardWithOutfit,
               ]}
               onPress={() => onSelectDate(day.fullDate)}
             >
@@ -75,27 +66,20 @@ export const OutfitCalendar: React.FC<OutfitCalendarProps> = ({
               </Text>
               <Text style={styles.date}>{day.date}</Text>
 
-              {hasOutfit && (
-                <View style={styles.outfitBadge}>
-                  <Ionicons name="shirt" size={14} color="#38bdf8" />
-                  <Text style={styles.outfitBadgeText}>{outfitCount}</Text>
-                </View>
-              )}
-
               {day.weather && day.temperature ? (
                 <View style={styles.weatherContainer}>
                   <Ionicons
                     name={getWeatherIcon(day.weather) as any}
                     size={20}
-                    color="#94a3b8"
+                    color="#64748b"
                   />
                   <Text style={styles.temperature}>{day.temperature}</Text>
                 </View>
-              ) : !hasOutfit ? (
+              ) : (
                 <View style={styles.emptyOutfit}>
-                  <Ionicons name="calendar-outline" size={24} color="#475569" />
+                  <Ionicons name="calendar-outline" size={24} color="#cbd5e1" />
                 </View>
-              ) : null}
+              )}
             </TouchableOpacity>
           );
         })}
@@ -118,7 +102,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#ffffff",
+    color: "#1e293b",
   },
   viewAllButton: {
     flexDirection: "row",
@@ -126,46 +110,44 @@ const styles = StyleSheet.create({
   },
   viewAllText: {
     fontSize: 14,
-    color: "#94a3b8",
+    color: "#64748b",
     marginRight: 4,
-    fontWeight: "600",
   },
   daysContainer: {
     paddingHorizontal: 16,
     gap: 12,
   },
   dayCard: {
-    backgroundColor: "rgba(15,23,42,0.8)",
+    backgroundColor: "#ffffff",
     borderRadius: 16,
     padding: 16,
     minWidth: 120,
-    borderWidth: 1,
-    borderColor: "rgba(148,163,184,0.25)",
+    borderWidth: 2,
+    borderColor: "#e2e8f0",
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
   },
   dayCardSelected: {
     borderColor: "#3b82f6",
-    backgroundColor: "rgba(59,130,246,0.15)",
+    backgroundColor: "#eff6ff",
   },
   dayCardToday: {
-    borderColor: "#38bdf8",
-    borderWidth: 2,
+    borderColor: "#1e293b",
   },
   dayOfWeek: {
     fontSize: 13,
     fontWeight: "600",
-    color: "rgba(226,232,240,0.8)",
+    color: "#64748b",
     marginBottom: 4,
   },
   date: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#ffffff",
+    color: "#1e293b",
     marginBottom: 12,
   },
   weatherContainer: {
@@ -174,7 +156,7 @@ const styles = StyleSheet.create({
   },
   temperature: {
     fontSize: 12,
-    color: "#94a3b8",
+    color: "#64748b",
     fontWeight: "500",
   },
   emptyOutfit: {
@@ -183,25 +165,4 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  dayCardWithOutfit: {
-    borderColor: "rgba(56,189,248,0.4)",
-  },
-  outfitBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(56,189,248,0.15)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: "rgba(56,189,248,0.3)",
-  },
-  outfitBadgeText: {
-    color: "#38bdf8",
-    fontSize: 12,
-    fontWeight: "700",
-  },
 });
-

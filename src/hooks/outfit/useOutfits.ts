@@ -13,8 +13,10 @@ export const useOutfits = () => {
   const [favoriteOutfits, setFavoriteOutfits] = useState<Outfit[]>([]);
   const [metadata, setMetadata] = useState<MetaData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const { 
     showError, 
     showSuccess, 
@@ -31,8 +33,8 @@ export const useOutfits = () => {
 
       const request: GetOutfitsRequest = {
         pageIndex: 1,
-        pageSize: 100,
-        takeAll: true,
+        pageSize: 5,
+        takeAll: false,
         ...params,
       };
 
@@ -41,6 +43,7 @@ export const useOutfits = () => {
       if (response.statusCode === 200 && response.data?.data) {
         setOutfits(response.data.data);
         setMetadata(response.data.metaData);
+        setCurrentPage(1);
         return response.data.data;
       } else {
         throw new Error(response.message || "Failed to fetch outfits");
@@ -53,7 +56,47 @@ export const useOutfits = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showError]);
+
+  // Load more outfits (pagination)
+  const loadMoreOutfits = useCallback(async (params?: Partial<GetOutfitsRequest>) => {
+    if (loadingMore || !metadata?.hasNext) {
+      return [];
+    }
+
+    try {
+      setLoadingMore(true);
+      const nextPage = currentPage + 1;
+
+      const request: GetOutfitsRequest = {
+        pageIndex: nextPage,
+        pageSize: 5,
+        takeAll: false,
+        ...params,
+      };
+
+      const response = await GetOutFitsAPI(request);
+      
+      if (response.statusCode === 200 && response.data?.data) {
+        setOutfits((prev) => {
+          // Filter out duplicates by id
+          const existingIds = new Set(prev.map((o) => o.id));
+          const newOutfits = response.data.data.filter((o: Outfit) => !existingIds.has(o.id));
+          return [...prev, ...newOutfits];
+        });
+        setMetadata(response.data.metaData);
+        setCurrentPage(nextPage);
+        return response.data.data;
+      } else {
+        throw new Error(response.message || "Failed to load more outfits");
+      }
+    } catch (err: any) {
+      console.error("Failed to load more outfits:", err);
+      return [];
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, metadata, currentPage]);
 
   // Fetch favorite outfits
   const fetchFavoriteOutfits = useCallback(async () => {
@@ -196,6 +239,7 @@ export const useOutfits = () => {
   // Refresh data
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
+    setCurrentPage(1);
     await Promise.all([fetchOutfits(), fetchFavoriteOutfits()]);
     setIsRefreshing(false);
   }, [fetchOutfits, fetchFavoriteOutfits]);
@@ -206,14 +250,21 @@ export const useOutfits = () => {
     fetchFavoriteOutfits();
   }, [fetchOutfits, fetchFavoriteOutfits]);
 
+  // Ensure loadMoreOutfits is always defined
+  const safeLoadMoreOutfits = useCallback(async (params?: Partial<GetOutfitsRequest>) => {
+    return loadMoreOutfits(params);
+  }, [loadMoreOutfits]);
+
   return {
     outfits,
     favoriteOutfits,
     metadata,
     loading,
+    loadingMore,
     isRefreshing,
     error,
     fetchOutfits,
+    loadMoreOutfits: safeLoadMoreOutfits,
     fetchFavoriteOutfits,
     createOutfit,
     editOutfit,
