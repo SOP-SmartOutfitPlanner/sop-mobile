@@ -28,6 +28,7 @@ import Animated, {
 import { useAuth } from "../../hooks/auth";
 import NotificationModal from "../../components/notification/NotificationModal";
 import { useNotification } from "../../hooks";
+import AnimatedBackground from "../../components/common/AnimatedBackground";
 
 const { width, height } = Dimensions.get("window");
 
@@ -62,7 +63,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       damping: 8,
       stiffness: 80,
     });
-    
+
     logoRotate.value = withSequence(
       withTiming(10, { duration: 300, easing: Easing.out(Easing.cubic) }),
       withTiming(-10, { duration: 300, easing: Easing.out(Easing.cubic) }),
@@ -113,12 +114,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   // Animated styles
   const logoAnimatedStyle = useAnimatedStyle(() => {
     const glowOpacity = interpolate(logoGlow.value, [0, 1], [0.3, 0.8]);
-    
+
     return {
       transform: [
         { scale: logoScale.value },
         { rotate: `${logoRotate.value}deg` },
-        { translateY: floatingAnimation.value }
+        { translateY: floatingAnimation.value },
       ],
       shadowOpacity: glowOpacity,
     };
@@ -244,158 +245,159 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Gradient Background */}
-      <LinearGradient
-        colors={['#1a2332', '#2c3e50', '#34495e']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFillObject}
-      />
-      
-      {/* Decorative circles */}
-      <View style={styles.circle1} />
-      <View style={styles.circle2} />
-      <View style={styles.circle3} />
-
-      <SafeAreaView style={styles.safeArea}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.keyboardContainer}
-        >
-          <ScrollView
-            contentContainerStyle={styles.scrollContainer}
-            showsVerticalScrollIndicator={false}
+      <AnimatedBackground>
+        <SafeAreaView style={styles.safeArea}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.keyboardContainer}
           >
-            {/* Logo and Title with Animation */}
-            <View style={[styles.centerContainer, { marginBottom: 20 }]}>
-              <Animated.View style={[styles.logoContainer, logoAnimatedStyle]}>
-                <View style={styles.logoWrapper}>
-                  <Image
-                    source={require("../../../assets/img/logo_text.png")}
-                    style={styles.logo}
-                    resizeMode="contain"
-                  />
-                </View>
-              </Animated.View>
-
-              <Animated.View style={headerAnimatedStyle}>
-                <Text style={styles.title}>Smart Outfit Planner</Text>
-                <Text style={styles.subtitle}>
-                  Style at your fingertips – Discover your personal style with smart AI.
-                </Text>
-              </Animated.View>
-            </View>
-
-            {/* Login Form Card with Glassmorphism */}
-            <Animated.View style={[styles.formCard, formAnimatedStyle, shakeAnimatedStyle]}>
-              <View style={styles.formInner}>
-                <Text style={styles.formTitle}>Welcome Back!</Text>
-                <Text style={styles.formSubtitle}>Sign in to continue</Text>
-
-                {/* Email Input */}
-                <View style={{ marginTop: 24, marginBottom: 16 }}>
-                  <View style={styles.inputWrapper}>
-                    <View style={styles.inputIconContainer}>
-                      <Ionicons name="mail-outline" size={20} color="#3b5998" />
-                    </View>
-                    <TextInput
-                      placeholder="Email address"
-                      value={email}
-                      onChangeText={setEmail}
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      placeholderTextColor="#94A3B8"
-                      style={styles.textInput}
+            <ScrollView
+              contentContainerStyle={styles.scrollContainer}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Logo and Title with Animation */}
+              <View style={[styles.centerContainer]}>
+                <Animated.View
+                  style={[styles.logoContainer, logoAnimatedStyle]}
+                >
+                  <View style={styles.logoWrapper}>
+                    <Image
+                      source={require("../../../assets/img/logo_text.png")}
+                      style={styles.logo}
+                      resizeMode="contain"
                     />
                   </View>
-                </View>
+                </Animated.View>
+                <Animated.View style={headerAnimatedStyle}>
+                  <Text style={styles.title}>Smart Outfit Planner</Text>
+                  <Text style={styles.subtitle}>
+                    Manifest your signature style with glassy precision.
+                  </Text>
+                </Animated.View>
+              </View>
 
-                {/* Password Input */}
-                <View style={{ marginBottom: 12 }}>
-                  <View style={styles.inputWrapper}>
-                    <View style={styles.inputIconContainer}>
-                      <Ionicons name="lock-closed-outline" size={20} color="#3b5998" />
-                    </View>
-                    <TextInput
-                      placeholder="Password"
-                      value={password}
-                      onChangeText={setPassword}
-                      secureTextEntry={!showPassword}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      placeholderTextColor="#94A3B8"
-                      style={styles.textInput}
-                    />
-                    <TouchableOpacity
-                      onPress={() => setShowPassword(!showPassword)}
-                      style={styles.eyeIconButton}
-                    >
-                      <Ionicons
-                        name={showPassword ? "eye-outline" : "eye-off-outline"}
-                        size={20}
-                        color="#3b5998"
+              {/* Login Form Card with Glassmorphism */}
+              <Animated.View
+                style={[styles.formCard, formAnimatedStyle, shakeAnimatedStyle]}
+              >
+                <View style={styles.formInner}>
+                  {/* Email Input */}
+                  <View style={{ marginBottom: 16 }}>
+                    <View style={styles.inputWrapper}>
+                      <View style={styles.inputIconContainer}>
+                        <Ionicons
+                          name="mail-outline"
+                          size={20}
+                          color="#3b5998"
+                        />
+                      </View>
+                      <TextInput
+                        placeholder="Email address"
+                        value={email}
+                        onChangeText={setEmail}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        placeholderTextColor="#94A3B8"
+                        style={styles.textInput}
                       />
+                    </View>
+                  </View>
+
+                  {/* Password Input */}
+                  <View style={{ marginBottom: 12 }}>
+                    <View style={styles.inputWrapper}>
+                      <View style={styles.inputIconContainer}>
+                        <Ionicons
+                          name="lock-closed-outline"
+                          size={20}
+                          color="#3b5998"
+                        />
+                      </View>
+                      <TextInput
+                        placeholder="Password"
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry={!showPassword}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        placeholderTextColor="#94A3B8"
+                        style={styles.textInput}
+                      />
+                      <TouchableOpacity
+                        onPress={() => setShowPassword(!showPassword)}
+                        style={styles.eyeIconButton}
+                      >
+                        <Ionicons
+                          name={
+                            showPassword ? "eye-outline" : "eye-off-outline"
+                          }
+                          size={20}
+                          color="#3b5998"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  {/* Forgot Password */}
+                  <View style={[styles.rightAlign, { marginBottom: 24 }]}>
+                    <TouchableOpacity onPress={handleForgotPassword}>
+                      <Text style={styles.forgotText}>Forgot password?</Text>
                     </TouchableOpacity>
                   </View>
-                </View>
 
-                {/* Forgot Password */}
-                <View style={[styles.rightAlign, { marginBottom: 24 }]}>
-                  <TouchableOpacity onPress={handleForgotPassword}>
-                    <Text style={styles.forgotText}>Forgot password?</Text>
+                  {/* Login Button with Gradient */}
+                  <TouchableOpacity
+                    onPress={handleLogin}
+                    disabled={isLoading}
+                    activeOpacity={0.8}
+                    style={styles.loginButtonContainer}
+                  >
+                    <LinearGradient
+                      colors={["#2563eb", "#38bdf8"]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.loginButton}
+                    >
+                      <Text style={styles.loginButtonText}>
+                        {isLoading ? "Signing in..." : "LOGIN"}
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  {/* Divider */}
+                  <View style={[styles.rowCenter, { marginVertical: 24 }]}>
+                    <View style={styles.dividerLine} />
+                    <Text style={styles.dividerText}>OR</Text>
+                    <View style={styles.dividerLine} />
+                  </View>
+
+                  {/* Google Login Button */}
+                  <TouchableOpacity
+                    onPress={handleGoogleLogin}
+                    disabled={isLoading}
+                    activeOpacity={0.8}
+                    style={styles.googleButton}
+                  >
+                    <Ionicons name="logo-google" size={20} color="#DB4437" />
+                    <Text style={styles.googleButtonText}>
+                      Sign in with Google
+                    </Text>
                   </TouchableOpacity>
                 </View>
+              </Animated.View>
 
-                {/* Login Button with Gradient */}
-                <TouchableOpacity
-                  onPress={handleLogin}
-                  disabled={isLoading}
-                  activeOpacity={0.8}
-                  style={styles.loginButtonContainer}
-                >
-                  <LinearGradient
-                    colors={['#2c5282', '#1a365d']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.loginButton}
-                  >
-                    <Text style={styles.loginButtonText}>
-                      {isLoading ? "Signing in..." : "Sign in"}
-                    </Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-
-                {/* Divider */}
-                <View style={[styles.rowCenter, { marginVertical: 24 }]}>
-                  <View style={styles.dividerLine} />
-                  <Text style={styles.dividerText}>OR</Text>
-                  <View style={styles.dividerLine} />
-                </View>
-
-                {/* Google Login Button */}
-                <TouchableOpacity
-                  onPress={handleGoogleLogin}
-                  disabled={isLoading}
-                  activeOpacity={0.8}
-                  style={styles.googleButton}
-                >
-                  <Ionicons name="logo-google" size={20} color="#DB4437" />
-                  <Text style={styles.googleButtonText}>Sign in with Google</Text>
+              {/* Register Link */}
+              <View style={[styles.rowCenter, { marginTop: 24 }]}>
+                <Text style={styles.registerText}>Don't have an account? </Text>
+                <TouchableOpacity onPress={navigateToRegister}>
+                  <Text style={styles.registerLink}>Sign up now</Text>
                 </TouchableOpacity>
               </View>
-            </Animated.View>
-
-            {/* Register Link */}
-            <View style={[styles.rowCenter, { marginTop: 24 }]}>
-              <Text style={styles.registerText}>Don't have an account? </Text>
-              <TouchableOpacity onPress={navigateToRegister}>
-                <Text style={styles.registerLink}>Sign up now</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </AnimatedBackground>
 
       {/* Notification Modal */}
       <NotificationModal
@@ -421,44 +423,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   centerContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   rowCenter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   rightAlign: {
-    alignItems: 'flex-end',
-  },
-  // Decorative background circles
-  circle1: {
-    position: 'absolute',
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    top: -100,
-    right: -50,
-  },
-  circle2: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    bottom: -50,
-    left: -30,
-  },
-  circle3: {
-    position: 'absolute',
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    top: height * 0.4,
-    right: 20,
+    alignItems: "flex-end",
   },
   keyboardContainer: {
     flex: 1,
@@ -471,7 +445,7 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     marginBottom: 16,
-    shadowColor: '#2c5282',
+    shadowColor: "#2c5282",
     shadowOffset: {
       width: 0,
       height: 10,
@@ -485,10 +459,10 @@ const styles = StyleSheet.create({
     height: 140,
     borderRadius: 70,
     // backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 4,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: "rgba(255, 255, 255, 0.3)",
   },
   logo: {
     width: 120,
@@ -501,7 +475,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     marginBottom: 8,
     textAlign: "center",
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
@@ -512,18 +486,18 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     maxWidth: 280,
     marginBottom: 32,
-    textShadowColor: 'rgba(0, 0, 0, 0.15)',
+    textShadowColor: "rgba(0, 0, 0, 0.15)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
   // Glassmorphism form card
   formCard: {
-    backgroundColor: 'rgba(30, 41, 59, 0.5)',
+    backgroundColor: "rgba(30, 41, 59, 0.5)",
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    overflow: 'hidden',
-    shadowColor: '#000',
+    borderColor: "rgba(255, 255, 255, 0.15)",
+    overflow: "hidden",
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 10,
@@ -534,34 +508,34 @@ const styles = StyleSheet.create({
   },
   formInner: {
     padding: 24,
-    backgroundColor: 'rgba(15, 23, 42, 0.3)',
+    backgroundColor: "rgba(15, 23, 42, 0.3)",
   },
   formTitle: {
     fontSize: 24,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    textAlign: 'center',
+    fontWeight: "700",
+    color: "#FFFFFF",
+    textAlign: "center",
     marginBottom: 4,
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
   formSubtitle: {
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-    textAlign: 'center',
+    color: "rgba(255, 255, 255, 0.8)",
+    textAlign: "center",
     marginBottom: 4,
   },
   inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderColor: "rgba(255, 255, 255, 0.5)",
     paddingHorizontal: 16,
     paddingVertical: 14,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -586,14 +560,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#FFFFFF",
     fontWeight: "600",
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
   loginButtonContainer: {
     borderRadius: 14,
-    overflow: 'hidden',
-    shadowColor: '#2c5282',
+    overflow: "hidden",
+    shadowColor: "#2c5282",
     shadowOffset: {
       width: 0,
       height: 6,
@@ -604,8 +578,8 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   loginButtonText: {
     color: "#FFFFFF",
@@ -622,18 +596,18 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     fontSize: 13,
     color: "rgba(255, 255, 255, 0.8)",
-    fontWeight: '600',
+    fontWeight: "600",
   },
   googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderColor: "rgba(255, 255, 255, 0.5)",
     paddingVertical: 14,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 4,
@@ -651,7 +625,7 @@ const styles = StyleSheet.create({
   registerText: {
     fontSize: 15,
     color: "rgba(255, 255, 255, 0.9)",
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
@@ -659,7 +633,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#FFFFFF",
     fontWeight: "700",
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
