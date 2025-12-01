@@ -6,14 +6,17 @@ import {
   StyleSheet,
   ImageSourcePropType,
 } from "react-native";
+import { Image as RNImage } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 
 interface OutfitItemProps {
   name: string;
-  image: ImageSourcePropType;
+  image?: ImageSourcePropType;
+  imageUrl?: string;
+  categoryName?: string;
 }
 
-const OutfitItem: React.FC<OutfitItemProps> = ({ name, image }) => {
+const OutfitItem: React.FC<OutfitItemProps> = ({ name, image, imageUrl, categoryName }) => {
   return (
     <View style={styles.container}>
       <View style={styles.imageContainer}>
@@ -23,9 +26,23 @@ const OutfitItem: React.FC<OutfitItemProps> = ({ name, image }) => {
           color="#10B981"
           style={styles.checkIcon}
         />
-        <Image source={image} style={styles.image} />
+        {imageUrl ? (
+          <RNImage
+            source={{ uri: imageUrl }}
+            style={styles.image}
+            contentFit="cover"
+            transition={200}
+          />
+        ) : image ? (
+          <Image source={image} style={styles.image} />
+        ) : (
+          <View style={[styles.image, styles.placeholder]} />
+        )}
       </View>
-      <Text style={styles.label}>{name}</Text>
+      <Text style={styles.label} numberOfLines={2}>{name}</Text>
+      {categoryName && (
+        <Text style={styles.category} numberOfLines={1}>{categoryName}</Text>
+      )}
     </View>
   );
 };
@@ -58,6 +75,17 @@ const styles = StyleSheet.create({
     color: "#64748B",
     textAlign: "center",
     maxWidth: 80,
+    marginTop: 4,
+  },
+  category: {
+    fontSize: 9,
+    color: "#94A3B8",
+    textAlign: "center",
+    maxWidth: 80,
+    marginTop: 2,
+  },
+  placeholder: {
+    backgroundColor: "#E2E8F0",
   },
 });
 

@@ -11,6 +11,7 @@ interface QuickPreferencesProps {
   onOccasionPress: () => void;
   onSeasonPress: () => void;
   onGenerate: () => void;
+  isLoading?: boolean;
 }
 
 const QuickPreferences: React.FC<QuickPreferencesProps> = ({
@@ -21,6 +22,7 @@ const QuickPreferences: React.FC<QuickPreferencesProps> = ({
   onOccasionPress,
   onSeasonPress,
   onGenerate,
+  isLoading = false,
 }) => {
   return (
     <View style={styles.card}>
@@ -47,9 +49,15 @@ const QuickPreferences: React.FC<QuickPreferencesProps> = ({
         />
       </View>
 
-      <TouchableOpacity style={styles.generateButton} onPress={onGenerate}>
-        <Ionicons name="flash" size={20} color="#FFFFFF" />
-        <Text style={styles.generateButtonText}>Generate Outfit</Text>
+      <TouchableOpacity 
+        style={[styles.generateButton, isLoading && styles.generateButtonDisabled]} 
+        onPress={onGenerate}
+        disabled={isLoading}
+      >
+        <Ionicons name={isLoading ? "hourglass-outline" : "flash"} size={20} color="#FFFFFF" />
+        <Text style={styles.generateButtonText}>
+          {isLoading ? "Generating..." : "Generate Outfit"}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -103,6 +111,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#FFFFFF",
+  },
+  generateButtonDisabled: {
+    opacity: 0.6,
   },
 });
 

@@ -31,6 +31,12 @@
           "icon": "./assets/img/notification_icon.png",
           "color": "#1E3A8A"
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow SOP to use your location to provide weather-based outfit suggestions."
+        }
       ]
     ],
     "ios": {
@@ -38,7 +44,9 @@
       "infoPlist": {
         "NSCameraUsageDescription": "This app needs access to the camera to take photos of your wardrobe items.",
         "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to select photos of your wardrobe items.",
-        "NSPhotoLibraryAddUsageDescription": "This app needs access to save photos to your photo library."
+        "NSPhotoLibraryAddUsageDescription": "This app needs access to save photos to your photo library.",
+        "NSLocationWhenInUseUsageDescription": "Allow SOP to use your location to provide weather-based outfit suggestions.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow SOP to use your location to provide weather-based outfit suggestions."
       }
     },
     "android": {
@@ -54,7 +62,9 @@
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
         "READ_MEDIA_IMAGES",
-        "POST_NOTIFICATIONS"
+        "POST_NOTIFICATIONS",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
       ],
       "package": "com.minhtr.SmartOutfitPlanner",
       "googleServicesFile": "./google-services.json",

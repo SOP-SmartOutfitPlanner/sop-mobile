@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -32,7 +32,9 @@ const AnimatedTab = ({
 }: {
   isFocused: boolean;
   onPress: () => void;
-  iconName: keyof typeof Ionicons.glyphMap | keyof typeof MaterialCommunityIcons.glyphMap;
+  iconName:
+    | keyof typeof Ionicons.glyphMap
+    | keyof typeof MaterialCommunityIcons.glyphMap;
   label: string;
   iconFamily?: "Ionicons" | "MaterialCommunityIcons";
 }) => {
@@ -190,7 +192,9 @@ const CustomTabBar = ({
             };
 
             // Icon mapping
-            let iconName: keyof typeof Ionicons.glyphMap | keyof typeof MaterialCommunityIcons.glyphMap;
+            let iconName:
+              | keyof typeof Ionicons.glyphMap
+              | keyof typeof MaterialCommunityIcons.glyphMap;
             let label = "";
             let iconFamily: "Ionicons" | "MaterialCommunityIcons" = "Ionicons";
 
@@ -202,8 +206,8 @@ const CustomTabBar = ({
               label = "Wardrobe";
               iconFamily = "MaterialCommunityIcons";
             } else if (route.name === "Suggestion") {
-              iconName = "add";
-              label = "";
+              iconName = isFocused ? "sparkles" : "sparkles-outline";
+              label = "Suggest";
             } else if (route.name === "Outfit") {
               iconName = isFocused ? "shirt" : "shirt-outline";
               label = "Outfit";

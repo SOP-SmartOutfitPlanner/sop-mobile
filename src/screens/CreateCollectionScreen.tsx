@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,13 +11,14 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { useCreateCollection } from "../hooks/useCollections";
+import { useCreateCollection, useUpdateCollection, useCollectionDetail } from "../hooks/useCollections";
 import { useOutfits } from "../hooks/outfit/useOutfits";
 import { Outfit } from "../types/outfit";
 import { useAuth } from "../hooks/auth/useAuth";
+import { CollectionStackParamList } from "../navigation/CollectionStackNavigator";
 
 const FALLBACK_IMAGE = require("../../assets/adaptive-icon.png");
 
@@ -26,11 +27,24 @@ interface SelectedOutfit {
   description: string;
 }
 
+type CreateCollectionRoute = RouteProp<CollectionStackParamList, "CreateCollection">;
+type EditCollectionRoute = RouteProp<CollectionStackParamList, "EditCollection">;
+
 export const CreateCollectionScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
+  const route = useRoute();
+  
+  // Get collectionId from route params (only EditCollection has it)
+  const collectionId = (route.params as any)?.collectionId;
+  const isEditMode = !!collectionId;
+  
   const { user } = useAuth();
-  const { createCollection, loading } = useCreateCollection();
+  const { createCollection, loading: createLoading } = useCreateCollection();
+  const { updateCollection, loading: updateLoading } = useUpdateCollection();
+  const { collection: existingCollection, loading: fetchLoading } = useCollectionDetail(collectionId || 0);
   const { outfits, fetchOutfits } = useOutfits();
+  
+  const loading = createLoading || updateLoading || fetchLoading;
 
   const [title, setTitle] = useState("");
   const [shortDescription, setShortDescription] = useState("");
@@ -40,9 +54,37 @@ export const CreateCollectionScreen: React.FC = () => {
   >(new Map());
   const [searchQuery, setSearchQuery] = useState("");
 
-  React.useEffect(() => {
+  // Fetch outfits
+  useEffect(() => {
     fetchOutfits({ takeAll: true });
   }, [fetchOutfits]);
+
+  // Initialize form with existing collection data in edit mode
+  useEffect(() => {
+    if (isEditMode && existingCollection) {
+      setTitle(existingCollection.title);
+      setShortDescription(existingCollection.shortDescription || "");
+      
+      if (existingCollection.thumbnailURL) {
+        setThumbnailUri(existingCollection.thumbnailURL);
+      }
+
+      // Initialize selected outfits from collection
+      const outfitsMap = new Map<number, SelectedOutfit>();
+      existingCollection.outfits?.forEach((entry) => {
+        if (entry.outfit) {
+          const outfitId = entry.outfit.outfitId || entry.outfit.id;
+          if (outfitId) {
+            outfitsMap.set(outfitId, {
+              outfitId,
+              description: entry.description || "",
+            });
+          }
+        }
+      });
+      setSelectedOutfits(outfitsMap);
+    }
+  }, [isEditMode, existingCollection]);
 
   const filteredOutfits = useMemo(() => {
     if (!searchQuery.trim()) return outfits;
@@ -108,7 +150,14 @@ export const CreateCollectionScreen: React.FC = () => {
       return;
     }
 
-    if (!thumbnailUri) {
+    // Thumbnail is only required for create, not edit (if already exists)
+    if (!isEditMode && !thumbnailUri) {
+      Alert.alert("Validation Error", "Thumbnail image is required");
+      return;
+    }
+    
+    // In edit mode, need either existing thumbnail or new one
+    if (isEditMode && !thumbnailUri && !existingCollection?.thumbnailURL) {
       Alert.alert("Validation Error", "Thumbnail image is required");
       return;
     }
@@ -129,16 +178,39 @@ export const CreateCollectionScreen: React.FC = () => {
       formData.append("Title", title.trim());
       formData.append("ShortDescription", shortDescription.trim() || "");
 
-      // Append thumbnail image
-      const filename = thumbnailUri.split("/").pop() || "thumbnail.jpg";
-      const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : "image/jpeg";
+      // Handle thumbnail: API requires ThumbnailImg field even when updating
+      const getThumbnailFile = (uri: string) => {
+        const filename = uri.split("/").pop() || "thumbnail.jpg";
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : "image/jpeg";
+        return {
+          uri,
+          type,
+          name: filename,
+        };
+      };
 
-      formData.append("ThumbnailImg", {
-        uri: thumbnailUri,
-        type,
-        name: filename,
-      } as any);
+      let thumbnailToAppend: any = null;
+
+      if (isEditMode) {
+        if (thumbnailUri && thumbnailUri !== existingCollection?.thumbnailURL) {
+          thumbnailToAppend = getThumbnailFile(thumbnailUri);
+        } else if (existingCollection?.thumbnailURL) {
+          thumbnailToAppend = getThumbnailFile(existingCollection.thumbnailURL);
+        }
+      } else if (thumbnailUri) {
+        thumbnailToAppend = getThumbnailFile(thumbnailUri);
+      }
+
+      if (!thumbnailToAppend) {
+        const errorMsg = isEditMode
+          ? "Thumbnail is required. Please select an image or ensure the collection has an existing thumbnail."
+          : "Thumbnail image is required";
+        Alert.alert("Validation Error", errorMsg);
+        return;
+      }
+
+      formData.append("ThumbnailImg", thumbnailToAppend as any);
 
       // Append outfits
       Array.from(selectedOutfits.values()).forEach((outfit, index) => {
@@ -149,17 +221,31 @@ export const CreateCollectionScreen: React.FC = () => {
         );
       });
 
-      const collection = await createCollection(formData);
-      Alert.alert("Success", "Collection created successfully", [
-        {
-          text: "OK",
-          onPress: () => {
-            navigation.goBack();
+      const collection = isEditMode && collectionId
+        ? await updateCollection(collectionId, formData)
+        : await createCollection(formData);
+
+      Alert.alert(
+        "Success",
+        isEditMode ? "Collection updated successfully" : "Collection created successfully",
+        [
+          {
+            text: "OK",
+            onPress: () => navigation.goBack(),
           },
-        },
-      ]);
+        ]
+      );
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Failed to create collection");
+      const errorMessage =
+        err?.response?.data?.message ||
+        err?.message ||
+        (err?.response?.status
+          ? `Request failed with status ${err.response.status}`
+          : isEditMode
+          ? "Failed to update collection"
+          : "Failed to create collection");
+
+      Alert.alert("Error", errorMessage);
     }
   }, [
     title,
@@ -168,23 +254,31 @@ export const CreateCollectionScreen: React.FC = () => {
     selectedOutfits,
     user?.id,
     createCollection,
+    updateCollection,
+    isEditMode,
+    collectionId,
+    existingCollection,
     navigation,
   ]);
 
   const validation = useMemo(
     () => ({
       title: title.trim().length === 0 ? "Title is required" : null,
-      thumbnail: !thumbnailUri ? "Thumbnail image is required" : null,
+      thumbnail: !thumbnailUri && !existingCollection?.thumbnailURL
+        ? "Thumbnail image is required"
+        : null,
       outfits:
         selectedOutfits.size === 0
           ? "Please select at least one outfit"
           : null,
     }),
-    [title, thumbnailUri, selectedOutfits.size]
+    [title, thumbnailUri, selectedOutfits.size, existingCollection?.thumbnailURL]
   );
 
   const isFormValid =
-    title.trim().length > 0 && thumbnailUri && selectedOutfits.size > 0;
+    title.trim().length > 0 &&
+    (thumbnailUri || existingCollection?.thumbnailURL) &&
+    selectedOutfits.size > 0;
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -195,7 +289,9 @@ export const CreateCollectionScreen: React.FC = () => {
         >
           <Ionicons name="chevron-back" size={24} color="#0F172A" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Create Collection</Text>
+        <Text style={styles.headerTitle}>
+          {isEditMode ? "Edit Collection" : "Create Collection"}
+        </Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -413,8 +509,14 @@ export const CreateCollectionScreen: React.FC = () => {
             <ActivityIndicator color="#FFFFFF" />
           ) : (
             <>
-              <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
-              <Text style={styles.submitButtonText}>Create Collection</Text>
+              <Ionicons
+                name={isEditMode ? "checkmark-circle-outline" : "add-circle-outline"}
+                size={20}
+                color="#FFFFFF"
+              />
+              <Text style={styles.submitButtonText}>
+                {isEditMode ? "Update Collection" : "Create Collection"}
+              </Text>
             </>
           )}
         </TouchableOpacity>
