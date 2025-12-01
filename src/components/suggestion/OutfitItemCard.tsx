@@ -102,7 +102,8 @@ const OutfitItemCard: React.FC<OutfitItemCardProps> = ({
     <View style={styles.container}>
       <View style={styles.imageContainer}>
         {showAIBadge && <AIBadge type="ai" confidence={aiConfidence} />}
-        {/* {showSuggestBadge && <AIBadge type="suggest" />} */}
+        {/* {showSuggestBadge && <AIBadge type="suggest" type="ai"  />} */}
+        {showSuggestBadge && <AIBadge type="ai" />}
 
         {hasValidImageUrl && !imageError ? (
           <>
@@ -270,7 +271,7 @@ const styles = StyleSheet.create({
   seasonText: {
     fontSize: 10,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "#000000",
     textTransform: "capitalize",
   },
 });
