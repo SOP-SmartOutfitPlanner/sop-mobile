@@ -2,7 +2,7 @@
 export interface GetOutfitsRequest {
     pageIndex: number;
     pageSize: number;
-    takeAll: boolean;
+    takeAll?: boolean;
     searchTerm?: string;
     isFavorite?: boolean;
     isSaved?: boolean;

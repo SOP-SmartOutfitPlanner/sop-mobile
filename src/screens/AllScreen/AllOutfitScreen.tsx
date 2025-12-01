@@ -6,6 +6,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   Text,
+  TouchableOpacity,
 } from "react-native";
 import { Header } from "../../components/common/Header";
 import { AllOutfitsSection } from "../../components/outfit/AllOutfitsSection";
@@ -152,6 +153,14 @@ const AllOutfitScreen = ({ navigation }: any) => {
           onViewOutfit={handleViewOutfit}
           totalCount={metadata?.totalCount}
         />
+        {metadata?.hasNext && !loadingMore && !loading && (
+          <TouchableOpacity
+            style={styles.loadMoreButton}
+            onPress={() => loadMoreOutfits()}
+          >
+            <Text style={styles.loadMoreButtonText}>Load more outfits</Text>
+          </TouchableOpacity>
+        )}
         {loadingMore && (
           <View style={styles.loadMoreContainer}>
             <ActivityIndicator size="small" color="#3b82f6" />
@@ -199,6 +208,19 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 80,
+  },
+  loadMoreButton: {
+    marginTop: 12,
+    alignSelf: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: "#e5edff",
+  },
+  loadMoreButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1d4ed8",
   },
   loadMoreContainer: {
     flexDirection: "row",

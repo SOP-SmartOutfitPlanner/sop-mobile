@@ -34,13 +34,13 @@ export const useOutfits = () => {
       const request: GetOutfitsRequest = {
         pageIndex: 1,
         pageSize: 5,
-        takeAll: false,
         ...params,
       };
 
       const response = await GetOutFitsAPI(request);
       
       if (response.statusCode === 200 && response.data?.data) {
+        // API đã tôn trọng pageSize=5 nên ta dùng trực tiếp dữ liệu & metaData từ server
         setOutfits(response.data.data);
         setMetadata(response.data.metaData);
         setCurrentPage(1);
@@ -59,44 +59,75 @@ export const useOutfits = () => {
   }, [showError]);
 
   // Load more outfits (pagination)
-  const loadMoreOutfits = useCallback(async (params?: Partial<GetOutfitsRequest>) => {
-    if (loadingMore || !metadata?.hasNext) {
-      return [];
-    }
-
-    try {
-      setLoadingMore(true);
-      const nextPage = currentPage + 1;
-
-      const request: GetOutfitsRequest = {
-        pageIndex: nextPage,
-        pageSize: 5,
-        takeAll: false,
-        ...params,
-      };
-
-      const response = await GetOutFitsAPI(request);
-      
-      if (response.statusCode === 200 && response.data?.data) {
-        setOutfits((prev) => {
-          // Filter out duplicates by id
-          const existingIds = new Set(prev.map((o) => o.id));
-          const newOutfits = response.data.data.filter((o: Outfit) => !existingIds.has(o.id));
-          return [...prev, ...newOutfits];
-        });
-        setMetadata(response.data.metaData);
-        setCurrentPage(nextPage);
-        return response.data.data;
-      } else {
-        throw new Error(response.message || "Failed to load more outfits");
+  const loadMoreOutfits = useCallback(
+    async (params?: Partial<GetOutfitsRequest>) => {
+      // Nếu đang load hoặc đã load đủ totalCount thì không gọi thêm
+      if (loadingMore) {
+        return [];
       }
-    } catch (err: any) {
-      console.error("Failed to load more outfits:", err);
-      return [];
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [loadingMore, metadata, currentPage]);
+
+      if (metadata && outfits.length >= (metadata.totalCount ?? outfits.length)) {
+        return [];
+      }
+
+      try {
+        setLoadingMore(true);
+        const nextPage = currentPage + 1;
+
+        const request: GetOutfitsRequest = {
+          pageIndex: nextPage,
+          pageSize: 5,
+          takeAll: false,
+          ...params,
+        };
+
+        const response = await GetOutFitsAPI(request);
+
+        if (response.statusCode === 200 && response.data?.data) {
+          const allData: Outfit[] = response.data.data;
+          // Loại bỏ trùng id rồi append
+          setOutfits((prev) => {
+            const existingIds = new Set(prev.map((o) => o.id));
+            const freshData = allData.filter((o) => !existingIds.has(o.id));
+            return [...prev, ...freshData];
+          });
+
+          // Cập nhật metaData, đồng thời tự tính hasNext dựa trên totalCount
+          const serverMeta = response.data.metaData as MetaData | undefined;
+          const newTotal =
+            serverMeta?.totalCount !== undefined
+              ? serverMeta.totalCount
+              : metadata?.totalCount ?? outfits.length + response.data.data.length;
+
+          const newOutfitCount = Math.min(
+            outfits.length + response.data.data.length,
+            newTotal
+          );
+
+          setMetadata(
+            serverMeta
+              ? {
+                  ...serverMeta,
+                  totalCount: newTotal,
+                  hasNext: newOutfitCount < newTotal,
+                }
+              : metadata
+          );
+
+          setCurrentPage(nextPage);
+          return response.data.data;
+        } else {
+          throw new Error(response.message || "Failed to load more outfits");
+        }
+      } catch (err: any) {
+        console.error("Failed to load more outfits:", err);
+        return [];
+      } finally {
+        setLoadingMore(false);
+      }
+    },
+    [loadingMore, metadata, outfits.length, currentPage]
+  );
 
   // Fetch favorite outfits
   const fetchFavoriteOutfits = useCallback(async () => {

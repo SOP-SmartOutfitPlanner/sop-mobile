@@ -27,10 +27,9 @@ export const useCalendar = () => {
       try {
         setLoading(true);
         setError(null);
-
         const request: GetCalenderRequest = {
           PageIndex: 1,
-          PageSize: 100,
+          PageSize: 20,
           takeAll: true,
           ...params,
         };
