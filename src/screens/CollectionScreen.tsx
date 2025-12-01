@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { Header } from "../components/common";
+import { AnimatedBackground, Header } from "../components/common";
 import {
   CollectionSearchBar,
   CollectionCard,
@@ -88,12 +88,7 @@ const CollectionScreen: React.FC = () => {
   );
 
   return (
-    <LinearGradient
-      colors={["#1e3a8a", "#172554"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.gradientContainer}
-    >
+    <AnimatedBackground>
       <SafeAreaView style={styles.container} edges={["bottom"]}>
         <Header
           title="Collections"
@@ -178,22 +173,16 @@ const CollectionScreen: React.FC = () => {
         </View>
         <View style={styles.bottomSpacing} />
       </SafeAreaView>
-    </LinearGradient>
+    </AnimatedBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  gradientContainer: {
-    flex: 1,
-    
-  },
-  bottomSpacing: {
-    height: 80, // pb-32 equivalent (32 * 4 = 128px)
-  },
-
   container: {
     flex: 1,
-    backgroundColor: "#030617",
+  },
+  bottomSpacing: {
+    height: 60, // pb-32 equivalent (32 * 4 = 128px)
   },
   content: {
     flex: 1,

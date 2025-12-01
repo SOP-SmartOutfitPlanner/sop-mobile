@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Header } from "../components/common";
+import { AnimatedBackground, Header } from "../components/common";
 import { MainSuggestionCard, WeatherContext } from "../components/suggestion";
 import OccasionDropdown from "../components/suggestion/OccasionDropdown";
 import OutfitCountDropdown from "../components/suggestion/OutfitCountDropdown";
@@ -332,215 +332,223 @@ const SuggestionScreen = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom"]}>
-      <Header
-        title="Suggest"
-        showBackButton={false}
-        showNotification={true}
-        showMessage={true}
-        showProfile={true}
-        onNotificationPress={handleNotificationPress}
-        onMessagePress={handleMessagePress}
-        onProfilePress={handleProfilePress}
-      />
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header Section */}
-        <View style={styles.headerSection}>
-          <Text style={styles.headerTitle}>What to wear today?</Text>
-          <Text style={styles.headerSubtitle}>
-            AI-powered outfit suggestions
-          </Text>
-        </View>
-
-        {/* Weather Section */}
-        <View style={styles.weatherSection}>
-          {/* Loading State */}
-          {isLoadingWeather && !todayForecast ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#6366F1" />
-              <Text style={styles.loadingText}>Loading weather...</Text>
-            </View>
-          ) : weatherError && !todayForecast ? (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{weatherError}</Text>
-              <TouchableOpacity
-                style={styles.retryButton}
-                onPress={handleWeatherRefresh}
-              >
-                <Text style={styles.retryButtonText}>Retry</Text>
-              </TouchableOpacity>
-            </View>
-          ) : todayForecast ? (
-            <WeatherContext
-              temperature={Math.round(todayForecast.temperature)}
-              description={todayForecast.description}
-              condition={todayForecast.description}
-              onRefresh={handleWeatherRefresh}
-              cityName={cityName}
-              forecast={todayForecast}
-            />
-          ) : null}
-        </View>
-
-        {/* Occasion Dropdown, Outfit Count, and Generate Button - Always visible when weather is available */}
-        {todayForecast && (
-          <View style={styles.suggestSection}>
-            <View style={styles.controlsRow}>
-              <View style={styles.occasionContainer}>
-                <OccasionDropdown
-                  value={selectedOccasion}
-                  onSelect={setSelectedOccasion}
-                />
-              </View>
-              <View style={styles.countContainer}>
-                <OutfitCountDropdown
-                  value={totalOutfit}
-                  onSelect={setTotalOutfit}
-                />
-              </View>
-              <TouchableOpacity
-                style={[
-                  styles.generateButton,
-                  (isLoadingSuggestion || !todayForecast) &&
-                    styles.generateButtonDisabled,
-                ]}
-                onPress={handleGenerate}
-                disabled={isLoadingSuggestion || !todayForecast}
-              >
-                {isLoadingSuggestion ? (
-                  <>
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                    <Text style={styles.generateButtonText} numberOfLines={1}>
-                      Generating...
-                    </Text>
-                  </>
-                ) : (
-                  <Text style={styles.generateButtonText} numberOfLines={1}>
-                    Generate
-                  </Text>
-                )}
-              </TouchableOpacity>
-            </View>
+      <AnimatedBackground>
+        <Header
+          title="Suggest"
+          showBackButton={false}
+          showNotification={true}
+          showMessage={true}
+          showProfile={true}
+          onNotificationPress={handleNotificationPress}
+          onMessagePress={handleMessagePress}
+          onProfilePress={handleProfilePress}
+        />
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header Section */}
+          <View style={styles.headerSection}>
+            <Text style={styles.headerTitle}>What to wear today?</Text>
+            <Text style={styles.headerSubtitle}>
+              AI-powered outfit suggestions
+            </Text>
           </View>
-        )}
 
-        {/* Suggestion Results - Multiple Outfits */}
-        {suggestionResults.length > 0 && (
-          <View style={styles.resultsSection}>
-            <View style={styles.resultsHeader}>
-              <View style={styles.resultsTitleRow}>
-                <View style={styles.resultsTitleContainer}>
-                  <View style={styles.resultsTitleWithIndicator}>
-                    <Text style={styles.resultsTitle}>Your Outfits</Text>
-                    {suggestionResults.length > 1 && (
-                      <Text style={styles.outfitIndicator}>
-                        {currentSuggestionIndex + 1}/{suggestionResults.length}
-                      </Text>
-                    )}
-                  </View>
-                  <Text style={styles.resultsSubtitle}>
-                    {selectedOccasion} •{" "}
-                    {todayForecast
-                      ? `${Math.round(todayForecast.temperature)}°C`
-                      : ""}
-                  </Text>
+          {/* Weather Section */}
+          <View style={styles.weatherSection}>
+            {/* Loading State */}
+            {isLoadingWeather && !todayForecast ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#6366F1" />
+                <Text style={styles.loadingText}>Loading weather...</Text>
+              </View>
+            ) : weatherError && !todayForecast ? (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{weatherError}</Text>
+                <TouchableOpacity
+                  style={styles.retryButton}
+                  onPress={handleWeatherRefresh}
+                >
+                  <Text style={styles.retryButtonText}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            ) : todayForecast ? (
+              <WeatherContext
+                temperature={Math.round(todayForecast.temperature)}
+                description={todayForecast.description}
+                condition={todayForecast.description}
+                onRefresh={handleWeatherRefresh}
+                cityName={cityName}
+                forecast={todayForecast}
+              />
+            ) : null}
+          </View>
+
+          {/* Occasion Dropdown, Outfit Count, and Generate Button - Always visible when weather is available */}
+          {todayForecast && (
+            <View style={styles.suggestSection}>
+              <View style={styles.controlsRow}>
+                <View style={styles.occasionContainer}>
+                  <OccasionDropdown
+                    value={selectedOccasion}
+                    onSelect={setSelectedOccasion}
+                  />
                 </View>
+                <View style={styles.countContainer}>
+                  <OutfitCountDropdown
+                    value={totalOutfit}
+                    onSelect={setTotalOutfit}
+                  />
+                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.generateButton,
+                    (isLoadingSuggestion || !todayForecast) &&
+                      styles.generateButtonDisabled,
+                  ]}
+                  onPress={handleGenerate}
+                  disabled={isLoadingSuggestion || !todayForecast}
+                >
+                  {isLoadingSuggestion ? (
+                    <>
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                      <Text style={styles.generateButtonText} numberOfLines={1}>
+                        Generating...
+                      </Text>
+                    </>
+                  ) : (
+                    <Text style={styles.generateButtonText} numberOfLines={1}>
+                      Generate
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* Suggestion Results - Multiple Outfits */}
+          {suggestionResults.length > 0 && (
+            <View style={styles.resultsSection}>
+              <View style={styles.resultsHeader}>
+                <View style={styles.resultsTitleRow}>
+                  <View style={styles.resultsTitleContainer}>
+                    <View style={styles.resultsTitleWithIndicator}>
+                      <Text style={styles.resultsTitle}>Your Outfits</Text>
+                      {suggestionResults.length > 1 && (
+                        <Text style={styles.outfitIndicator}>
+                          {currentSuggestionIndex + 1}/
+                          {suggestionResults.length}
+                        </Text>
+                      )}
+                    </View>
+                    <Text style={styles.resultsSubtitle}>
+                      {selectedOccasion} •{" "}
+                      {todayForecast
+                        ? `${Math.round(todayForecast.temperature)}°C`
+                        : ""}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Mass Add Controls - Only show if multiple outfits */}
+                {suggestionResults.length > 1 && (
+                  <View style={styles.massAddControls}>
+                    <TouchableOpacity
+                      style={styles.deselectAllButton}
+                      onPress={handleSelectAll}
+                    >
+                      <Text style={styles.deselectAllText}>
+                        {selectedOutfitIndexes.length ===
+                        suggestionResults.length
+                          ? "Deselect All"
+                          : "Select All"}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.addSelectedButton,
+                        selectedOutfitIndexes.length === 0 &&
+                          styles.addSelectedButtonDisabled,
+                      ]}
+                      onPress={handleAddSelectedOutfits}
+                      disabled={
+                        selectedOutfitIndexes.length === 0 || isAddingMultiple
+                      }
+                    >
+                      {isAddingMultiple ? (
+                        <>
+                          <ActivityIndicator size="small" color="#FFFFFF" />
+                          <Text style={styles.addSelectedButtonText}>
+                            Adding...
+                          </Text>
+                        </>
+                      ) : (
+                        <>
+                          <Ionicons
+                            name="add-circle"
+                            size={18}
+                            color="#FFFFFF"
+                          />
+                          <Text style={styles.addSelectedButtonText}>
+                            Add Selected ({selectedOutfitIndexes.length})
+                          </Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
 
-              {/* Mass Add Controls - Only show if multiple outfits */}
-              {suggestionResults.length > 1 && (
-                <View style={styles.massAddControls}>
-                  <TouchableOpacity
-                    style={styles.deselectAllButton}
-                    onPress={handleSelectAll}
-                  >
-                    <Text style={styles.deselectAllText}>
-                      {selectedOutfitIndexes.length === suggestionResults.length
-                        ? "Deselect All"
-                        : "Select All"}
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.addSelectedButton,
-                      selectedOutfitIndexes.length === 0 &&
-                        styles.addSelectedButtonDisabled,
-                    ]}
-                    onPress={handleAddSelectedOutfits}
-                    disabled={
-                      selectedOutfitIndexes.length === 0 || isAddingMultiple
-                    }
-                  >
-                    {isAddingMultiple ? (
-                      <>
-                        <ActivityIndicator size="small" color="#FFFFFF" />
-                        <Text style={styles.addSelectedButtonText}>
-                          Adding...
-                        </Text>
-                      </>
-                    ) : (
-                      <>
-                        <Ionicons name="add-circle" size={18} color="#FFFFFF" />
-                        <Text style={styles.addSelectedButtonText}>
-                          Add Selected ({selectedOutfitIndexes.length})
-                        </Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
+              {/* Display Current Outfit with Navigation */}
+              {suggestionResults.length > 0 && (
+                <View style={styles.outfitContainer}>
+                  <MainSuggestionCard
+                    items={suggestionResults[
+                      currentSuggestionIndex
+                    ].suggestedItems.map((item) => {
+                      return {
+                        id: item.id,
+                        name: item.name,
+                        imageUrl: item.imgUrl || undefined,
+                        categoryName: item.categoryName,
+                        color: item.color,
+                        fabric: item.fabric,
+                        weatherSuitable: item.weatherSuitable,
+                        seasons: item.seasons,
+                        styles: item.styles,
+                        isAnalyzed: item.isAnalyzed,
+                        aiConfidence: item.aiConfidence,
+                        itemType: item.itemType,
+                      };
+                    })}
+                    currentIndex={currentSuggestionIndex}
+                    totalSuggestions={suggestionResults.length}
+                    onPrevious={() => {
+                      setCurrentSuggestionIndex((prev) =>
+                        prev > 0 ? prev - 1 : suggestionResults.length - 1
+                      );
+                    }}
+                    onNext={() => {
+                      setCurrentSuggestionIndex((prev) =>
+                        prev < suggestionResults.length - 1 ? prev + 1 : 0
+                      );
+                    }}
+                    onSave={() => handleSave(currentSuggestionIndex)}
+                    onShare={handleShare}
+                    onUseToday={() => handleUseToday(currentSuggestionIndex)}
+                    isSaving={isSaving}
+                    isUsingToday={isUsingToday}
+                    reason={suggestionResults[currentSuggestionIndex].reason}
+                  />
                 </View>
               )}
             </View>
+          )}
 
-            {/* Display Current Outfit with Navigation */}
-            {suggestionResults.length > 0 && (
-              <View style={styles.outfitContainer}>
-                <MainSuggestionCard
-                  items={suggestionResults[
-                    currentSuggestionIndex
-                  ].suggestedItems.map((item) => {
-                    return {
-                      id: item.id,
-                      name: item.name,
-                      imageUrl: item.imgUrl || undefined,
-                      categoryName: item.categoryName,
-                      color: item.color,
-                      fabric: item.fabric,
-                      weatherSuitable: item.weatherSuitable,
-                      seasons: item.seasons,
-                      styles: item.styles,
-                      isAnalyzed: item.isAnalyzed,
-                      aiConfidence: item.aiConfidence,
-                      itemType: item.itemType,
-                    };
-                  })}
-                  currentIndex={currentSuggestionIndex}
-                  totalSuggestions={suggestionResults.length}
-                  onPrevious={() => {
-                    setCurrentSuggestionIndex((prev) =>
-                      prev > 0 ? prev - 1 : suggestionResults.length - 1
-                    );
-                  }}
-                  onNext={() => {
-                    setCurrentSuggestionIndex((prev) =>
-                      prev < suggestionResults.length - 1 ? prev + 1 : 0
-                    );
-                  }}
-                  onSave={() => handleSave(currentSuggestionIndex)}
-                  onShare={handleShare}
-                  onUseToday={() => handleUseToday(currentSuggestionIndex)}
-                  isSaving={isSaving}
-                  isUsingToday={isUsingToday}
-                  reason={suggestionResults[currentSuggestionIndex].reason}
-                />
-              </View>
-            )}
-          </View>
-        )}
-
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
+          <View style={styles.bottomSpacing} />
+        </ScrollView>
+      </AnimatedBackground>
     </SafeAreaView>
   );
 };
@@ -548,7 +556,7 @@ const SuggestionScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#030617",
+    // backgroundColor: "#030617",
   },
   scrollView: {
     flex: 1,
