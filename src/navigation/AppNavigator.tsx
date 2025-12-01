@@ -50,10 +50,6 @@ export const AppNavigator: React.FC = () => {
       <Stack.Screen name="AllOutfit" component={AllOutfitScreen} />
       <Stack.Screen name="Suggestion" component={SuggestionScreen} />
       <Stack.Screen name="Notifications" component={NotificationScreen} />
-      <Stack.Screen
-        name="CreateCollection"
-        component={CreateCollectionScreen}
-      />
       <Stack.Screen name="EditCollection" component={CreateCollectionScreen} />
       <Stack.Screen name="CollectionDetail" component={CollectionDetailScreen} />
       <Stack.Screen name="CreateCollection" component={CreateCollectionScreen} />
