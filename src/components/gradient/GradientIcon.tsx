@@ -15,8 +15,8 @@ const GradientIcon = ({ name, size, focused, iconFamily = "Ionicons" }: Gradient
   const IconComponent = iconFamily === "MaterialCommunityIcons" ? MaterialCommunityIcons : Ionicons;
   
   if (!focused) {
-    // Icon thường không có gradient
-    return <IconComponent name={name as any} size={size} color="#8e8e93" />;
+    // Icon inactive: gray color
+    return <IconComponent name={name as any} size={size} color="#6B7280" />;
   }
 
   // Icon có gradient khi focused
