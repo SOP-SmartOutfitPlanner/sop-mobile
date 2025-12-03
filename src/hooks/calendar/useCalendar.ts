@@ -8,6 +8,7 @@ import {
 } from "../../types/calendar";
 import { CreateUserOccasionRequest, EditUserOccasionRequest } from "../../types/userOccasion";
 import { useNotification } from "../notification/useNotification";
+import { getUserId } from "../../services/api/apiClient";
 
 export const useCalendar = () => {
   const [calendarEntries, setCalendarEntries] = useState<CalendarEntry[]>([]);
@@ -28,9 +29,18 @@ export const useCalendar = () => {
         setLoading(true);
         setError(null);
 
+        const userId = await getUserId();
+        
+        if (!userId) {
+          console.log("No userId found, clearing calendar entries");
+          setCalendarEntries([]);
+          setLoading(false);
+          return [];
+        }
+
         const request: GetCalenderRequest = {
           PageIndex: 1,
-          PageSize: 100,
+          PageSize: 20,
           takeAll: true,
           ...params,
         };
@@ -46,7 +56,12 @@ export const useCalendar = () => {
       } catch (err: any) {
         const errorMessage = err.message || "Failed to fetch calendar entries";
         setError(errorMessage);
-        showError(errorMessage);
+        // Don't show error for authentication issues
+        if (err.response?.status !== 401 && err.response?.status !== 403) {
+          showError(errorMessage);
+        } else {
+          setCalendarEntries([]);
+        }
         return [];
       } finally {
         setLoading(false);
@@ -59,6 +74,13 @@ export const useCalendar = () => {
   const createCalendarEntry = useCallback(
     async (data: CreateCalenderRequest) => {
       try {
+        const userId = await getUserId();
+        
+        if (!userId) {
+          console.log("No userId found, cannot create calendar entry");
+          return null;
+        }
+
         setLoading(true);
         setError(null);
 
@@ -81,7 +103,10 @@ export const useCalendar = () => {
           errorMessage = err.message;
         }
         setError(errorMessage);
-        showError(errorMessage);
+        // Don't show error for authentication issues
+        if (err.response?.status !== 401 && err.response?.status !== 403) {
+          showError(errorMessage);
+        }
         return null;
       } finally {
         setLoading(false);
@@ -94,6 +119,13 @@ export const useCalendar = () => {
   const updateCalendarEntry = useCallback(
     async (id: number, data: EditCalenderRequest) => {
       try {
+        const userId = await getUserId();
+        
+        if (!userId) {
+          console.log("No userId found, cannot update calendar entry");
+          return null;
+        }
+
         setLoading(true);
         setError(null);
 
@@ -109,7 +141,10 @@ export const useCalendar = () => {
       } catch (err: any) {
         const errorMessage = err.message || "Failed to update calendar entry";
         setError(errorMessage);
-        showError(errorMessage);
+        // Don't show error for authentication issues
+        if (err.response?.status !== 401 && err.response?.status !== 403) {
+          showError(errorMessage);
+        }
         return null;
       } finally {
         setLoading(false);
@@ -122,6 +157,13 @@ export const useCalendar = () => {
   const deleteCalendarEntry = useCallback(
     async (id: number) => {
       try {
+        const userId = await getUserId();
+        
+        if (!userId) {
+          console.log("No userId found, cannot delete calendar entry");
+          return false;
+        }
+
         setLoading(true);
         setError(null);
 
@@ -141,7 +183,10 @@ export const useCalendar = () => {
       } catch (err: any) {
         const errorMessage = err.message || "Failed to remove outfit from calendar";
         setError(errorMessage);
-        showError(errorMessage);
+        // Don't show error for authentication issues
+        if (err.response?.status !== 401 && err.response?.status !== 403) {
+          showError(errorMessage);
+        }
         setLoading(false);
         return false;
       }
@@ -168,6 +213,13 @@ export const useCalendar = () => {
   const createUserOccasion = useCallback(
     async (data: CreateUserOccasionRequest) => {
       try {
+        const userId = await getUserId();
+        
+        if (!userId) {
+          console.log("No userId found, cannot create user occasion");
+          return null;
+        }
+
         setLoading(true);
         setError(null);
 
@@ -191,7 +243,10 @@ export const useCalendar = () => {
           errorMessage = err.message;
         }
         setError(errorMessage);
-        showError(errorMessage);
+        // Don't show error for authentication issues
+        if (err.response?.status !== 401 && err.response?.status !== 403) {
+          showError(errorMessage);
+        }
         return null;
       } finally {
         setLoading(false);
@@ -204,6 +259,13 @@ export const useCalendar = () => {
   const updateUserOccasion = useCallback(
     async (id: number, data: Partial<EditUserOccasionRequest>) => {
       try {
+        const userId = await getUserId();
+        
+        if (!userId) {
+          console.log("No userId found, cannot update user occasion");
+          return null;
+        }
+
         setLoading(true);
         setError(null);
 
@@ -226,7 +288,10 @@ export const useCalendar = () => {
           errorMessage = err.message;
         }
         setError(errorMessage);
-        showError(errorMessage);
+        // Don't show error for authentication issues
+        if (err.response?.status !== 401 && err.response?.status !== 403) {
+          showError(errorMessage);
+        }
         return null;
       } finally {
         setLoading(false);
@@ -239,6 +304,13 @@ export const useCalendar = () => {
   const deleteUserOccasion = useCallback(
     async (id: number) => {
       try {
+        const userId = await getUserId();
+        
+        if (!userId) {
+          console.log("No userId found, cannot delete user occasion");
+          return false;
+        }
+
         setLoading(true);
         setError(null);
 
@@ -258,7 +330,10 @@ export const useCalendar = () => {
       } catch (err: any) {
         const errorMessage = err.message || "Failed to delete occasion";
         setError(errorMessage);
-        showError(errorMessage);
+        // Don't show error for authentication issues
+        if (err.response?.status !== 401 && err.response?.status !== 403) {
+          showError(errorMessage);
+        }
         setLoading(false);
         return false;
       }

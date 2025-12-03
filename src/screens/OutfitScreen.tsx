@@ -18,6 +18,7 @@ import { OutfitBookSection } from "@/components/outfit";
 import { WeeklyCalendar } from "../components/calendar/WeeklyCalendar";
 import { MonthlyCalendar } from "../components/calendar/MonthlyCalendar";
 import { CalendarDayDetailModal } from "../components/calendar/CalendarDayDetailModal";
+import { getUserId } from "../services/api/apiClient";
 
 const OutfitScreen = ({ navigation }: any) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
@@ -75,6 +76,15 @@ const OutfitScreen = ({ navigation }: any) => {
 
   // Fetch calendar entries and user occasions
   const fetchCalendarData = useCallback(async () => {
+    const userId = await getUserId();
+    
+    if (!userId) {
+      console.log("No userId found, skipping data fetch");
+      // Clear data when no userId but stay on current screen
+      setUserOccasions([]);
+      return;
+    }
+
     // Fetch all calendar entries to ensure we have complete data
     await fetchCalendarEntries({ takeAll: true });
     
@@ -180,7 +190,15 @@ const OutfitScreen = ({ navigation }: any) => {
     return map;
   }, [outfits, favoriteOutfits]);
 
-  const handleCreateOutfit = () => {
+  const handleCreateOutfit = async () => {
+    const userId = await getUserId();
+    
+    if (!userId) {
+      console.log("No userId found, cannot create outfit");
+      // User stays on current screen, modal won't open
+      return;
+    }
+    
     setIsCreateModalVisible(true);
   };
 

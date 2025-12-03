@@ -80,7 +80,7 @@ export const AllOutfitCard: React.FC<AllOutfitCardProps> = ({ outfit, onPress })
           })}
         </View>
 
-        <Text numberOfLines={1} style={styles.cardTitle}>
+        <Text numberOfLines={2} style={styles.cardTitle}>
           {outfit.name || "Unnamed outfit"}
         </Text>
         <Text numberOfLines={2} style={styles.cardDescription}>
@@ -191,13 +191,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     color: "#f8fafc",
+    lineHeight: 20,
+    // Giữ cho tối đa 2 dòng luôn chiếm cùng chiều cao,
+    // tránh việc card bị lệch chiều cao giữa các cột.
+    minHeight: 40,
   },
   cardDescription: {
     fontSize: 12,
     color: "#cbd5ff",
+    lineHeight: 16,
+    // Tương tự title, cố định chiều cao cho 2 dòng mô tả
+    minHeight: 32,
   },
   metaRow: {
-    flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
     alignItems: "flex-start",

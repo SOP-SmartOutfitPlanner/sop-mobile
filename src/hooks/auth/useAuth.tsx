@@ -299,16 +299,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
-      // Try to call logout API, but don't fail if token is expired (401)
+      // Try to call logout API, but don't fail if token is expired or missing
       await logoutAPI();
     } catch (error: any) {
-      // Ignore 401 errors (token already expired)
-      if (error?.response?.status !== 401) {
-        console.error("❌ Logout error:", error);
+      // Silently ignore all logout errors (401, 403, network errors, etc.)
+      // This ensures logout always succeeds even if token is expired or missing
+      if (error?.response?.status === 401 || error?.response?.status === 403) {
+        console.log("ℹ️ Token expired or invalid, clearing local data");
       } else {
-        console.log("ℹ️ Token already expired, clearing local data");
+        console.log("ℹ️ Logout API call failed, clearing local data anyway");
       }
     } finally {
+      // Always clear session regardless of API call result
       await clearSession();
       console.log("✅ Logged out successfully");
     }
