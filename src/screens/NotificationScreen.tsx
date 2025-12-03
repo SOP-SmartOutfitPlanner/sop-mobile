@@ -24,6 +24,7 @@ import { useAuth } from "../hooks/auth";
 import NotificationCard from "../components/notification/NotificationCard";
 import { NotificationFilterKey } from "../components/notification/NotificationFilters";
 import { NotificationItem, NotificationMeta } from "../types/notification";
+import AnimatedBackground from "../components/common/AnimatedBackground";
 import {
   deleteNotifications,
   fetchUnreadNotificationCount,
@@ -275,9 +276,10 @@ export const NotificationScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#020617]">
+    <SafeAreaView className="flex-1" edges={["top", "left", "right"]}>
+      <AnimatedBackground />
       <View className="flex-1">
-        <View className="gap-4 px-5 py-4">
+        <View className="gap-4 px-5 pt-2 pb-4">
           <View className="flex-row items-center justify-between">
             <TouchableOpacity
               className="rounded-full border border-white/20 p-2"
