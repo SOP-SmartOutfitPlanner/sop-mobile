@@ -41,12 +41,12 @@ export const LogoutButton: React.FC<LogoutButtonProps> = ({
 
 const styles = StyleSheet.create({
   logoutContainer: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(15,23,42,0.85)",
     marginHorizontal: 24,
     marginVertical: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "rgba(148,163,184,0.6)",
   },
   logoutButton: {
     flexDirection: "row",

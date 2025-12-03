@@ -35,5 +35,8 @@ export interface User {
   jobName: string | null;
   jobDescription: string | null;
   userStyles: UserStyle[];
+  postsCount?: number;
+  followersCount?: number;
+  followingCount?: number;
 }
 
