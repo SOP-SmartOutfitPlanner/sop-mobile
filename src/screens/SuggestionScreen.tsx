@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Text,
   TouchableOpacity,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -21,7 +22,7 @@ import {
   CreateOutfitAPI,
   MassCreateOutfitsAPI,
 } from "../services/endpoint/outfit";
-import { CreateCalendarEntryAPI } from "../services/endpoint/calendar";
+import { CalenderAPI } from "../services/endpoint/calendar";
 import { SuggestedItem } from "../types/outfit";
 import { useNotification } from "../hooks/notification/useNotification";
 import { getUserId } from "../services/api/apiClient";
@@ -61,6 +62,10 @@ const SuggestionScreen = ({ navigation }: any) => {
   const [isSaving, setIsSaving] = useState(false);
   const [isUsingToday, setIsUsingToday] = useState(false);
   const [isAddingMultiple, setIsAddingMultiple] = useState(false);
+  const [duplicateModal, setDuplicateModal] = useState<{
+    context: "save" | "use";
+    message: string;
+  } | null>(null);
 
   // Fetch occasions to get IDs
   useEffect(() => {
@@ -220,6 +225,18 @@ const SuggestionScreen = ({ navigation }: any) => {
     }
   };
 
+  // Helper: structured API error logging for debugging
+  const logApiError = (context: string, error: any) => {
+    console.error(`❌ [${context}] API Error:`, {
+      message: error?.message,
+      isAxiosError: !!error?.isAxiosError,
+      status: error?.response?.status,
+      url: error?.response?.config?.url,
+      method: error?.response?.config?.method,
+      responseData: error?.response?.data,
+    });
+  };
+
   // Save single outfit
   const handleSave = async (outfitIndex: number) => {
     const outfit = suggestionResults[outfitIndex];
@@ -243,8 +260,28 @@ const SuggestionScreen = ({ navigation }: any) => {
         throw new Error(response.message || "Failed to save outfit");
       }
     } catch (error: any) {
-      console.error("Error saving outfit:", error);
-      showError(error.message || "Failed to save outfit");
+      logApiError("SuggestionScreen.handleSave", error);
+
+      const apiMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to save outfit. Please try again.";
+
+      // If outfit already exists, show friendly modal instead of only toast
+      if (
+        error?.response?.status === 400 &&
+        typeof error?.response?.data?.message === "string" &&
+        error.response.data.message
+          .toLowerCase()
+          .includes("same combination of items already exists")
+      ) {
+        setDuplicateModal({
+          context: "save",
+          message: error.response.data.message,
+        });
+      } else {
+        showError(apiMessage);
+      }
     } finally {
       setIsSaving(false);
     }
@@ -284,7 +321,7 @@ const SuggestionScreen = ({ navigation }: any) => {
         "T" +
         today.toTimeString().split(" ")[0]; // Format: yyyy-MM-ddTHH:mm:ss
 
-      const calendarResponse = await CreateCalendarEntryAPI({
+      const calendarResponse = await CalenderAPI.createCalendarEntry({
         outfitIds: [outfitId],
         isDaily: true,
         time: todayString,
@@ -301,8 +338,27 @@ const SuggestionScreen = ({ navigation }: any) => {
         );
       }
     } catch (error: any) {
-      console.error("Error using outfit today:", error);
-      showError(error.message || "Failed to set up outfit for today");
+      logApiError("SuggestionScreen.handleUseToday", error);
+
+      const apiMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to set up outfit for today. Please try again.";
+
+      if (
+        error?.response?.status === 400 &&
+        typeof error?.response?.data?.message === "string" &&
+        error.response.data.message
+          .toLowerCase()
+          .includes("same combination of items already exists")
+      ) {
+        setDuplicateModal({
+          context: "use",
+          message: error.response.data.message,
+        });
+      } else {
+        showError(apiMessage);
+      }
     } finally {
       setIsUsingToday(false);
     }
@@ -549,6 +605,66 @@ const SuggestionScreen = ({ navigation }: any) => {
           <View style={styles.bottomSpacing} />
         </ScrollView>
       </AnimatedBackground>
+
+      {/* Duplicate outfit modal */}
+      {duplicateModal && (
+        <Modal
+          transparent
+          visible={!!duplicateModal}
+          animationType="fade"
+          onRequestClose={() => setDuplicateModal(null)}
+        >
+          <View style={styles.modalBackdrop}>
+            <View style={styles.modalCard}>
+              <View style={styles.modalIconContainer}>
+                <View style={styles.modalIconCircle}>
+                  <Ionicons name="alert-circle" size={24} color="#B91C1C" />
+                </View>
+              </View>
+              {/* EN: This outfit already exists / VN: Outfit này đã tồn tại */}
+              <Text style={styles.modalTitle}>This outfit already exists</Text>
+              <Text style={styles.modalMessage}>
+                {duplicateModal.context === "save"
+                  ? "We’ve already created an outfit with this exact combination of items in your outfits."
+                  : "We’ve already created an outfit with this exact combination of items in your calendar."}
+              </Text>
+              <Text style={styles.modalHint}>
+                {duplicateModal.context === "save"
+                  ? "Open your outfits to reuse it, or stay here and try a different combination."
+                  : "Open your calendar to use it today, or stay here and try a different combination."}
+              </Text>
+
+              <View style={styles.modalButtonsRow}>
+                <TouchableOpacity
+                  style={styles.modalSecondaryButton}
+                  onPress={() => setDuplicateModal(null)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.modalSecondaryText}>Stay here</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.modalPrimaryButton}
+                  onPress={() => {
+                    if (duplicateModal.context === "save") {
+                      navigation.navigate("Outfit");
+                    } else {
+                      navigation.navigate("Outfit");
+                    }
+                    setDuplicateModal(null);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.modalPrimaryText}>
+                    {duplicateModal.context === "save"
+                      ? "Go to outfits"
+                      : "Go to calendar"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 };
@@ -563,6 +679,86 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 60, // pb-32 equivalent (32 * 4 = 128px)
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.75)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  modalCard: {
+    width: "100%",
+    maxWidth: 380,
+    backgroundColor: "#0F172A",
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+    borderWidth: 1,
+    borderColor: "rgba(148, 163, 184, 0.35)",
+  },
+  modalIconContainer: {
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  modalIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#FEF2F2",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#F9FAFB",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  modalMessage: {
+    fontSize: 14,
+    color: "#E5E7EB",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  modalHint: {
+    fontSize: 13,
+    color: "#9CA3AF",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  modalButtonsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  modalSecondaryButton: {
+    flex: 1,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#4B5563",
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalSecondaryText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#E5E7EB",
+  },
+  modalPrimaryButton: {
+    flex: 1,
+    borderRadius: 999,
+    backgroundColor: "#2563EB",
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalPrimaryText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
   // Header Section
   headerSection: {

@@ -97,17 +97,17 @@ const WeatherContext: React.FC<WeatherContextProps> = ({
               <Text style={styles.locationText}>
                 {getShortLocation(cityName)}
               </Text>
-      </View>
+            </View>
 
             {/* Temperature and Icon - Right */}
             <View style={styles.tempRight}>
               <View style={styles.weatherIconContainer}>
-          <Ionicons
+                <Ionicons
                   name={getWeatherIcon(description)}
-                  size={32}
+                  size={40}
                   color="#FFFFFF"
-          />
-        </View>
+                />
+              </View>
               <View style={styles.tempColumn}>
                 <Text style={styles.temperature}>{temperature}°</Text>
                 {forecast?.feelsLike && (
@@ -115,8 +115,8 @@ const WeatherContext: React.FC<WeatherContextProps> = ({
                     Feels {Math.round(forecast.feelsLike)}°
                   </Text>
                 )}
-        </View>
-      </View>
+              </View>
+            </View>
           </View>
 
           {/* Description - Below */}
@@ -157,8 +157,11 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#FFFFFF",
+    fontWeight: "700",
+    color: "rgba(255, 255, 255, 0.96)",
+    textShadowColor: "rgba(15, 23, 42, 0.45)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   tempRight: {
     flexDirection: "row",
@@ -166,12 +169,14 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   weatherIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: "rgba(15, 23, 42, 0.3)",
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.25)",
   },
   tempColumn: {
     alignItems: "flex-end",
@@ -184,15 +189,21 @@ const styles = StyleSheet.create({
   },
   feelsLikeText: {
     fontSize: 14,
-    fontWeight: "500",
-    color: "rgba(255, 255, 255, 0.9)",
+    fontWeight: "600",
+    color: "rgba(255, 255, 255, 0.95)",
     marginTop: 2,
+    textShadowColor: "rgba(15, 23, 42, 0.45)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   description: {
     fontSize: 16,
-    fontWeight: "500",
-    color: "#FFFFFF",
+    fontWeight: "600",
+    color: "rgba(255, 255, 255, 0.97)",
     textTransform: "capitalize",
+    textShadowColor: "rgba(15, 23, 42, 0.5)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
 });
 
