@@ -11,6 +11,7 @@ import {
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import * as Haptics from "expo-haptics";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -97,13 +98,13 @@ const AnimatedTab = ({
           <MaterialCommunityIcons
             name={iconName as keyof typeof MaterialCommunityIcons.glyphMap}
             size={21}
-            color="#9CA3AF"
+            color="#000000"
           />
         ) : (
           <Ionicons
             name={iconName as keyof typeof Ionicons.glyphMap}
             size={21}
-            color="#9CA3AF"
+            color="#000000"
           />
         )}
         {label && (
@@ -111,8 +112,8 @@ const AnimatedTab = ({
             style={[
               styles.label,
               {
-                color: isFocused ? "#FFFFFF" : "#9CA3AF", // white when active, gray-400 when inactive
-                fontWeight: isFocused ? "700" : "500",
+                color: isFocused ? "#FFFFFF" : "#000000", // white when active, gray-400 when inactive
+                fontWeight: isFocused ? "900" : "700",
               },
             ]}
             // numberOfLines={1}
@@ -267,6 +268,10 @@ const CustomTabBar = ({
 
                   const onPress = () => {
                     if (isMiddleButton) {
+                      // Medium impact haptic for central action button
+                      void Haptics.impactAsync(
+                        Haptics.ImpactFeedbackStyle.Medium
+                      );
                       addSheetRef.current?.present();
                       return;
                     }
@@ -278,6 +283,8 @@ const CustomTabBar = ({
                     });
 
                     if (!isFocused && !event.defaultPrevented) {
+                      // Subtle haptic when switching tabs
+                      void Haptics.selectionAsync();
                       navigation.navigate(route.name);
                     }
                   };
@@ -378,6 +385,10 @@ const CustomTabBar = ({
 
                 const onPress = () => {
                   if (isMiddleButton) {
+                    // Medium impact haptic for central action button
+                    void Haptics.impactAsync(
+                      Haptics.ImpactFeedbackStyle.Medium
+                    );
                     addSheetRef.current?.present();
                     return;
                   }
@@ -389,6 +400,8 @@ const CustomTabBar = ({
                   });
 
                   if (!isFocused && !event.defaultPrevented) {
+                    // Subtle haptic when switching tabs
+                    void Haptics.selectionAsync();
                     navigation.navigate(route.name);
                   }
                 };
@@ -484,7 +497,8 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     elevation: 14,
     // Nền glass sáng hơn, hơi xanh nhạt
-    backgroundColor: "rgba(148, 163, 184, 0.18)", // slate-400 rất nhạt
+    // backgroundColor: "rgba(148, 163, 184, 0.3)", // slate-400 rất nhạt
+    backgroundColor: "rgba(255, 255, 255, 0.75)", // slate-400 rất nhạt
   },
   blurView: {
     flex: 1,

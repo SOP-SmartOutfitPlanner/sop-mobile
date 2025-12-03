@@ -1,7 +1,8 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
 import { CollectionStackParamList } from "../navigation/CollectionStackNavigator";
 import { useCollectionDetail } from "../hooks/useCollections";
@@ -26,8 +28,13 @@ type CollectionDetailRoute = RouteProp<
 
 const FALLBACK_IMAGE = require("../../assets/adaptive-icon.png");
 
+type CollectionDetailNavigation = StackNavigationProp<
+  CollectionStackParamList,
+  "CollectionDetail"
+>;
+
 export const CollectionDetailScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<CollectionDetailNavigation>();
   const route = useRoute<CollectionDetailRoute>();
   const collectionId = route.params?.collectionId;
 
@@ -44,6 +51,10 @@ export const CollectionDetailScreen: React.FC = () => {
     isOwner,
     setCommentCount,
   } = useCollectionDetail(collectionId);
+  const [expandedOutfitId, setExpandedOutfitId] = useState<number | null>(null);
+  const [selectedItem, setSelectedItem] = useState<CollectionItemDetail | null>(
+    null
+  );
 
   const coverSource = collection?.thumbnailURL
     ? { uri: collection.thumbnailURL }
@@ -82,21 +93,10 @@ export const CollectionDetailScreen: React.FC = () => {
             }
           }
 
-          const primaryOccasion = item.occasions?.[0]?.name;
-          const primarySeason = item.seasons?.[0]?.name;
-          const primaryStyle = item.styles?.[0]?.name;
-
-          const metaLine1Parts = [
+          const metaLabel = [
             item.categoryName,
             primaryColor ?? undefined,
-            item.weatherSuitable ?? undefined,
-          ].filter(Boolean);
-
-          const metaLine2Parts = [
-            primaryOccasion,
-            primarySeason,
-            primaryStyle,
-          ].filter(Boolean);
+          ].filter(Boolean).join(" · ");
 
           const imageSource =
             item.imgUrl && item.imgUrl.length > 0
@@ -104,24 +104,24 @@ export const CollectionDetailScreen: React.FC = () => {
               : FALLBACK_IMAGE;
 
           return (
-            <View key={item.itemId} style={styles.itemCard}>
+            <TouchableOpacity
+              key={item.itemId}
+              style={styles.itemCard}
+              activeOpacity={0.85}
+              onPress={() => setSelectedItem(item)}
+            >
               <Image source={imageSource} style={styles.itemImage} />
               <View style={styles.itemTextContainer}>
                 <Text style={styles.itemName} numberOfLines={1}>
                   {item.name}
                 </Text>
-                {metaLine1Parts.length > 0 && (
+                {!!metaLabel && (
                   <Text style={styles.itemMeta} numberOfLines={1}>
-                    {metaLine1Parts.join(" · ")}
-                  </Text>
-                )}
-                {metaLine2Parts.length > 0 && (
-                  <Text style={styles.itemMetaSecondary} numberOfLines={1}>
-                    {metaLine2Parts.join(" · ")}
+                    {metaLabel}
                   </Text>
                 )}
               </View>
-            </View>
+            </TouchableOpacity>
           );
         })}
       </View>
@@ -198,6 +198,23 @@ export const CollectionDetailScreen: React.FC = () => {
                   {collection.shortDescription}
                 </Text>
               )}
+              {isOwner && (
+                <TouchableOpacity
+                  style={styles.coverEditButton}
+                  onPress={() =>
+                    navigation.navigate("EditCollection", {
+                      collectionId: collection.id,
+                    })
+                  }
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name="create-outline"
+                    size={18}
+                    color={COLLECTION_COLORS.text.primary}
+                  />
+                </TouchableOpacity>
+              )}
             </LinearGradient>
           </View>
 
@@ -239,31 +256,34 @@ export const CollectionDetailScreen: React.FC = () => {
                   </Text>
                 </View>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.followButton,
-                  collection.isFollowing && styles.followingButton,
-                ]}
-                onPress={toggleFollow}
-              >
-                <Ionicons
-                  name={collection.isFollowing ? "checkmark" : "add"}
-                  size={16}
-                  color={
-                    collection.isFollowing
-                      ? COLLECTION_COLORS.text.secondary
-                      : COLLECTION_COLORS.text.primary
-                  }
-                />
-                <Text
+              {!isOwner && (
+                <TouchableOpacity
                   style={[
-                    styles.followText,
-                    collection.isFollowing && styles.followingText,
+                    styles.followButton,
+                    collection.isFollowing && styles.followingButton,
                   ]}
+                  onPress={toggleFollow}
+                  activeOpacity={0.9}
                 >
-                  {collection.isFollowing ? "Following" : "Follow"}
-                </Text>
-              </TouchableOpacity>
+                  <Ionicons
+                    name={collection.isFollowing ? "checkmark" : "add"}
+                    size={16}
+                    color={
+                      collection.isFollowing
+                        ? COLLECTION_COLORS.text.secondary
+                        : COLLECTION_COLORS.text.primary
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.followText,
+                      collection.isFollowing && styles.followingText,
+                    ]}
+                  >
+                    {collection.isFollowing ? "Following" : "Follow"}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             {weatherTags.length > 0 && (
@@ -395,7 +415,14 @@ export const CollectionDetailScreen: React.FC = () => {
           </View>
 
           <View style={styles.glassSection}>
-            <Text style={styles.sectionTitle}>Outfits in this collection</Text>
+            <View style={styles.outfitsHeaderRow}>
+              <Text style={styles.sectionTitle}>Outfits in this collection</Text>
+              {collection.outfits.length > 1 && (
+                <TouchableOpacity activeOpacity={0.8}>
+                  <Text style={styles.viewAllLink}>View all</Text>
+                </TouchableOpacity>
+              )}
+            </View>
             {collection.outfits.length === 0 ? (
               <Text style={styles.metaText}>
                 No outfits have been added yet.
@@ -413,9 +440,34 @@ export const CollectionDetailScreen: React.FC = () => {
                     </Text>
                   </View>
                   {entry.description && (
-                    <Text style={styles.outfitDescription}>
-                      {entry.description}
-                    </Text>
+                    <>
+                      <Text
+                        style={styles.outfitDescription}
+                        numberOfLines={
+                          expandedOutfitId === entry.outfit.outfitId ? undefined : 3
+                        }
+                      >
+                        {entry.description}
+                      </Text>
+                      {entry.description.length > 140 && (
+                        <TouchableOpacity
+                          onPress={() =>
+                            setExpandedOutfitId(
+                              expandedOutfitId === entry.outfit.outfitId
+                                ? null
+                                : entry.outfit.outfitId
+                            )
+                          }
+                          activeOpacity={0.7}
+                        >
+                          <Text style={styles.readMoreText}>
+                            {expandedOutfitId === entry.outfit.outfitId
+                              ? "Show less"
+                              : "Read more"}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </>
                   )}
                   {renderItems(entry.outfit.items ?? [])}
                 </View>
@@ -435,6 +487,71 @@ export const CollectionDetailScreen: React.FC = () => {
           </View>
         </ScrollView>
         <View style={styles.bottomSpacing} />
+
+        {selectedItem && (
+          <Modal
+            visible={!!selectedItem}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setSelectedItem(null)}
+          >
+            <View style={styles.itemModalBackdrop}>
+              <View style={styles.itemModalCard}>
+                <Image
+                  source={
+                    selectedItem.imgUrl && selectedItem.imgUrl.length > 0
+                      ? { uri: selectedItem.imgUrl }
+                      : FALLBACK_IMAGE
+                  }
+                  style={styles.itemModalImage}
+                />
+                <Text style={styles.itemModalTitle}>{selectedItem.name}</Text>
+                <Text style={styles.itemModalMeta}>
+                  {selectedItem.categoryName}
+                  {selectedItem.weatherSuitable
+                    ? ` · ${selectedItem.weatherSuitable}`
+                    : ""}
+                  {selectedItem.condition ? ` · ${selectedItem.condition}` : ""}
+                </Text>
+                {selectedItem.aiDescription && (
+                  <Text style={styles.itemModalDescription}>
+                    {selectedItem.aiDescription}
+                  </Text>
+                )}
+                <View style={styles.itemModalTagsRow}>
+                  {selectedItem.styles?.[0]?.name && (
+                    <View style={styles.itemModalTagPill}>
+                      <Text style={styles.itemModalTagText}>
+                        {selectedItem.styles[0].name}
+                      </Text>
+                    </View>
+                  )}
+                  {selectedItem.occasions?.[0]?.name && (
+                    <View style={styles.itemModalTagPill}>
+                      <Text style={styles.itemModalTagText}>
+                        {selectedItem.occasions[0].name}
+                      </Text>
+                    </View>
+                  )}
+                  {selectedItem.seasons?.[0]?.name && (
+                    <View style={styles.itemModalTagPill}>
+                      <Text style={styles.itemModalTagText}>
+                        {selectedItem.seasons[0].name}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <TouchableOpacity
+                  style={styles.itemModalCloseButton}
+                  onPress={() => setSelectedItem(null)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.itemModalCloseText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+        )}
       </SafeAreaView>
     </LinearGradient>
   );
@@ -491,6 +608,20 @@ const styles = StyleSheet.create({
     right: 0,
     padding: 24,
     justifyContent: "flex-end",
+  },
+  coverEditButton: {
+    position: "absolute",
+    top: 16,
+    right: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(148, 163, 184, 0.6)",
+    backgroundColor: "rgba(15, 23, 42, 0.6)",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   backButton: {
     position: "absolute",
@@ -633,7 +764,18 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     color: COLLECTION_COLORS.text.primary,
-    marginBottom: 20,
+    marginBottom: 16,
+  },
+  outfitsHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  viewAllLink: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: COLLECTION_COLORS.accent.blue,
   },
   outfitCard: {
     borderWidth: 1,
@@ -659,8 +801,14 @@ const styles = StyleSheet.create({
   outfitDescription: {
     color: COLLECTION_COLORS.text.secondary,
     fontSize: 14,
-    marginBottom: 16,
+    marginBottom: 8,
     lineHeight: 20,
+  },
+  readMoreText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: COLLECTION_COLORS.accent.blue,
+    marginBottom: 16,
   },
   itemGrid: {
     flexDirection: "row",
@@ -703,6 +851,74 @@ const styles = StyleSheet.create({
     color: COLLECTION_COLORS.text.muted,
     marginTop: 2,
   },
+  itemModalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  itemModalCard: {
+    width: "100%",
+    borderRadius: 24,
+    padding: 20,
+    backgroundColor: COLLECTION_COLORS.glass.card,
+    borderWidth: 1,
+    borderColor: COLLECTION_COLORS.glass.border,
+  },
+  itemModalImage: {
+    width: "100%",
+    height: 260,
+    borderRadius: 16,
+    marginBottom: 16,
+  },
+  itemModalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: COLLECTION_COLORS.text.primary,
+    marginBottom: 4,
+  },
+  itemModalMeta: {
+    fontSize: 13,
+    color: COLLECTION_COLORS.text.muted,
+    marginBottom: 12,
+  },
+  itemModalDescription: {
+    fontSize: 14,
+    color: COLLECTION_COLORS.text.secondary,
+    marginBottom: 16,
+  },
+  itemModalTagsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 20,
+  },
+  itemModalTagPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: `${COLLECTION_COLORS.accent.cyan}20`,
+    borderWidth: 1,
+    borderColor: `${COLLECTION_COLORS.accent.cyan}40`,
+  },
+  itemModalTagText: {
+    fontSize: 12,
+    color: COLLECTION_COLORS.accent.cyan,
+    fontWeight: "600",
+  },
+  itemModalCloseButton: {
+    alignSelf: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: COLLECTION_COLORS.accent.cyan,
+  },
+  itemModalCloseText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLLECTION_COLORS.text.primary,
+  },
   ownerActions: {
     flexDirection: "row",
     gap: 12,
@@ -724,16 +940,21 @@ const styles = StyleSheet.create({
     backgroundColor: COLLECTION_COLORS.glass.light,
   },
   ownerButtonPublished: {
-    borderColor: `${COLLECTION_COLORS.status.published}60`,
-    backgroundColor: `${COLLECTION_COLORS.status.published}20`,
+    flex: 0,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    alignSelf: "center",
+    borderRadius: 999,
+    borderColor: `${COLLECTION_COLORS.status.published}40`,
+    backgroundColor: `${COLLECTION_COLORS.status.published}15`,
   },
   ownerButtonEdit: {
     borderColor: `${COLLECTION_COLORS.accent.cyan}60`,
     backgroundColor: `${COLLECTION_COLORS.accent.cyan}20`,
   },
   ownerButtonDelete: {
-    borderColor: "#EF444460",
-    backgroundColor: "#EF444420",
+    borderColor: "#EF444430",
+    backgroundColor: "transparent",
   },
   ownerButtonText: {
     fontSize: 14,
