@@ -28,6 +28,7 @@ import Animated, {
 import { useAuth } from "../../hooks/auth";
 import NotificationModal from "../../components/notification/NotificationModal";
 import { useNotification } from "../../hooks";
+import AnimatedBackground from "../../components/common/AnimatedBackground";
 
 const { width, height } = Dimensions.get("window");
 
@@ -65,7 +66,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
       damping: 8,
       stiffness: 80,
     });
-    
+
     logoRotate.value = withSequence(
       withTiming(10, { duration: 300, easing: Easing.out(Easing.cubic) }),
       withTiming(-10, { duration: 300, easing: Easing.out(Easing.cubic) }),
@@ -116,12 +117,12 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
   // Animated styles
   const logoAnimatedStyle = useAnimatedStyle(() => {
     const glowOpacity = interpolate(logoGlow.value, [0, 1], [0.3, 0.8]);
-    
+
     return {
       transform: [
         { scale: logoScale.value },
         { rotate: `${logoRotate.value}deg` },
-        { translateY: floatingAnimation.value }
+        { translateY: floatingAnimation.value },
       ],
       shadowOpacity: glowOpacity,
     };
@@ -275,164 +276,173 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Gradient Background */}
-      <LinearGradient
-        colors={['#1a2332', '#2c3e50', '#34495e']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFillObject}
-      />
-      
-      {/* Decorative circles */}
-      <View style={styles.circle1} />
-      <View style={styles.circle2} />
-      <View style={styles.circle3} />
-
-      <SafeAreaView style={styles.safeArea}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.keyboardContainer}
-        >
-          <ScrollView
-            contentContainerStyle={styles.scrollContainer}
-            showsVerticalScrollIndicator={false}
+      <AnimatedBackground>
+        <SafeAreaView style={styles.safeArea}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.keyboardContainer}
           >
-            {/* Logo and Title with Animation */}
-            <View style={[styles.centerContainer, { marginBottom: 20 }]}>
-              <Animated.View style={[styles.logoContainer, logoAnimatedStyle]}>
-                <View style={styles.logoWrapper}>
-                  <Image
-                    source={require("../../../assets/img/logo_text.png")}
-                    style={styles.logo}
-                    resizeMode="contain"
-                  />
-                </View>
-              </Animated.View>
-
-              <Animated.View style={headerAnimatedStyle}>
-                <View style={[styles.rowCenter, { marginBottom: 8 }]}>
-                  <Text style={styles.title}>Create Account </Text>
-                </View>
-                <Text style={styles.subtitle}>Start your style journey</Text>
-              </Animated.View>
-            </View>
-
-            {/* Register Form Card with Glassmorphism */}
-            <Animated.View style={[styles.formCard, formAnimatedStyle, shakeAnimatedStyle]}>
-              <View style={styles.formInner}>
-                {/* Full Name Input */}
-                <View style={{ marginBottom: 16 }}>
-                  <View style={styles.inputWrapper}>
-                    <View style={styles.inputIconContainer}>
-                      <Ionicons name="person-outline" size={20} color="#3b5998" />
-                    </View>
-                    <TextInput
-                      placeholder="Full name"
-                      value={fullName}
-                      onChangeText={setFullName}
-                      autoCapitalize="words"
-                      autoCorrect={false}
-                      placeholderTextColor="#94A3B8"
-                      style={styles.textInput}
-                    />
-                  </View>
-                </View>
-
-                {/* Email Input */}
-                <View style={{ marginBottom: 16 }}>
-                  <View style={styles.inputWrapper}>
-                    <View style={styles.inputIconContainer}>
-                      <Ionicons name="mail-outline" size={20} color="#3b5998" />
-                    </View>
-                    <TextInput
-                      placeholder="Email address"
-                      value={email}
-                      onChangeText={setEmail}
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      placeholderTextColor="#94A3B8"
-                      style={styles.textInput}
-                    />
-                  </View>
-                </View>
-
-                {/* Password Input */}
-                <View style={{ marginBottom: 12 }}>
-                  <View style={styles.inputWrapper}>
-                    <View style={styles.inputIconContainer}>
-                      <Ionicons name="lock-closed-outline" size={20} color="#3b5998" />
-                    </View>
-                    <TextInput
-                      placeholder="Password"
-                      value={password}
-                      onChangeText={setPassword}
-                      secureTextEntry={!showPassword}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      placeholderTextColor="#94A3B8"
-                      style={styles.textInput}
-                    />
-                    <TouchableOpacity
-                      onPress={() => setShowPassword(!showPassword)}
-                      style={styles.eyeIconButton}
-                    >
-                      <Ionicons
-                        name={showPassword ? "eye-outline" : "eye-off-outline"}
-                        size={20}
-                        color="#3b5998"
-                      />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-
-                {/* Password Requirements */}
-                <View style={{ marginBottom: 24 }}>
-                  <Text style={styles.requirementText}>
-                    Password must be at least 6 characters
-                  </Text>
-                </View>
-
-                {/* Register Button with Gradient */}
-                <TouchableOpacity
-                  onPress={handleRegister}
-                  disabled={isLoading}
-                  activeOpacity={0.8}
-                  style={styles.registerButtonContainer}
+            <ScrollView
+              contentContainerStyle={styles.scrollContainer}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Logo and Title with Animation */}
+              <View style={[styles.centerContainer, { marginBottom: 20 }]}>
+                <Animated.View
+                  style={[styles.logoContainer, logoAnimatedStyle]}
                 >
-                  <LinearGradient
-                    colors={['#2c5282', '#1a365d']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.registerButton}
-                  >
-                    <Text style={styles.registerButtonText}>
-                      {isLoading ? "Creating account..." : "Create Account"}
-                    </Text>
-                  </LinearGradient>
-                </TouchableOpacity>
+                  <View style={styles.logoWrapper}>
+                    <Image
+                      source={require("../../../assets/img/logo_text.png")}
+                      style={styles.logo}
+                      resizeMode="contain"
+                    />
+                  </View>
+                </Animated.View>
 
-                {/* Terms and Privacy */}
-                <View style={{ marginTop: 16 }}>
-                  <Text style={styles.termsText}>
-                    By creating an account, you agree to our{" "}
-                    <Text style={styles.termsLink}>Terms of Service</Text> and{" "}
-                    <Text style={styles.termsLink}>Privacy Policy</Text>.
+                <Animated.View style={headerAnimatedStyle}>
+                  <View style={[styles.rowCenter, { marginBottom: 8 }]}>
+                    <Text style={styles.title}>Create new account</Text>
+                  </View>
+                  <Text style={styles.subtitle}>
+                    Start your fashion journey
                   </Text>
-                </View>
+                </Animated.View>
               </View>
-            </Animated.View>
 
-            {/* Login Link */}
-            <View style={[styles.rowCenter, { marginTop: 24 }]}>
-              <Text style={styles.loginText}>Already have an account? </Text>
-              <TouchableOpacity onPress={navigateToLogin}>
-                <Text style={styles.loginLink}>Sign in</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+              {/* Register Form Card with Glassmorphism */}
+              <Animated.View
+                style={[styles.formCard, formAnimatedStyle, shakeAnimatedStyle]}
+              >
+                <View style={styles.formInner}>
+                  {/* Full Name Input */}
+                  <View style={{ marginBottom: 16 }}>
+                    <View style={styles.inputWrapper}>
+                      <View style={styles.inputIconContainer}>
+                        <Ionicons
+                          name="person-outline"
+                          size={20}
+                          color="#3b5998"
+                        />
+                      </View>
+                      <TextInput
+                        placeholder="Full name"
+                        value={fullName}
+                        onChangeText={setFullName}
+                        autoCapitalize="words"
+                        autoCorrect={false}
+                        placeholderTextColor="#94A3B8"
+                        style={styles.textInput}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Email Input */}
+                  <View style={{ marginBottom: 16 }}>
+                    <View style={styles.inputWrapper}>
+                      <View style={styles.inputIconContainer}>
+                        <Ionicons
+                          name="mail-outline"
+                          size={20}
+                          color="#3b5998"
+                        />
+                      </View>
+                      <TextInput
+                        placeholder="Email address"
+                        value={email}
+                        onChangeText={setEmail}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        placeholderTextColor="#94A3B8"
+                        style={styles.textInput}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Password Input */}
+                  <View style={{ marginBottom: 12 }}>
+                    <View style={styles.inputWrapper}>
+                      <View style={styles.inputIconContainer}>
+                        <Ionicons
+                          name="lock-closed-outline"
+                          size={20}
+                          color="#3b5998"
+                        />
+                      </View>
+                      <TextInput
+                        placeholder="Password"
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry={!showPassword}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        placeholderTextColor="#94A3B8"
+                        style={styles.textInput}
+                      />
+                      <TouchableOpacity
+                        onPress={() => setShowPassword(!showPassword)}
+                        style={styles.eyeIconButton}
+                      >
+                        <Ionicons
+                          name={
+                            showPassword ? "eye-outline" : "eye-off-outline"
+                          }
+                          size={20}
+                          color="#3b5998"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  {/* Password Requirements */}
+                  <View style={{ marginBottom: 24 }}>
+                    <Text style={styles.requirementText}>
+                      Password must be at least 6 characters
+                    </Text>
+                  </View>
+
+                  {/* Register Button with Gradient */}
+                  <TouchableOpacity
+                    onPress={handleRegister}
+                    disabled={isLoading}
+                    activeOpacity={0.8}
+                    style={styles.registerButtonContainer}
+                  >
+                    <LinearGradient
+                      colors={["#2563eb", "#38bdf8"]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.registerButton}
+                    >
+                      <Text style={styles.registerButtonText}>
+                        {isLoading ? "Creating account..." : "Create Account"}
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  {/* Terms and Privacy */}
+                  <View style={{ marginTop: 16 }}>
+                    <Text style={styles.termsText}>
+                      By creating an account, you agree to our{" "}
+                      <Text style={styles.termsLink}>Terms of Service</Text> and{" "}
+                      <Text style={styles.termsLink}>Privacy Policy</Text>.
+                    </Text>
+                  </View>
+                </View>
+              </Animated.View>
+
+              {/* Login Link */}
+              <View style={[styles.rowCenter, { marginTop: 24 }]}>
+                <Text style={styles.loginText}>Already have an account? </Text>
+                <TouchableOpacity onPress={navigateToLogin}>
+                  <Text style={styles.loginLink}>Sign in</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </AnimatedBackground>
 
       {/* Notification Modal */}
       <NotificationModal
@@ -458,41 +468,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   centerContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   rowCenter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  // Decorative background circles
-  circle1: {
-    position: 'absolute',
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    top: -100,
-    right: -50,
-  },
-  circle2: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    bottom: -50,
-    left: -30,
-  },
-  circle3: {
-    position: 'absolute',
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    top: height * 0.4,
-    right: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   keyboardContainer: {
     flex: 1,
@@ -505,7 +487,7 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     marginBottom: 16,
-    shadowColor: '#2c5282',
+    shadowColor: "#2c5282",
     shadowOffset: {
       width: 0,
       height: 10,
@@ -518,10 +500,10 @@ const styles = StyleSheet.create({
     width: 140,
     height: 140,
     borderRadius: 70,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 4,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: "rgba(255, 255, 255, 0.3)",
   },
   logo: {
     width: 120,
@@ -533,7 +515,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#FFFFFF",
     textAlign: "center",
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
@@ -543,18 +525,18 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
     marginBottom: 32,
-    textShadowColor: 'rgba(0, 0, 0, 0.15)',
+    textShadowColor: "rgba(0, 0, 0, 0.15)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
   // Glassmorphism form card
   formCard: {
-    backgroundColor: 'rgba(30, 41, 59, 0.5)',
+    backgroundColor: "rgba(30, 41, 59, 0.5)",
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    overflow: 'hidden',
-    shadowColor: '#000',
+    borderColor: "rgba(255, 255, 255, 0.15)",
+    overflow: "hidden",
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 10,
@@ -565,18 +547,18 @@ const styles = StyleSheet.create({
   },
   formInner: {
     padding: 24,
-    backgroundColor: 'rgba(15, 23, 42, 0.3)',
+    backgroundColor: "rgba(15, 23, 42, 0.3)",
   },
   inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderColor: "rgba(255, 255, 255, 0.5)",
     paddingHorizontal: 16,
     paddingVertical: 14,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -599,13 +581,13 @@ const styles = StyleSheet.create({
   },
   requirementText: {
     fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: "rgba(255, 255, 255, 0.7)",
     marginLeft: 4,
   },
   registerButtonContainer: {
     borderRadius: 14,
-    overflow: 'hidden',
-    shadowColor: '#2c5282',
+    overflow: "hidden",
+    shadowColor: "#2c5282",
     shadowOffset: {
       width: 0,
       height: 6,
@@ -616,8 +598,8 @@ const styles = StyleSheet.create({
   },
   registerButton: {
     paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   registerButtonText: {
     color: "#FFFFFF",
@@ -627,18 +609,18 @@ const styles = StyleSheet.create({
   },
   termsText: {
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.7)',
-    textAlign: 'center',
+    color: "rgba(255, 255, 255, 0.7)",
+    textAlign: "center",
     lineHeight: 18,
   },
   termsLink: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontWeight: "600",
   },
   loginText: {
     fontSize: 15,
     color: "rgba(255, 255, 255, 0.9)",
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
@@ -646,7 +628,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#FFFFFF",
     fontWeight: "700",
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
