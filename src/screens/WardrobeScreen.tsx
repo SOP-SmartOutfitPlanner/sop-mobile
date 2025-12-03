@@ -23,6 +23,7 @@ import { useAIDetection } from "../contexts/AIDetectionContext";
 import { useAuth } from "../hooks/auth";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { getUserId } from "../services/api/apiClient";
 
 const WardrobeScreen = ({ navigation }: any) => {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
@@ -143,6 +144,13 @@ const WardrobeScreen = ({ navigation }: any) => {
   }, []);
 
   const handleSuccessAddItem = useCallback(async () => {
+    const userId = await getUserId();
+    
+    if (!userId) {
+      console.log('⚠️ No userId found, skipping refresh');
+      return;
+    }
+    
     console.log('✅ Items uploaded successfully, refreshing wardrobe...');
     await refetch(); // Refresh wardrobe items
   }, [refetch]);
@@ -270,7 +278,17 @@ const WardrobeScreen = ({ navigation }: any) => {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.addButton}
-            onPress={() => setIsAddItemModalOpen(true)}
+            onPress={async () => {
+              const userId = await getUserId();
+              
+              if (!userId) {
+                console.log('⚠️ No userId found, cannot add item');
+                // User stays on current screen, modal won't open
+                return;
+              }
+              
+              setIsAddItemModalOpen(true);
+            }}
             activeOpacity={0.85}
           >
             <Ionicons name="add" size={20} color="#0f172a" />

@@ -7,6 +7,7 @@ import {
   MetaData 
 } from "../../types/outfit";
 import { useNotification } from "../notification/useNotification";
+import { getUserId } from "../../services/api/apiClient";
 
 export const useOutfits = () => {
   const [outfits, setOutfits] = useState<Outfit[]>([]);
@@ -31,16 +32,27 @@ export const useOutfits = () => {
       setLoading(true);
       setError(null);
 
+      const userId = await getUserId();
+      
+      if (!userId) {
+        console.log("No userId found, clearing outfits");
+        setOutfits([]);
+        setFavoriteOutfits([]);
+        setMetadata(null);
+        setLoading(false);
+        return [];
+      }
+
       const request: GetOutfitsRequest = {
         pageIndex: 1,
         pageSize: 5,
-        takeAll: false,
         ...params,
       };
 
       const response = await GetOutFitsAPI(request);
       
       if (response.statusCode === 200 && response.data?.data) {
+        // API đã tôn trọng pageSize=5 nên ta dùng trực tiếp dữ liệu & metaData từ server
         setOutfits(response.data.data);
         setMetadata(response.data.metaData);
         setCurrentPage(1);
@@ -49,9 +61,15 @@ export const useOutfits = () => {
         throw new Error(response.message || "Failed to fetch outfits");
       }
     } catch (err: any) {
-      const errorMessage = err.message || "Failed to fetch outfits";
-      setError(errorMessage);
-      showError(errorMessage);
+      // Don't show error if it's due to missing userId (already handled above)
+      if (err.message && !err.message.includes("userId")) {
+        const errorMessage = err.message || "Failed to fetch outfits";
+        setError(errorMessage);
+        // Only show error for non-authentication issues
+        if (err.response?.status !== 401 && err.response?.status !== 403) {
+          showError(errorMessage);
+        }
+      }
       return [];
     } finally {
       setLoading(false);
@@ -59,48 +77,99 @@ export const useOutfits = () => {
   }, [showError]);
 
   // Load more outfits (pagination)
-  const loadMoreOutfits = useCallback(async (params?: Partial<GetOutfitsRequest>) => {
-    if (loadingMore || !metadata?.hasNext) {
-      return [];
-    }
-
-    try {
-      setLoadingMore(true);
-      const nextPage = currentPage + 1;
-
-      const request: GetOutfitsRequest = {
-        pageIndex: nextPage,
-        pageSize: 5,
-        takeAll: false,
-        ...params,
-      };
-
-      const response = await GetOutFitsAPI(request);
-      
-      if (response.statusCode === 200 && response.data?.data) {
-        setOutfits((prev) => {
-          // Filter out duplicates by id
-          const existingIds = new Set(prev.map((o) => o.id));
-          const newOutfits = response.data.data.filter((o: Outfit) => !existingIds.has(o.id));
-          return [...prev, ...newOutfits];
-        });
-        setMetadata(response.data.metaData);
-        setCurrentPage(nextPage);
-        return response.data.data;
-      } else {
-        throw new Error(response.message || "Failed to load more outfits");
+  const loadMoreOutfits = useCallback(
+    async (params?: Partial<GetOutfitsRequest>) => {
+      // Nếu đang load hoặc đã load đủ totalCount thì không gọi thêm
+      if (loadingMore) {
+        return [];
       }
-    } catch (err: any) {
-      console.error("Failed to load more outfits:", err);
-      return [];
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [loadingMore, metadata, currentPage]);
+
+      if (metadata && outfits.length >= (metadata.totalCount ?? outfits.length)) {
+        return [];
+      }
+
+      try {
+        const userId = await getUserId();
+        
+        if (!userId) {
+          console.log("No userId found, cannot load more outfits");
+          return [];
+        }
+
+        setLoadingMore(true);
+        const nextPage = currentPage + 1;
+
+        const request: GetOutfitsRequest = {
+          pageIndex: nextPage,
+          pageSize: 5,
+          takeAll: false,
+          ...params,
+        };
+
+        const response = await GetOutFitsAPI(request);
+
+        if (response.statusCode === 200 && response.data?.data) {
+          const allData: Outfit[] = response.data.data;
+          // Loại bỏ trùng id rồi append
+          setOutfits((prev) => {
+            const existingIds = new Set(prev.map((o) => o.id));
+            const freshData = allData.filter((o) => !existingIds.has(o.id));
+            return [...prev, ...freshData];
+          });
+
+          // Cập nhật metaData, đồng thời tự tính hasNext dựa trên totalCount
+          const serverMeta = response.data.metaData as MetaData | undefined;
+          const newTotal =
+            serverMeta?.totalCount !== undefined
+              ? serverMeta.totalCount
+              : metadata?.totalCount ?? outfits.length + response.data.data.length;
+
+          const newOutfitCount = Math.min(
+            outfits.length + response.data.data.length,
+            newTotal
+          );
+
+          setMetadata(
+            serverMeta
+              ? {
+                  ...serverMeta,
+                  totalCount: newTotal,
+                  hasNext: newOutfitCount < newTotal,
+                }
+              : metadata
+          );
+
+          setCurrentPage(nextPage);
+          return response.data.data;
+        } else {
+          throw new Error(response.message || "Failed to load more outfits");
+        }
+      } catch (err: any) {
+        console.error("Failed to load more outfits:", err);
+        // Don't show error for authentication issues
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          setOutfits([]);
+          setFavoriteOutfits([]);
+        }
+        return [];
+      } finally {
+        setLoadingMore(false);
+      }
+    },
+    [loadingMore, metadata, outfits.length, currentPage]
+  );
 
   // Fetch favorite outfits
   const fetchFavoriteOutfits = useCallback(async () => {
     try {
+      const userId = await getUserId();
+      
+      if (!userId) {
+        console.log("No userId found, clearing favorite outfits");
+        setFavoriteOutfits([]);
+        return [];
+      }
+
       const request: GetOutfitsRequest = {
         pageIndex: 1,
         pageSize: 10,
@@ -118,6 +187,10 @@ export const useOutfits = () => {
       return [];
     } catch (err: any) {
       console.error("Failed to fetch favorite outfits:", err);
+      // Don't show error for authentication issues
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        setFavoriteOutfits([]);
+      }
       return [];
     }
   }, []);
@@ -125,6 +198,13 @@ export const useOutfits = () => {
   // Create new outfit
   const createOutfit = useCallback(async (data: CreateOutfitRequest) => {
     try {
+      const userId = await getUserId();
+      
+      if (!userId) {
+        console.log("No userId found, cannot create outfit");
+        return null;
+      }
+
       setLoading(true);
       setError(null);
 
@@ -141,7 +221,10 @@ export const useOutfits = () => {
     } catch (err: any) {
       const errorMessage = err.message || "Failed to create outfit";
       setError(errorMessage);
-      showError(errorMessage);
+      // Don't show error for authentication issues
+      if (err.response?.status !== 401 && err.response?.status !== 403) {
+        showError(errorMessage);
+      }
       return null;
     } finally {
       setLoading(false);
@@ -151,6 +234,13 @@ export const useOutfits = () => {
   // Toggle favorite status
   const toggleFavorite = useCallback(async (outfitId: number) => {
     try {
+      const userId = await getUserId();
+      
+      if (!userId) {
+        console.log("No userId found, cannot toggle favorite");
+        return false;
+      }
+
       const response = await SaveFavoriteOutfitAPI(outfitId);
       
       if (response.statusCode === 200) {
@@ -171,7 +261,10 @@ export const useOutfits = () => {
       return false;
     } catch (err: any) {
       console.error("Failed to toggle favorite:", err);
-      showError("Failed to update favorite status");
+      // Don't show error for authentication issues
+      if (err.response?.status !== 401 && err.response?.status !== 403) {
+        showError("Failed to update favorite status");
+      }
       return false;
     }
   }, [fetchFavoriteOutfits, showError]);
@@ -179,6 +272,13 @@ export const useOutfits = () => {
   // Edit outfit
   const editOutfit = useCallback(async (outfitId: number, data: Partial<CreateOutfitRequest>) => {
     try {
+      const userId = await getUserId();
+      
+      if (!userId) {
+        console.log("No userId found, cannot edit outfit");
+        return null;
+      }
+
       setLoading(true);
       setError(null);
 
@@ -207,7 +307,10 @@ export const useOutfits = () => {
     } catch (err: any) {
       const errorMessage = err.message || "Failed to update outfit";
       setError(errorMessage);
-      showError(errorMessage);
+      // Don't show error for authentication issues
+      if (err.response?.status !== 401 && err.response?.status !== 403) {
+        showError(errorMessage);
+      }
       return null;
     } finally {
       setLoading(false);
@@ -216,6 +319,13 @@ export const useOutfits = () => {
 
   const deleteOutfit = useCallback(async (outfitId: number) => {
     try {
+      const userId = await getUserId();
+      
+      if (!userId) {
+        console.log("No userId found, cannot delete outfit");
+        return false;
+      }
+
       setLoading(true);
       const response = await DeleteOutfitAPI(outfitId);
 
@@ -229,7 +339,10 @@ export const useOutfits = () => {
       }
     } catch (err: any) {
       const errorMessage = err.message || "Failed to delete outfit";
-      showError(errorMessage);
+      // Don't show error for authentication issues
+      if (err.response?.status !== 401 && err.response?.status !== 403) {
+        showError(errorMessage);
+      }
       return false;
     } finally {
       setLoading(false);

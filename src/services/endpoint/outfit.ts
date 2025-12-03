@@ -14,7 +14,22 @@ MassCreateOutfitResponse, } from "../../types/outfit";
 import apiClient, { getAccessToken } from "../api/apiClient";
 
 export const GetOutFitsAPI = async(data: GetOutfitsRequest): Promise<GetOutfitsResponse> => {
-    const response = await apiClient.get<GetOutfitsResponse>("/outfits/user", { params: data });
+    const params: Record<string, string | number | boolean> = {
+        'page-index': data.pageIndex,
+        'page-size': data.pageSize,
+      };
+    
+    if (data.searchTerm !== undefined) {
+        params['search'] = data.searchTerm;
+    }
+    if (data.isFavorite !== undefined) {
+        params['is-favorite'] = data.isFavorite;
+    }
+    if (data.isSaved !== undefined) {
+        params['is-saved'] = data.isSaved;
+    }
+    
+    const response = await apiClient.get<GetOutfitsResponse>("/outfits/user", { params });
     return response.data;
 }
 export const GetOutFitAPI = async(id: number): Promise<GetOutfitResponse> => {
