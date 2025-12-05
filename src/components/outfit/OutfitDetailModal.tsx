@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Outfit } from "../../types/outfit";
+import AnimatedBackground from "../common/AnimatedBackground";
 
 type ColorInfo = {
   name?: string;
@@ -116,13 +117,15 @@ export const OutfitDetailModal: React.FC<OutfitDetailModalProps> = ({
       presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
-      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-        <LinearGradient
-          colors={["#1f2b88", "#0e133a"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.hero}
-        >
+      <View style={styles.container}>
+        <AnimatedBackground />
+        <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+          <LinearGradient
+            colors={["rgba(31, 43, 136, 0.95)", "rgba(14, 19, 58, 0.9)"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.hero}
+          >
           <View style={styles.heroHeader}>
             <View style={styles.heroTextWrapper}>
               <Text style={styles.heroTitle}>{outfit.name}</Text>
@@ -258,45 +261,57 @@ export const OutfitDetailModal: React.FC<OutfitDetailModalProps> = ({
             </View>
         </ScrollView>
 
-        <View style={styles.actionsRow}>
+        <View style={styles.actionsContainer}>
+          {/* Primary CTA */}
           {onUseOutfitToday && (
             <TouchableOpacity
               style={styles.useTodayButton}
               onPress={handleUseOutfitToday}
             >
-              <Ionicons name="calendar" size={18} color="#fff" />
+              <Ionicons name="calendar" size={20} color="#fff" />
               <Text style={styles.useTodayButtonText}>Use Outfit Today</Text>
             </TouchableOpacity>
           )}
 
-          <TouchableOpacity
-            style={styles.favoriteButton}
-            onPress={handleFavoritePress}
-          >
-            <Ionicons
-              name={outfit.isFavorite ? "heart" : "heart-outline"}
-              size={18}
-              color="#fff"
-            />
-            <Text style={styles.favoriteButtonText}>
-              {outfit.isFavorite ? "Remove Favorite" : "Add to Favorites"}
-            </Text>
-          </TouchableOpacity>
+          {/* Secondary Actions Row */}
+          <View style={styles.actionsRow}>
+            <TouchableOpacity
+              style={[
+                styles.favoriteButton,
+                outfit.isFavorite && styles.favoriteButtonActive
+              ]}
+              onPress={handleFavoritePress}
+            >
+              <Ionicons
+                name={outfit.isFavorite ? "heart" : "heart-outline"}
+                size={18}
+                color={outfit.isFavorite ? "#f87171" : "#e2e8f0"}
+              />
+              <Text style={[
+                styles.favoriteButtonText,
+                outfit.isFavorite && styles.favoriteButtonTextActive
+              ]}>
+                {outfit.isFavorite ? "Favorited" : "Favorite"}
+              </Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.secondaryButton} onPress={handleEditPress}>
-            <Ionicons name="create-outline" size={18} color="#1e1b4b" />
-            <Text style={styles.secondaryButtonText}>Edit Outfit</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.editButton} onPress={handleEditPress}>
+              <Ionicons name="create-outline" size={18} color="#60a5fa" />
+              <Text style={styles.editButtonText}>Edit</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={handleDeletePress}
-          >
-            <Ionicons name="trash-outline" size={18} color="#fff" />
-            <Text style={styles.deleteButtonText}>Delete Outfit</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={handleDeletePress}
+            >
+              <Ionicons name="trash-outline" size={18} color="#f87171" />
+              <Text style={styles.deleteButtonText}>Delete</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </SafeAreaView>
+        </View>
+        </SafeAreaView>
+      </View>
     </Modal>
   );
 };
@@ -304,7 +319,10 @@ export const OutfitDetailModal: React.FC<OutfitDetailModalProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#030617",
+  },
+  safeArea: {
+    flex: 1,
   },
   hero: {
     paddingTop: 16,
@@ -371,11 +389,11 @@ const styles = StyleSheet.create({
   },
   statusCard: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "rgba(30, 41, 59, 0.8)",
     borderRadius: 18,
     padding: 14,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "rgba(148, 163, 184, 0.2)",
   },
   statusLabel: {
     fontSize: 12,
@@ -392,6 +410,7 @@ const styles = StyleSheet.create({
   statusValue: {
     fontSize: 15,
     fontWeight: "600",
+    color: "#e2e8f0",
   },
   sectionHeader: {
     flexDirection: "row",
@@ -403,11 +422,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#f8fafc",
   },
   sectionSubtitle: {
     fontSize: 13,
-    color: "#64748b",
+    color: "#94a3b8",
     marginTop: 4,
   },
   badge: {
@@ -416,13 +435,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: "rgba(59,130,246,0.08)",
+    backgroundColor: "rgba(59, 130, 246, 0.15)",
     flexShrink: 1,
     gap: 6,
   },
   badgeText: {
     fontSize: 12,
-    color: "#1d4ed8",
+    color: "#60a5fa",
     fontWeight: "600",
   },
   itemsGrid: {
@@ -434,11 +453,11 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
-    backgroundColor: "#ffffff",
-    shadowColor: "#0f172a",
+    borderColor: "rgba(148, 163, 184, 0.2)",
+    backgroundColor: "rgba(30, 41, 59, 0.6)",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 2,
   },
@@ -446,7 +465,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 16,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: "rgba(51, 65, 85, 0.8)",
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -469,17 +488,17 @@ const styles = StyleSheet.create({
   itemName: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#f8fafc",
     flex: 1,
   },
   itemMeta: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#475569",
+    color: "#94a3b8",
   },
   itemMetaMuted: {
     fontSize: 12,
-    color: "#94a3b8",
+    color: "#64748b",
   },
   colorRow: {
     flexDirection: "row",
@@ -494,20 +513,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: "rgba(51, 65, 85, 0.8)",
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "rgba(148, 163, 184, 0.2)",
   },
   colorSwatch: {
     width: 16,
     height: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(15,23,42,0.1)",
+    borderColor: "rgba(255,255,255,0.2)",
   },
   colorText: {
     fontSize: 12,
-    color: "#0f172a",
+    color: "#e2e8f0",
     fontWeight: "600",
     maxWidth: 120,
   },
@@ -515,95 +534,103 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: "#eef2ff",
+    backgroundColor: "rgba(99, 102, 241, 0.2)",
   },
   itemPillText: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#312e81",
+    color: "#a5b4fc",
   },
-  actionsRow: {
-    backgroundColor: "#fff",
+  actionsContainer: {
+    backgroundColor: "rgba(15, 23, 42, 0.95)",
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 20,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    columnGap: 12,
-    rowGap: 12,
+    paddingBottom: 24,
     borderTopWidth: 1,
-    borderColor: "#e2e8f0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 5,
+    borderColor: "rgba(148, 163, 184, 0.15)",
+    gap: 12,
+  },
+  actionsRow: {
+    flexDirection: "row",
+    gap: 10,
   },
   useTodayButton: {
     width: "100%",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    paddingVertical: 14,
+    gap: 10,
+    paddingVertical: 16,
     borderRadius: 16,
     backgroundColor: "#3b82f6",
-    marginBottom: 4,
+    shadowColor: "#3b82f6",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   useTodayButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "700",
     color: "#fff",
   },
   favoriteButton: {
     flex: 1,
-    minWidth: "30%",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 16,
-    backgroundColor: "#dc2626",
-  },
-  favoriteButtonText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#fff",
-  },
-  secondaryButton: {
-    flex: 1,
-    minWidth: "30%",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    paddingVertical: 14,
-    borderRadius: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#d4d4f5",
-    backgroundColor: "#eef2ff",
+    borderColor: "rgba(148, 163, 184, 0.25)",
+    backgroundColor: "rgba(30, 41, 59, 0.8)",
   },
-  secondaryButtonText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#1e1b4b",
+  favoriteButtonActive: {
+    borderColor: "rgba(248, 113, 113, 0.4)",
+    backgroundColor: "rgba(248, 113, 113, 0.15)",
+  },
+  favoriteButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#e2e8f0",
+  },
+  favoriteButtonTextActive: {
+    color: "#f87171",
+  },
+  editButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(96, 165, 250, 0.3)",
+    backgroundColor: "rgba(59, 130, 246, 0.1)",
+  },
+  editButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#60a5fa",
   },
   deleteButton: {
     flex: 1,
-    minWidth: "30%",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    paddingVertical: 14,
-    borderRadius: 16,
-    backgroundColor: "#ef4444",
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(248, 113, 113, 0.3)",
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
   },
   deleteButtonText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#f87171",
   },
 });
 

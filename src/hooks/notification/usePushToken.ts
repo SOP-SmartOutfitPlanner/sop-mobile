@@ -15,18 +15,16 @@ import { emitPushModalEvent } from "../../components/notification/PushNotificati
 
 const DEVICE_TOKEN_STORAGE_KEY = "@sop_fcm_token";
 const ANDROID_NOTIFICATION_CHANNEL_ID = "sop_default";
-type NotificationContentWithChannel =
-  Notifications.NotificationContentInput & {
-    channelId?: string;
-  };
 
+// When app is foreground, don't show system notification banner
+// We use in-app modal instead for better UX
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
+    shouldShowAlert: false, // Don't show banner when app is foreground - we use in-app modal instead
+    shouldPlaySound: false,
     shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
+    shouldShowBanner: false,
+    shouldShowList: true, // Still add to notification list
   }),
 });
 
@@ -49,7 +47,11 @@ const ensureAndroidNotificationChannel = async () => {
   );
 };
 
-const presentLocalNotification = async (
+/**
+ * Handle foreground notification - only show in-app modal, no system notification
+ * System notifications are handled by FCM when app is in background/killed
+ */
+const handleForegroundNotification = (
   remoteMessage: FirebaseMessagingTypes.RemoteMessage
 ) => {
   const title =
@@ -61,22 +63,7 @@ const presentLocalNotification = async (
   const body =
     typeof rawBody === "string" ? rawBody : JSON.stringify(rawBody ?? "");
 
-  const content: NotificationContentWithChannel = {
-    title,
-    body,
-    data: remoteMessage.data,
-    sound: "default",
-  };
-
-  if (Platform.OS === "android") {
-    content.channelId = ANDROID_NOTIFICATION_CHANNEL_ID;
-  }
-
-  await Notifications.scheduleNotificationAsync({
-    content,
-    trigger: null,
-  });
-
+  // Only show in-app modal when foreground - no system notification needed
   emitPushModalEvent({
     title,
     message: body,
@@ -128,15 +115,9 @@ export const usePushToken = () => {
     );
 
     const unsubscribeOnMessage = messaging().onMessage(
-      async (remoteMessage) => {
-        try {
-          await presentLocalNotification(remoteMessage);
-        } catch (notificationError) {
-          console.error(
-            "❌ Failed to present local notification:",
-            notificationError
-          );
-        }
+      (remoteMessage) => {
+        // App is in foreground - only show in-app modal, no system notification
+        handleForegroundNotification(remoteMessage);
       }
     );
 

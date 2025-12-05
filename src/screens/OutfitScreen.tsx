@@ -1,11 +1,24 @@
 import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { View, ScrollView, StyleSheet, RefreshControl, ActivityIndicator, Text, Modal, TouchableOpacity } from "react-native";
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  RefreshControl,
+  ActivityIndicator,
+  Text,
+  Modal,
+  TouchableOpacity,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Header } from "../components/common/Header";
 import { OutfitActionButtons } from "../components/outfit/OutfitActionButtons";
 import { OutfitSearchBar } from "../components/outfit/OutfitSearchBar";
-import { OutfitFilterModal, FilterOption, SortOption } from "../components/outfit/OutfitFilterModal";
+import {
+  OutfitFilterModal,
+  FilterOption,
+  SortOption,
+} from "../components/outfit/OutfitFilterModal";
 import { FavoriteOutfitsSection } from "../components/outfit/FavoriteOutfitsSection";
 import { OutfitDetailModal } from "../components/outfit/OutfitDetailModal";
 import { CreateOutfitModal } from "../components/outfit/modal/CreateOutfitModal";
@@ -19,13 +32,16 @@ import { WeeklyCalendar } from "../components/calendar/WeeklyCalendar";
 import { MonthlyCalendar } from "../components/calendar/MonthlyCalendar";
 import { CalendarDayDetailModal } from "../components/calendar/CalendarDayDetailModal";
 import { getUserId } from "../services/api/apiClient";
+import { AnimatedBackground } from "@/components/common";
 
 const OutfitScreen = ({ navigation }: any) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null);
   const [isDetailVisible, setIsDetailVisible] = useState(false);
-  const [isCalendarDayDetailVisible, setIsCalendarDayDetailVisible] = useState(false);
-  const [isMonthlyCalendarVisible, setIsMonthlyCalendarVisible] = useState(false);
+  const [isCalendarDayDetailVisible, setIsCalendarDayDetailVisible] =
+    useState(false);
+  const [isMonthlyCalendarVisible, setIsMonthlyCalendarVisible] =
+    useState(false);
   const [userOccasions, setUserOccasions] = useState<any[]>([]);
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
@@ -35,7 +51,7 @@ const OutfitScreen = ({ navigation }: any) => {
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
   const [currentFilter, setCurrentFilter] = useState<FilterOption>("all");
   const [currentSort, setCurrentSort] = useState<SortOption>("newest");
-  
+
   // Use custom hook for outfit management
   const {
     outfits,
@@ -57,18 +73,19 @@ const OutfitScreen = ({ navigation }: any) => {
   } = useOutfits();
 
   // Use calendar hook
-  const { 
-    useOutfitToday, 
-    fetchCalendarEntries, 
+  const {
+    useOutfitToday,
+    fetchCalendarEntries,
     calendarEntries,
     visible: calendarNotificationVisible,
     config: calendarNotificationConfig,
     hideNotification: hideCalendarNotification,
   } = useCalendar();
-  
+
   // State to track calendar entries for CalendarDayDetailModal
-  const [localCalendarEntries, setLocalCalendarEntries] = useState(calendarEntries);
-  
+  const [localCalendarEntries, setLocalCalendarEntries] =
+    useState(calendarEntries);
+
   // Update local state when calendarEntries from hook changes
   useEffect(() => {
     setLocalCalendarEntries(calendarEntries);
@@ -77,7 +94,7 @@ const OutfitScreen = ({ navigation }: any) => {
   // Fetch calendar entries and user occasions
   const fetchCalendarData = useCallback(async () => {
     const userId = await getUserId();
-    
+
     if (!userId) {
       console.log("No userId found, skipping data fetch");
       // Clear data when no userId but stay on current screen
@@ -87,7 +104,7 @@ const OutfitScreen = ({ navigation }: any) => {
 
     // Fetch all calendar entries to ensure we have complete data
     await fetchCalendarEntries({ takeAll: true });
-    
+
     // Fetch user occasions
     try {
       const { CalenderAPI } = await import("../services/endpoint/calendar");
@@ -118,7 +135,6 @@ const OutfitScreen = ({ navigation }: any) => {
       fetchCalendarData();
     }, [fetchCalendarData])
   );
-
 
   // Filter and sort outfits
   const filteredAndSortedOutfits = useMemo(() => {
@@ -153,9 +169,15 @@ const OutfitScreen = ({ navigation }: any) => {
     filtered.sort((a, b) => {
       switch (currentSort) {
         case "newest":
-          return new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime();
+          return (
+            new Date(b.createdDate).getTime() -
+            new Date(a.createdDate).getTime()
+          );
         case "oldest":
-          return new Date(a.createdDate).getTime() - new Date(b.createdDate).getTime();
+          return (
+            new Date(a.createdDate).getTime() -
+            new Date(b.createdDate).getTime()
+          );
         case "name":
           return (a.name || "").localeCompare(b.name || "");
         case "items":
@@ -169,11 +191,13 @@ const OutfitScreen = ({ navigation }: any) => {
   }, [outfits, searchQuery, showFavoritesOnly, currentFilter, currentSort]);
 
   // Transform outfits for components
-  const transformedOutfitsForBook = filteredAndSortedOutfits.slice(0, 5).map((outfit) => ({
-    id: outfit.id.toString(),
-    items: outfit.items.map((item) => item.imgUrl),
-    name: outfit.name,
-  }));
+  const transformedOutfitsForBook = filteredAndSortedOutfits
+    .slice(0, 5)
+    .map((outfit) => ({
+      id: outfit.id.toString(),
+      items: outfit.items.map((item) => item.imgUrl),
+      name: outfit.name,
+    }));
 
   const transformedFavoriteOutfits = favoriteOutfits.map((outfit) => ({
     id: outfit.id.toString(),
@@ -192,13 +216,13 @@ const OutfitScreen = ({ navigation }: any) => {
 
   const handleCreateOutfit = async () => {
     const userId = await getUserId();
-    
+
     if (!userId) {
       console.log("No userId found, cannot create outfit");
       // User stays on current screen, modal won't open
       return;
     }
-    
+
     setIsCreateModalVisible(true);
   };
 
@@ -236,7 +260,9 @@ const OutfitScreen = ({ navigation }: any) => {
     const success = await toggleFavorite(outfitId);
     if (success) {
       setSelectedOutfit((prev) =>
-        prev && prev.id === outfitId ? { ...prev, isFavorite: !prev.isFavorite } : prev
+        prev && prev.id === outfitId
+          ? { ...prev, isFavorite: !prev.isFavorite }
+          : prev
       );
     }
   };
@@ -340,203 +366,209 @@ const OutfitScreen = ({ navigation }: any) => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <Header
-        title="Outfits"
-        showBackButton={false}
-        onBackPress={handleBackPress}
-        onNotificationPress={handleNotificationPress}
-        onMessagePress={handleMessagePress}
-        onProfilePress={handleProfilePress}
-      />
-
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
-        }
-      >
-        {/* Search Bar */}
-        <OutfitSearchBar
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          onFilterPress={() => setIsFilterModalVisible(true)}
-          onFavoritesPress={() => setShowFavoritesOnly(!showFavoritesOnly)}
-          showFavoritesOnly={showFavoritesOnly}
+      <AnimatedBackground>
+        {/* Header */}
+        <Header
+          title="Outfits"
+          showBackButton={false}
+          onBackPress={handleBackPress}
+          onNotificationPress={handleNotificationPress}
+          onMessagePress={handleMessagePress}
+          onProfilePress={handleProfilePress}
         />
 
-        {/* Stats Bar */}
-        <View style={styles.statsBar}>
-          <Text style={styles.statsText}>
-            Showing {filteredAndSortedOutfits.length} of {outfits.length} outfits
-          </Text>
-        </View>
-
-        {/* Action Buttons */}
-        <OutfitActionButtons
-          onCreateOutfit={handleCreateOutfit}
-          onAddToCalendar={handleAddToCalendar}
-        />
-
-        {/* Weekly Calendar Section */}
-        <WeeklyCalendar
-          calendarEntries={localCalendarEntries}
-          userOccasions={userOccasions}
-          onDayPress={handleDayPress}
-          onShowMonthView={handleViewCalendar}
-        />
-
-        {/* Outfit Book Section */}
-        <OutfitBookSection
-          outfits={transformedOutfitsForBook}
-          onViewOutfit={handleViewOutfit}
-          onViewAllOutfits={handleNavigateAllOutfits}
-        />
-
-        {/* Favorite Outfits */}
-        <FavoriteOutfitsSection
-          outfits={transformedFavoriteOutfits}
-          onViewOutfit={handleViewOutfit}
-          onViewAll={handleNavigateAllOutfits}
-        />
-
-        {/* Bottom spacing */}
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
-
-      {/* Notification Modal for Outfits */}
-      <NotificationModal
-        isVisible={visible}
-        type={config.type}
-        title={config.title}
-        message={config.message}
-        confirmText={config.confirmText}
-        cancelText={config.cancelText}
-        showCancel={config.showCancel}
-        onConfirm={config.onConfirm}
-        onClose={hideNotification}
-      />
-
-      {/* Notification Modal for Calendar */}
-      <NotificationModal
-        isVisible={calendarNotificationVisible}
-        type={calendarNotificationConfig.type}
-        title={calendarNotificationConfig.title}
-        message={calendarNotificationConfig.message}
-        confirmText={calendarNotificationConfig.confirmText}
-        cancelText={calendarNotificationConfig.cancelText}
-        showCancel={calendarNotificationConfig.showCancel}
-        onConfirm={calendarNotificationConfig.onConfirm}
-        onClose={hideCalendarNotification}
-      />
-
-      <OutfitDetailModal
-        visible={isDetailVisible}
-        outfit={selectedOutfit}
-        onClose={handleCloseDetail}
-        onToggleFavorite={handleFavoriteToggle}
-        onDeleteOutfit={handleDeleteOutfit}
-        onEditOutfit={handleEditOutfit}
-        onUseOutfitToday={async (outfitId) => {
-          try {
-            const today = new Date();
-            const result = await useOutfitToday(outfitId, today);
-            if (result) {
-              // Refresh calendar entries with all data
-              await fetchCalendarData();
-            }
-          } catch (error) {
-            console.error("Error using outfit today:", error);
-          }
-        }}
-      />
-
-      <CreateOutfitModal
-        visible={isCreateModalVisible}
-        onClose={() => setIsCreateModalVisible(false)}
-        onCreateOutfit={async (data) => {
-          const result = await createOutfit(data);
-          if (result) {
-            handleCreateOutfitSuccess();
-          }
-          return result;
-        }}
-      />
-
-      <EditOutfitModal
-        visible={isEditModalVisible}
-        outfit={editingOutfit}
-        onClose={() => {
-          setIsEditModalVisible(false);
-          setEditingOutfit(null);
-        }}
-        onEditOutfit={async (id, data) => {
-          const result = await editOutfit(id, data);
-          if (result) {
-            handleEditOutfitSuccess();
-            // Update selected outfit if it's the one being edited
-            if (selectedOutfit && selectedOutfit.id === id) {
-              setSelectedOutfit(result);
-            }
-          }
-          return result;
-        }}
-      />
-
-      <OutfitFilterModal
-        visible={isFilterModalVisible}
-        onClose={() => setIsFilterModalVisible(false)}
-        onApply={handleFilterApply}
-        currentFilter={currentFilter}
-        currentSort={currentSort}
-      />
-
-      {/* Monthly Calendar Modal */}
-      <Modal
-        visible={isMonthlyCalendarVisible}
-        animationType="slide"
-        presentationStyle="fullScreen"
-        onRequestClose={handleCloseMonthlyCalendar}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Outfit Calendar</Text>
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={handleCloseMonthlyCalendar}
-            >
-              <Ionicons name="close" size={24} color="#ffffff" />
-            </TouchableOpacity>
-          </View>
-          <ScrollView
-            style={styles.modalScrollView}
-            contentContainerStyle={styles.modalScrollContent}
-          >
-            <MonthlyCalendar
-              calendarEntries={localCalendarEntries}
-              onDayPress={(date) => {
-                setSelectedDate(date);
-                setIsMonthlyCalendarVisible(false);
-                setIsCalendarDayDetailVisible(true);
-              }}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
             />
-          </ScrollView>
-        </View>
-      </Modal>
+          }
+        >
+          {/* Search Bar */}
+          <OutfitSearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onFilterPress={() => setIsFilterModalVisible(true)}
+            onFavoritesPress={() => setShowFavoritesOnly(!showFavoritesOnly)}
+            showFavoritesOnly={showFavoritesOnly}
+          />
 
-      {/* Calendar Day Detail Modal */}
-      <CalendarDayDetailModal
-        visible={isCalendarDayDetailVisible}
-        selectedDate={selectedDate}
-        onClose={handleCloseCalendarDayDetail}
-        calendarEntries={localCalendarEntries}
-        outfits={outfits}
-        onLoadMoreOutfits={loadMoreOutfits}
-        hasMoreOutfits={metadata?.hasNext || false}
-        loadingMoreOutfits={loadingMore}
-        onRefresh={handleRefreshCalendar}
-      />
+          {/* Stats Bar */}
+          <View style={styles.statsBar}>
+            <Text style={styles.statsText}>
+              Showing {filteredAndSortedOutfits.length} of {outfits.length}{" "}
+              outfits
+            </Text>
+          </View>
+
+          {/* Action Buttons */}
+          <OutfitActionButtons
+            onCreateOutfit={handleCreateOutfit}
+            onAddToCalendar={handleAddToCalendar}
+          />
+
+          {/* Weekly Calendar Section */}
+          <WeeklyCalendar
+            calendarEntries={localCalendarEntries}
+            userOccasions={userOccasions}
+            onDayPress={handleDayPress}
+            onShowMonthView={handleViewCalendar}
+          />
+
+          {/* Outfit Book Section */}
+          <OutfitBookSection
+            outfits={transformedOutfitsForBook}
+            onViewOutfit={handleViewOutfit}
+            onViewAllOutfits={handleNavigateAllOutfits}
+          />
+
+          {/* Favorite Outfits */}
+          <FavoriteOutfitsSection
+            outfits={transformedFavoriteOutfits}
+            onViewOutfit={handleViewOutfit}
+            onViewAll={handleNavigateAllOutfits}
+          />
+
+          {/* Bottom spacing */}
+          <View style={styles.bottomSpacing} />
+        </ScrollView>
+
+        {/* Notification Modal for Outfits */}
+        <NotificationModal
+          isVisible={visible}
+          type={config.type}
+          title={config.title}
+          message={config.message}
+          confirmText={config.confirmText}
+          cancelText={config.cancelText}
+          showCancel={config.showCancel}
+          onConfirm={config.onConfirm}
+          onClose={hideNotification}
+        />
+
+        {/* Notification Modal for Calendar */}
+        <NotificationModal
+          isVisible={calendarNotificationVisible}
+          type={calendarNotificationConfig.type}
+          title={calendarNotificationConfig.title}
+          message={calendarNotificationConfig.message}
+          confirmText={calendarNotificationConfig.confirmText}
+          cancelText={calendarNotificationConfig.cancelText}
+          showCancel={calendarNotificationConfig.showCancel}
+          onConfirm={calendarNotificationConfig.onConfirm}
+          onClose={hideCalendarNotification}
+        />
+
+        <OutfitDetailModal
+          visible={isDetailVisible}
+          outfit={selectedOutfit}
+          onClose={handleCloseDetail}
+          onToggleFavorite={handleFavoriteToggle}
+          onDeleteOutfit={handleDeleteOutfit}
+          onEditOutfit={handleEditOutfit}
+          onUseOutfitToday={async (outfitId) => {
+            try {
+              const today = new Date();
+              const result = await useOutfitToday(outfitId, today);
+              if (result) {
+                // Refresh calendar entries with all data
+                await fetchCalendarData();
+              }
+            } catch (error) {
+              console.error("Error using outfit today:", error);
+            }
+          }}
+        />
+
+        <CreateOutfitModal
+          visible={isCreateModalVisible}
+          onClose={() => setIsCreateModalVisible(false)}
+          onCreateOutfit={async (data) => {
+            const result = await createOutfit(data);
+            if (result) {
+              handleCreateOutfitSuccess();
+            }
+            return result;
+          }}
+        />
+
+        <EditOutfitModal
+          visible={isEditModalVisible}
+          outfit={editingOutfit}
+          onClose={() => {
+            setIsEditModalVisible(false);
+            setEditingOutfit(null);
+          }}
+          onEditOutfit={async (id, data) => {
+            const result = await editOutfit(id, data);
+            if (result) {
+              handleEditOutfitSuccess();
+              // Update selected outfit if it's the one being edited
+              if (selectedOutfit && selectedOutfit.id === id) {
+                setSelectedOutfit(result);
+              }
+            }
+            return result;
+          }}
+        />
+
+        <OutfitFilterModal
+          visible={isFilterModalVisible}
+          onClose={() => setIsFilterModalVisible(false)}
+          onApply={handleFilterApply}
+          currentFilter={currentFilter}
+          currentSort={currentSort}
+        />
+
+        {/* Monthly Calendar Modal */}
+        <Modal
+          visible={isMonthlyCalendarVisible}
+          animationType="slide"
+          presentationStyle="fullScreen"
+          onRequestClose={handleCloseMonthlyCalendar}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Outfit Calendar</Text>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={handleCloseMonthlyCalendar}
+              >
+                <Ionicons name="close" size={24} color="#ffffff" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView
+              style={styles.modalScrollView}
+              contentContainerStyle={styles.modalScrollContent}
+            >
+              <MonthlyCalendar
+                calendarEntries={localCalendarEntries}
+                onDayPress={(date) => {
+                  setSelectedDate(date);
+                  setIsMonthlyCalendarVisible(false);
+                  setIsCalendarDayDetailVisible(true);
+                }}
+              />
+            </ScrollView>
+          </View>
+        </Modal>
+
+        {/* Calendar Day Detail Modal */}
+        <CalendarDayDetailModal
+          visible={isCalendarDayDetailVisible}
+          selectedDate={selectedDate}
+          onClose={handleCloseCalendarDayDetail}
+          calendarEntries={localCalendarEntries}
+          outfits={outfits}
+          onLoadMoreOutfits={loadMoreOutfits}
+          hasMoreOutfits={metadata?.hasNext || false}
+          loadingMoreOutfits={loadingMore}
+          onRefresh={handleRefreshCalendar}
+        />
+      </AnimatedBackground>
     </View>
   );
 };
