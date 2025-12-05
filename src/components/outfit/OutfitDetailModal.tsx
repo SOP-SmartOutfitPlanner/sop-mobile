@@ -267,6 +267,7 @@ export const OutfitDetailModal: React.FC<OutfitDetailModalProps> = ({
             <TouchableOpacity
               style={styles.useTodayButton}
               onPress={handleUseOutfitToday}
+              activeOpacity={0.8}
             >
               <Ionicons name="calendar" size={20} color="#fff" />
               <Text style={styles.useTodayButtonText}>Use Outfit Today</Text>
@@ -277,10 +278,12 @@ export const OutfitDetailModal: React.FC<OutfitDetailModalProps> = ({
           <View style={styles.actionsRow}>
             <TouchableOpacity
               style={[
+                styles.actionButton,
                 styles.favoriteButton,
                 outfit.isFavorite && styles.favoriteButtonActive
               ]}
               onPress={handleFavoritePress}
+              activeOpacity={0.7}
             >
               <Ionicons
                 name={outfit.isFavorite ? "heart" : "heart-outline"}
@@ -288,24 +291,29 @@ export const OutfitDetailModal: React.FC<OutfitDetailModalProps> = ({
                 color={outfit.isFavorite ? "#f87171" : "#e2e8f0"}
               />
               <Text style={[
-                styles.favoriteButtonText,
+                styles.actionButtonText,
                 outfit.isFavorite && styles.favoriteButtonTextActive
               ]}>
-                {outfit.isFavorite ? "Favorited" : "Favorite"}
+                {outfit.isFavorite ? "Saved" : "Save"}
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.editButton} onPress={handleEditPress}>
+            <TouchableOpacity 
+              style={[styles.actionButton, styles.editButton]} 
+              onPress={handleEditPress}
+              activeOpacity={0.7}
+            >
               <Ionicons name="create-outline" size={18} color="#60a5fa" />
-              <Text style={styles.editButtonText}>Edit</Text>
+              <Text style={[styles.actionButtonText, styles.editButtonText]}>Edit</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.deleteButton}
+              style={[styles.actionButton, styles.deleteButton]}
               onPress={handleDeletePress}
+              activeOpacity={0.7}
             >
-              <Ionicons name="trash-outline" size={18} color="#f87171" />
-              <Text style={styles.deleteButtonText}>Delete</Text>
+              <Ionicons name="trash-outline" size={18} color="#94a3b8" />
+              <Text style={[styles.actionButtonText, styles.deleteButtonText]}>Delete</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -554,6 +562,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
   },
+  actionButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#e2e8f0",
+  },
   useTodayButton: {
     width: "100%",
     flexDirection: "row",
@@ -575,14 +598,6 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
   favoriteButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
     borderColor: "rgba(148, 163, 184, 0.25)",
     backgroundColor: "rgba(30, 41, 59, 0.8)",
   },
@@ -590,47 +605,22 @@ const styles = StyleSheet.create({
     borderColor: "rgba(248, 113, 113, 0.4)",
     backgroundColor: "rgba(248, 113, 113, 0.15)",
   },
-  favoriteButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#e2e8f0",
-  },
   favoriteButtonTextActive: {
     color: "#f87171",
   },
   editButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
     borderColor: "rgba(96, 165, 250, 0.3)",
     backgroundColor: "rgba(59, 130, 246, 0.1)",
   },
   editButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
     color: "#60a5fa",
   },
   deleteButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(248, 113, 113, 0.3)",
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    borderColor: "rgba(148, 163, 184, 0.2)",
+    backgroundColor: "rgba(30, 41, 59, 0.5)",
   },
   deleteButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#f87171",
+    color: "#94a3b8",
   },
 });
 
