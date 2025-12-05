@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Modal,
   View,
@@ -42,7 +42,21 @@ export const AddOccasionModal: React.FC<AddOccasionModalProps> = ({
     name?: string;
     occasionId?: string;
     endTime?: string;
+    date?: string;
   }>({});
+
+  const isDateInPast = (date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(date);
+    target.setHours(0, 0, 0, 0);
+    return target < today;
+  };
+
+  const isPastSelectedDate = useMemo(() => {
+    if (!selectedDate) return false;
+    return isDateInPast(selectedDate);
+  }, [selectedDate]);
 
   useEffect(() => {
     if (visible) {
@@ -53,6 +67,17 @@ export const AddOccasionModal: React.FC<AddOccasionModalProps> = ({
         setStartTime(`${dateStr}T09:00:00`);
         setEndTime(`${dateStr}T17:00:00`);
       }
+      if (isPastSelectedDate) {
+        setErrors((prev) => ({
+          ...prev,
+          date: "Cannot create an occasion for a past date",
+        }));
+      } else {
+        setErrors((prev) => {
+          const { date, ...rest } = prev;
+          return rest;
+        });
+      }
     } else {
       // Reset form when modal closes
       setName("");
@@ -62,7 +87,7 @@ export const AddOccasionModal: React.FC<AddOccasionModalProps> = ({
       setSelectedOccasionId(null); // Will be required, so reset to null
       setErrors({});
     }
-  }, [visible, selectedDate]);
+  }, [visible, selectedDate, isPastSelectedDate]);
 
   const fetchOccasions = async () => {
     try {
@@ -89,6 +114,9 @@ export const AddOccasionModal: React.FC<AddOccasionModalProps> = ({
     }
     if (!selectedOccasionId) {
       newErrors.occasionId = "Occasion type is required";
+    }
+    if (isPastSelectedDate) {
+      newErrors.date = "Cannot create an occasion for a past date";
     }
     // startTime and endTime are optional, but if both are provided, validate endTime > startTime
     if (startTime && endTime && new Date(startTime) >= new Date(endTime)) {
@@ -190,6 +218,13 @@ export const AddOccasionModal: React.FC<AddOccasionModalProps> = ({
             <Ionicons name="close" size={24} color="#ffffff" />
           </TouchableOpacity>
         </View>
+
+        {errors.date && (
+          <View style={styles.errorBanner}>
+            <Ionicons name="alert-circle" size={18} color="#fecdd3" />
+            <Text style={styles.errorBannerText}>{errors.date}</Text>
+          </View>
+        )}
 
         <ScrollView
           style={styles.scrollView}
@@ -375,9 +410,13 @@ export const AddOccasionModal: React.FC<AddOccasionModalProps> = ({
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.button, styles.submitButton, loading && styles.buttonDisabled]}
+            style={[
+              styles.button,
+              styles.submitButton,
+              (loading || isPastSelectedDate) && styles.buttonDisabled,
+            ]}
             onPress={handleSubmit}
-            disabled={loading}
+            disabled={loading || isPastSelectedDate}
           >
             {loading ? (
               <ActivityIndicator size="small" color="#ffffff" />
@@ -497,6 +536,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#ef4444",
     marginTop: 4,
+  },
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "rgba(248,113,113,0.15)",
+    borderColor: "rgba(248,113,113,0.4)",
+    borderWidth: 1,
+    marginHorizontal: 16,
+    marginTop: 8,
+    borderRadius: 12,
+  },
+  errorBannerText: {
+    color: "#fecdd3",
+    fontSize: 13,
+    fontWeight: "600",
+    flex: 1,
   },
   occasionsScroll: {
     marginTop: 8,

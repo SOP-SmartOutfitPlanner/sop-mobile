@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { View, Modal, ScrollView, StyleSheet } from "react-native";
+import {
+  View,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  Text,
+  ActivityIndicator,
+} from "react-native";
 import { Item, ItemEdit } from "../../types/item";
 import {
   DetailHeader,
@@ -12,6 +20,8 @@ import {
 import { EditItemModal } from "./modal/EditItemModal";
 import NotificationModal from "../notification/NotificationModal";
 import { useNotification } from "../../hooks";
+import { Ionicons } from "@expo/vector-icons";
+import { AnalyzeItems } from "../../services/endpoint/upload";
 
 interface ItemDetailModalProps {
   visible: boolean;
@@ -33,6 +43,8 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
   deleteItem,
 }) => {
   const [showEditModal, setShowEditModal] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [localAnalyzed, setLocalAnalyzed] = useState<boolean>(item?.isAnalyzed || false);
   const notification = useNotification();
 
   // Reset notification when modal closes or item changes
@@ -45,6 +57,8 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
   useEffect(() => {
     // Reset notification when switching to a different item
     notification.hideNotification();
+    setLocalAnalyzed(item?.isAnalyzed || false);
+    setIsAnalyzing(false);
   }, [item?.id]);
 
   if (!item) return null;
@@ -97,6 +111,26 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
     );
   };
 
+  const handleAnalyzeItem = async () => {
+    if (!item || isAnalyzing) return;
+    try {
+      setIsAnalyzing(true);
+      const response = await AnalyzeItems([item.id]);
+
+      if (response.statusCode === 200) {
+        setLocalAnalyzed(true);
+        notification.showSuccess("Item analyzed successfully");
+        onRefresh?.();
+      } else {
+        notification.showError("Analysis failed, please try again");
+      }
+    } catch (error) {
+      notification.showError("Unable to analyze, please try again");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   return (
     <>
       <Modal
@@ -144,6 +178,31 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
               seasons={itemSeasons}
             />
 
+            {/* Single-item analysis */}
+            {!localAnalyzed && (
+              <View style={styles.analysisContainer}>
+                <View style={styles.analysisInfo}>
+                  <Ionicons name="analytics-outline" size={18} color="#f59e0b" />
+                  <Text style={styles.analysisText}>Analyze this item</Text>
+                </View>
+                <TouchableOpacity
+                  style={[styles.analyzeButton, isAnalyzing && styles.analyzeButtonDisabled]}
+                  onPress={handleAnalyzeItem}
+                  activeOpacity={0.8}
+                  disabled={isAnalyzing}
+                >
+                  {isAnalyzing ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <>
+                      <Ionicons name="flash" size={16} color="#fff" />
+                      <Text style={styles.analyzeButtonText}>Analyze</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+
             <DetailActions
               onUseInOutfit={handleUseInOutfit}
               onEdit={handleEdit}
@@ -190,5 +249,46 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 100,
+  },
+  analysisContainer: {
+    marginTop: 12,
+    marginHorizontal: 16,
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: "rgba(245, 158, 11, 0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(245, 158, 11, 0.3)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  analysisInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+  },
+  analysisText: {
+    color: "#fcd34d",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  analyzeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#f59e0b",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  analyzeButtonDisabled: {
+    opacity: 0.6,
+  },
+  analyzeButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "700",
   },
 });

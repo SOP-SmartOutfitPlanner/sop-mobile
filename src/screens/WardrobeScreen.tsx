@@ -230,12 +230,6 @@ const WardrobeScreen = ({ navigation }: any) => {
                 <Text style={styles.heroStatNumber}>{analyzedCount}</Text>
                 <Text style={styles.heroStatLabel}>Analyzed</Text>
               </View>
-              <View style={styles.heroStatCard}>
-                <Text style={styles.heroStatNumber}>
-                  {favoriteItems.length}
-                </Text>
-                <Text style={styles.heroStatLabel}>Favorites</Text>
-              </View>
             </View>
 
             <View style={styles.heroActions}>
@@ -298,12 +292,12 @@ const WardrobeScreen = ({ navigation }: any) => {
         {/* Wardrobe Section */}
         <WardrobeSection
           title="Wardrobe"
-          showViewMore={filteredItems.length > 4}
+          showViewMore={filteredItems.length > 1}
           viewMoreText="View All"
           onViewMore={() => navigation.navigate("AllWardrobe")}
         >
           {filteredItems.length === 0 ? (
-            <EmptyWardrobe onCreateWardrobe={() => navigation.navigate("Auth", { screen: "Login" })} />
+            <EmptyWardrobe onCreateWardrobe={() => getUserId().then(userId => userId ? setIsAddItemModalOpen(true) : navigation.navigate("Auth", { screen: "Login" }))} />
           ) : (
             <WardrobeItemGrid
               items={filteredItems}
@@ -314,7 +308,7 @@ const WardrobeScreen = ({ navigation }: any) => {
         </WardrobeSection>
 
         {/* Favorites Section */}
-        {favoriteItems.length > 0 && (
+        {/* {favoriteItems.length > 0 && (
           <WardrobeSection
             title="Favorites list"
             showViewMore
@@ -327,7 +321,7 @@ const WardrobeScreen = ({ navigation }: any) => {
               columns={2}
             />
           </WardrobeSection>
-        )}
+        )} */}
 
         {/* Bottom spacing */}
         <View style={styles.bottomSpacing} />

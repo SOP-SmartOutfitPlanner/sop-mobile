@@ -9,6 +9,12 @@ import {
 import { useNotification } from "../notification/useNotification";
 import { getUserId } from "../../services/api/apiClient";
 
+const getApiErrorMessage = (err: any, fallback: string) => {
+  if (err?.response?.data?.message) return err.response.data.message;
+  if (err?.message) return err.message;
+  return fallback;
+};
+
 export const useOutfits = () => {
   const [outfits, setOutfits] = useState<Outfit[]>([]);
   const [favoriteOutfits, setFavoriteOutfits] = useState<Outfit[]>([]);
@@ -210,7 +216,7 @@ export const useOutfits = () => {
 
       const response = await CreateOutfitAPI(data);
       
-      if (response.statusCode === 200 && response.data) {
+      if (response.statusCode === 201 && response.data) {
         // Add new outfit to list
         setOutfits((prev) => [response.data, ...prev]);
         showSuccess("Outfit created successfully!");
@@ -219,7 +225,7 @@ export const useOutfits = () => {
         throw new Error(response.message || "Failed to create outfit");
       }
     } catch (err: any) {
-      const errorMessage = err.message || "Failed to create outfit";
+      const errorMessage = getApiErrorMessage(err, "Failed to create outfit");
       setError(errorMessage);
       // Don't show error for authentication issues
       if (err.response?.status !== 401 && err.response?.status !== 403) {
@@ -305,7 +311,7 @@ export const useOutfits = () => {
         throw new Error(response.message || "Failed to update outfit");
       }
     } catch (err: any) {
-      const errorMessage = err.message || "Failed to update outfit";
+      const errorMessage = getApiErrorMessage(err, "Failed to update outfit");
       setError(errorMessage);
       // Don't show error for authentication issues
       if (err.response?.status !== 401 && err.response?.status !== 403) {
@@ -338,7 +344,7 @@ export const useOutfits = () => {
         throw new Error(response.message || "Failed to delete outfit");
       }
     } catch (err: any) {
-      const errorMessage = err.message || "Failed to delete outfit";
+      const errorMessage = getApiErrorMessage(err, "Failed to delete outfit");
       // Don't show error for authentication issues
       if (err.response?.status !== 401 && err.response?.status !== 403) {
         showError(errorMessage);

@@ -52,6 +52,19 @@ export const AddCalendarModal: React.FC<AddCalendarModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const isDateInPast = (date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(date);
+    target.setHours(0, 0, 0, 0);
+    return target < today;
+  };
+
+  const isPastSelectedDate = useMemo(() => {
+    if (!selectedDate) return false;
+    return isDateInPast(selectedDate);
+  }, [selectedDate]);
+
   useEffect(() => {
     if (visible) {
       if (mode === "normal" && userOccasionId) {
@@ -112,6 +125,10 @@ export const AddCalendarModal: React.FC<AddCalendarModalProps> = ({
   };
 
   const handleSubmit = async () => {
+    if (isPastSelectedDate) {
+      return;
+    }
+
     if (selectedOutfitIds.length === 0) {
       return;
     }
@@ -187,6 +204,15 @@ export const AddCalendarModal: React.FC<AddCalendarModalProps> = ({
             <Ionicons name="close" size={24} color="#ffffff" />
           </TouchableOpacity>
         </View>
+
+        {isPastSelectedDate && (
+          <View style={styles.warningBanner}>
+            <Ionicons name="alert-circle" size={18} color="#fecdd3" />
+            <Text style={styles.warningBannerText}>
+              Cannot add calendar items for past dates
+            </Text>
+          </View>
+        )}
 
         <ScrollView
           style={styles.scrollView}
@@ -400,14 +426,16 @@ export const AddCalendarModal: React.FC<AddCalendarModalProps> = ({
               styles.submitButton,
               (loading ||
                 selectedOutfitIds.length === 0 ||
-                (mode === "normal" && !selectedOccasionId)) &&
+                (mode === "normal" && !selectedOccasionId) ||
+                isPastSelectedDate) &&
                 styles.buttonDisabled,
             ]}
             onPress={handleSubmit}
             disabled={
               loading ||
               selectedOutfitIds.length === 0 ||
-              (mode === "normal" && !selectedOccasionId)
+              (mode === "normal" && !selectedOccasionId) ||
+              isPastSelectedDate
             }
           >
             {loading ? (
@@ -695,6 +723,25 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.5,
+  },
+  warningBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "rgba(248,113,113,0.15)",
+    borderColor: "rgba(248,113,113,0.4)",
+    borderWidth: 1,
+    marginHorizontal: 16,
+    marginTop: 8,
+    borderRadius: 12,
+  },
+  warningBannerText: {
+    color: "#fecdd3",
+    fontSize: 13,
+    fontWeight: "600",
+    flex: 1,
   },
   loadMoreContainer: {
     marginTop: 16,
