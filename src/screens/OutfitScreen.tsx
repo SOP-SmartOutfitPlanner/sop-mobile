@@ -34,7 +34,7 @@ import { CalendarDayDetailModal } from "../components/calendar/CalendarDayDetail
 import { getUserId } from "../services/api/apiClient";
 import { AnimatedBackground } from "@/components/common";
 
-const OutfitScreen = ({ navigation }: any) => {
+const OutfitScreen = ({ navigation, route }: any) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null);
   const [isDetailVisible, setIsDetailVisible] = useState(false);
@@ -133,7 +133,18 @@ const OutfitScreen = ({ navigation }: any) => {
   useFocusEffect(
     useCallback(() => {
       fetchCalendarData();
-    }, [fetchCalendarData])
+      
+      // Check if we should open create modal from navigation params
+      const params = route?.params as any;
+      if (params?.openCreateModal) {
+        // Use setTimeout to ensure screen is fully focused
+        setTimeout(() => {
+          setIsCreateModalVisible(true);
+        }, 100);
+        // Clear the param to prevent reopening on next focus
+        navigation.setParams({ openCreateModal: undefined });
+      }
+    }, [fetchCalendarData, route?.params, navigation])
   );
 
   // Filter and sort outfits

@@ -118,7 +118,7 @@ export const OutfitDetailModal: React.FC<OutfitDetailModalProps> = ({
       onRequestClose={onClose}
     >
       <View style={styles.container}>
-        <AnimatedBackground />
+        <AnimatedBackground>
         <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
           <LinearGradient
             colors={["rgba(31, 43, 136, 0.95)", "rgba(14, 19, 58, 0.9)"]}
@@ -317,8 +317,8 @@ export const OutfitDetailModal: React.FC<OutfitDetailModalProps> = ({
             </TouchableOpacity>
           </View>
         </View>
-        </View>
         </SafeAreaView>
+        </AnimatedBackground>
       </View>
     </Modal>
   );

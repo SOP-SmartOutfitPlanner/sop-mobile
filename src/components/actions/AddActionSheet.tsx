@@ -14,6 +14,7 @@ import {
 } from "@gorhom/bottom-sheet";
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient";
 import { AddItemModal } from "../wardrobe/modal/AddItemModal";
 
 // Chiều cao của bottom tab bar
@@ -38,13 +39,6 @@ const menuItems: MenuItem[] = [
     screen: "AddItem",
     color: "#3b82f6"
   },
-  {
-    iconFamily: "Ionicons",
-    icon: "heart-outline",
-    label: "Add to wishlist",
-    screen: "AddWishlist",
-    color: "#ec4899",
-  },
 ];
 
 const outfitItems: MenuItem[] = [
@@ -52,7 +46,7 @@ const outfitItems: MenuItem[] = [
     iconFamily: "MaterialCommunityIcons",
     icon: "hanger",
     label: "Create new outfit",
-    screen: "AddOutfit",
+    screen: "Outfit",
     color: "#8b5cf6",
   },
   {
@@ -80,6 +74,18 @@ export const AddActionSheet = forwardRef<BottomSheetModal>((props, ref) => {
       return;
     }
 
+    // Special handling for Outfit screen - navigate to Outfit tab and open create modal
+    if (screen === "Outfit") {
+      setTimeout(() => {
+        // Navigate to Main (which contains BottomTabNavigator) then to Outfit tab
+        (navigation as any).navigate("Main", {
+          screen: "Outfit",
+          params: { openCreateModal: true }
+        });
+      }, 300);
+      return;
+    }
+
     // Navigate to other screens
     setTimeout(() => {
       navigation.navigate(screen as never);
@@ -96,8 +102,8 @@ export const AddActionSheet = forwardRef<BottomSheetModal>((props, ref) => {
   };
 
   const renderIcon = (item: MenuItem) => {
-    const iconColor = item.color || "#000";
-    const iconSize = 24;
+    const iconColor = "#ffffff";
+    const iconSize = 22;
 
     switch (item.iconFamily) {
       case "MaterialCommunityIcons":
@@ -124,13 +130,58 @@ export const AddActionSheet = forwardRef<BottomSheetModal>((props, ref) => {
     }
   };
 
+  const renderMenuItem = (item: MenuItem, index: number) => {
+    // Convert hex color to rgba for gradient
+    const getGradientColors = (color: string) => {
+      if (color === "#3b82f6") {
+        return ["rgba(59, 130, 246, 0.15)", "rgba(59, 130, 246, 0.08)"] as const;
+      } else if (color === "#8b5cf6") {
+        return ["rgba(139, 92, 246, 0.15)", "rgba(139, 92, 246, 0.08)"] as const;
+      } else if (color === "#10b981") {
+        return ["rgba(16, 185, 129, 0.15)", "rgba(16, 185, 129, 0.08)"] as const;
+      }
+      return ["rgba(59, 130, 246, 0.15)", "rgba(59, 130, 246, 0.08)"] as const;
+    };
+
+    const gradientColors = getGradientColors(item.color || "#3b82f6");
+
+    return (
+      <TouchableOpacity
+        key={index}
+        style={styles.menuItemContainer}
+        onPress={() => handleItemPress(item.screen)}
+        activeOpacity={0.7}
+      >
+        <LinearGradient
+          colors={gradientColors}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.menuItemGradient}
+        >
+          <View style={[styles.iconContainer, { backgroundColor: item.color || "#3b82f6" }]}>
+            {renderIcon(item)}
+          </View>
+          <View style={styles.menuItemContent}>
+            <Text style={styles.menuLabel}>{item.label}</Text>
+            {item.badge && (
+              <View style={[styles.badge, { backgroundColor: item.color || "#10b981" }]}>
+                <Text style={styles.badgeText}>{item.badge}</Text>
+              </View>
+            )}
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="rgba(148, 163, 184, 0.5)" />
+        </LinearGradient>
+      </TouchableOpacity>
+    );
+  };
+
   const renderBackdrop = React.useCallback(
     (props: any) => (
       <BottomSheetBackdrop
         {...props}
         disappearsOnIndex={-1}
         appearsOnIndex={0}
-        opacity={0.4}
+        opacity={0.6}
         pressBehavior="close"
       />
     ),
@@ -151,45 +202,19 @@ export const AddActionSheet = forwardRef<BottomSheetModal>((props, ref) => {
         style={styles.sheetContainer} // Thêm margin horizontal
       >
         <BottomSheetView style={styles.container}>
-          <Text style={styles.title}>Quick Actions</Text>
-
-          <View style={styles.section}>
-            {menuItems.map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.menuItem}
-                onPress={() => handleItemPress(item.screen)}
-              >
-                {renderIcon(item)}
-                <Text style={styles.menuLabel}>{item.label}</Text>
-                {item.badge && (
-                  <View style={[styles.badge, { backgroundColor: item.color || "#007AFF" }]}>
-                    <Text style={styles.badgeText}>{item.badge}</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            ))}
+          <View style={styles.header}>
+            <Text style={styles.title}>Quick Actions</Text>
+            <Text style={styles.subtitle}>Choose an action to get started</Text>
           </View>
 
-          <View style={styles.divider} />
-
-          <Text style={styles.sectionTitle}>Outfit Creation</Text>
           <View style={styles.section}>
-            {outfitItems.map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.menuItem}
-                onPress={() => handleItemPress(item.screen)}
-              >
-                {renderIcon(item)}
-                <Text style={styles.menuLabel}>{item.label}</Text>
-                {item.badge && (
-                  <View style={[styles.badge, { backgroundColor: item.color || "#007AFF" }]}>
-                    <Text style={styles.badgeText}>{item.badge}</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            ))}
+            <Text style={styles.sectionTitle}>Wardrobe</Text>
+            {menuItems.map((item, index) => renderMenuItem(item, index))}
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Outfit Creation</Text>
+            {outfitItems.map((item, index) => renderMenuItem(item, index))}
           </View>
         </BottomSheetView>
       </BottomSheetModal>
@@ -206,67 +231,108 @@ export const AddActionSheet = forwardRef<BottomSheetModal>((props, ref) => {
 
 const styles = StyleSheet.create({
   sheetContainer: {
-    // Thêm margin horizontal để sheet không chạm mép màn hình
     marginHorizontal: 16,
   },
   sheetBackground: {
-    backgroundColor: "#fff",
-    borderRadius: 20, // Border radius cho cả 4 góc vì sheet detached
+    backgroundColor: "#0f172a",
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "rgba(148, 163, 184, 0.1)",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 10,
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 15,
   },
   indicator: {
-    backgroundColor: "#ddd",
+    backgroundColor: "rgba(148, 163, 184, 0.4)",
     width: 40,
+    height: 4,
   },
   container: {
     flex: 1,
-    padding: 20,
+    padding: 24,
+    paddingTop: 12,
+  },
+  header: {
+    marginBottom: 24,
   },
   title: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#8e8e93",
-    marginBottom: 16,
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#ffffff",
+    marginBottom: 6,
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: "rgba(148, 163, 184, 0.8)",
+    fontWeight: "500",
   },
   section: {
-    gap: 4,
+    marginBottom: 24,
   },
-  menuItem: {
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "rgba(148, 163, 184, 0.6)",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  menuItemContainer: {
+    marginBottom: 10,
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  menuItemGradient: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    gap: 12,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(148, 163, 184, 0.1)",
+  },
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 14,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  menuItemContent: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   menuLabel: {
     fontSize: 16,
-    color: "#000",
+    fontWeight: "600",
+    color: "#ffffff",
     flex: 1,
   },
   badge: {
-    backgroundColor: "#007AFF",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
   },
   badgeText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "#e5e5e7",
-    marginVertical: 12,
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#8e8e93",
-    marginBottom: 8,
+    color: "#ffffff",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
 });
