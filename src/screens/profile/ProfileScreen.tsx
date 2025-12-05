@@ -1,20 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
+import { StyleSheet, ScrollView, RefreshControl, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ProfileHeader,
   GuestProfileSection,
   UserProfileSection,
-  ProfileTabs,
-  ProfileContent,
   LogoutButton,
-  type ProfileTab,
-  type OutfitItem,
 } from "../../components/profile";
 import { useAuth } from "../../hooks/auth";
+import AnimatedBackground from "../../components/common/AnimatedBackground";
 
 const ProfileScreen = ({ navigation }: any) => {
-  const [activeTab, setActiveTab] = useState<ProfileTab>("Outfits");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { user, isGuest, logout, loadUserProfile } = useAuth();
@@ -40,10 +36,6 @@ const ProfileScreen = ({ navigation }: any) => {
     }
   };
 
-  const outfits: OutfitItem[] = [
-    
-  ];
-
   const handleLogout = () => {
     try {
       setIsLoggingOut(true);
@@ -63,46 +55,70 @@ const ProfileScreen = ({ navigation }: any) => {
     navigation.goBack();
   };
 
+  const handleEditProfile = () => {
+    navigation.navigate("EditProfile");
+  };
+
+  const handleShareProfile = () => {
+    // TODO: implement deep link share
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <ProfileHeader onBackPress={handleBackPress} />
+      <AnimatedBackground>
+        <ProfileHeader onBackPress={handleBackPress} />
 
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={onRefresh}
-            tintColor="#4F46E5"
-            colors={["#4F46E5"]}
-          />
-        }
-      >
-        {isGuest ? (
-          <GuestProfileSection onLoginPress={handleLogin} />
-        ) : (
-          <UserProfileSection user={user} />
-        )}
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={onRefresh}
+              tintColor="#38BDF8"
+              colors={["#38BDF8"]}
+            />
+          }
+        >
+          {isGuest ? (
+            <GuestProfileSection onLoginPress={handleLogin} />
+          ) : (
+            <View style={styles.heroCardWrapper}>
+              <UserProfileSection
+                user={user}
+                onEditProfile={handleEditProfile}
+                onShareProfile={handleShareProfile}
+              />
+            </View>
+          )}
 
-        <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} />
-
-        <ProfileContent activeTab={activeTab} outfits={outfits} />
-
-        {!isGuest && (
-          <LogoutButton onLogout={handleLogout} disabled={isLoggingOut} />
-        )}
-      </ScrollView>
+          {!isGuest && (
+            <LogoutButton onLogout={handleLogout} disabled={isLoggingOut} />
+          )}
+        </ScrollView>
+      </AnimatedBackground>
     </SafeAreaView>
   );
 };
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
   },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 24,
+  },
+  heroCardWrapper: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    borderRadius: 24,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.5)",
+    backgroundColor: "rgba(15,23,42,0.85)",
   },
 });
 

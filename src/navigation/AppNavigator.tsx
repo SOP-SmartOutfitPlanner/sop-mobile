@@ -4,6 +4,7 @@ import BottomTabNavigator from "./BottomTabNavigator";
 import CommunityScreen from "../screens/CommunityScreen";
 import { OnboardingScreen } from "../screens/onboarding";
 import ProfileScreen from "../screens/profile/ProfileScreen";
+import EditProfileScreen from "../screens/profile/EditProfileScreen";
 import { VerifyScreen } from "../screens/auth/VerifyScreen";
 import { AuthNavigator } from "./AuthNavigator";
 import AllWardrobeScreen from "../screens/AllScreen/AllWardrobeScreen";
@@ -18,6 +19,7 @@ export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
   Profile: undefined;
+  EditProfile: undefined;
   Community: undefined;
   Onboarding: undefined;
   Verify: { email: string };
@@ -42,6 +44,7 @@ export const AppNavigator: React.FC = () => {
     >
       <Stack.Screen name="Main" component={BottomTabNavigator} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="Auth" component={AuthNavigator} />
       <Stack.Screen name="Community" component={CommunityScreen} />
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />
