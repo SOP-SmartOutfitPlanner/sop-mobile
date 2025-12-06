@@ -15,7 +15,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useItemUpload } from "../../../hooks/useItemUpload";
 import { UploadProgressModal } from "../UploadProgressModal";
 import { ManualCategoryModal } from "../ManualCategoryModal";
+import { AnalysisPromptModal } from "./AnalysisPromptModal";
 import { getUserId } from "../../../services/api/apiClient";
+import { useNotification } from "../../../hooks";
+import NotificationModal from "@/components/notification/NotificationModal";
 
 interface AddItemModalProps {
   visible: boolean;
@@ -30,6 +33,7 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
   onSuccess,
 }) => {
   const [selectedImages, setSelectedImages] = useState<any[]>([]);
+  const notification = useNotification();
   
   const {
     uploadItems,
@@ -37,8 +41,13 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     uploadProgress,
     isUploading,
     failedImages,
+    successfulItemIds,
     showManualCategoryModal,
     setShowManualCategoryModal,
+    showAnalysisPromptModal,
+    setShowAnalysisPromptModal,
+    handleAnalyzeItems,
+    isAnalyzing,
     submitManualCategories,
     resetUpload,
   } = useItemUpload();
@@ -163,6 +172,7 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
       await submitManualCategories(parseInt(userId), selections);
       
       // Call success callback after manual upload completes
+      // Note: Manual upload doesn't show analysis prompt
       setTimeout(() => {
         onSuccess?.(); // Refresh wardrobe items
         handleClose();
@@ -172,6 +182,52 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     }
   };
 
+  const handleAnalysisComplete = async (selectedItemIds: number[]) => {
+    try {
+      const result = await handleAnalyzeItems(
+        selectedItemIds,
+        // onSuccess callback
+        (message: string) => {
+          notification.showSuccess(message, 'Success');
+        },
+        // onError callback
+        (message: string) => {
+          notification.showError(message, 'Error');
+        }
+      );
+      // After analysis completes successfully, refresh and close
+      if (result?.success) {
+        // Wait a bit for user to see success notification, then refresh and close
+        setTimeout(() => {
+          onSuccess?.(); // Refresh wardrobe items
+          handleClose();
+        }, 2000);
+      } else {
+        // If failed, just close modal (error already shown via notification)
+        setTimeout(() => {
+          handleClose();
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Error in analysis:', error);
+      notification.showError('An unexpected error occurred during analysis', 'Error');
+      // Even if analysis fails, still refresh and close
+      setTimeout(() => {
+        onSuccess?.();
+        handleClose();
+      }, 2000);
+    }
+  };
+
+  const handleSkipAnalysis = () => {
+    setShowAnalysisPromptModal(false);
+    // Refresh and close after skipping
+    setTimeout(() => {
+      onSuccess?.(); // Refresh wardrobe items
+      handleClose();
+    }, 500);
+  };
+
   const handleClose = () => {
     setSelectedImages([]);
     resetUpload();
@@ -179,43 +235,15 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
   };
 
   // Auto-close and refresh when upload completes successfully (auto upload)
+  // But only if analysis prompt modal is not showing
   useEffect(() => {
-    if (uploadProgress.phase === 'complete' && !showManualCategoryModal) {
+    if (uploadProgress.phase === 'complete' && !showManualCategoryModal && !showAnalysisPromptModal) {
       setTimeout(() => {
         onSuccess?.(); // Refresh wardrobe items
         handleClose();
       }, 1500);
     }
-  }, [uploadProgress.phase, showManualCategoryModal]);
-
-  const multiHighlights = useMemo(
-    () => [
-      { icon: "sparkles", text: "AI auto-tags each piece" },
-      { icon: "images-outline", text: "Bulk upload up to 10" },
-      { icon: "shield-checkmark", text: "Keeps photo quality" },
-    ],
-    []
-  );
-
-  const outfitHighlights = useMemo(
-    () => [
-      { icon: "cut", text: "Smart outfit segmentation" },
-      { icon: "timer-outline", text: "Takes ~15 seconds" },
-      { icon: "color-palette-outline", text: "Background cleaned" },
-    ],
-    []
-  );
-
-  const renderHighlights = (items: { icon: any; text: string }[]) => (
-    <View style={styles.highlightGrid}>
-      {items.map((item) => (
-        <View key={item.text} style={styles.highlightChip}>
-          <Ionicons name={item.icon} size={14} color="#cbd5f5" />
-          <Text style={styles.highlightText}>{item.text}</Text>
-        </View>
-      ))}
-    </View>
-  );
+  }, [uploadProgress.phase, showManualCategoryModal, showAnalysisPromptModal]);
 
   return (
     <>
@@ -254,10 +282,6 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
                   <Text style={styles.cardLabel}>Multiple Items</Text>
                 </View>
                 <Text style={styles.cardTitle}>Upload up to 10 items</Text>
-                <Text style={styles.cardDescription}>
-                  Pick photos from camera or gallery. We'll auto-classify each piece.
-                </Text>
-                {renderHighlights(multiHighlights)}
                 <View style={styles.actionButtons}>
                   <TouchableOpacity
                     style={[styles.actionButton, styles.cameraButton]}
@@ -322,10 +346,6 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
                   <Text style={styles.cardLabel}>Outfit Image</Text>
                 </View>
                 <Text style={styles.cardTitle}>AI Outfit Split</Text>
-                <Text style={styles.cardDescription}>
-                  Upload a single outfit photo. We'll split the look into individual items automatically.
-                </Text>
-                {renderHighlights(outfitHighlights)}
                 <View style={styles.tipCard}>
                   <Ionicons name="information-circle-outline" size={16} color="#fcd34d" />
                   <Text style={styles.tipText}>
@@ -355,6 +375,30 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
         failedImages={failedImages}
         onClose={() => setShowManualCategoryModal(false)}
         onSubmit={handleManualCategorySubmit}
+      />
+
+      {/* Analysis Prompt Modal */}
+      <AnalysisPromptModal
+        visible={showAnalysisPromptModal}
+        itemIds={successfulItemIds}
+        onAnalyze={handleAnalysisComplete}
+        onSkip={handleSkipAnalysis}
+        isAnalyzing={isAnalyzing}
+      />
+
+      {/* Notification Modal */}
+      <NotificationModal
+        isVisible={notification.visible}
+        type={notification.config.type}
+        title={notification.config.title}
+        message={notification.config.message}
+        confirmText={notification.config.confirmText}
+        cancelText={notification.config.cancelText}
+        showCancel={notification.config.showCancel}
+        onConfirm={() => {
+          notification.config.onConfirm?.();
+        }}
+        onClose={notification.hideNotification}
       />
     </>
   );

@@ -14,6 +14,8 @@ export const useItemUpload = () => {
   const [failedImages, setFailedImages] = useState<FailedItem[]>([]);
   const [successfulItemIds, setSuccessfulItemIds] = useState<number[]>([]);
   const [showManualCategoryModal, setShowManualCategoryModal] = useState(false);
+  const [showAnalysisPromptModal, setShowAnalysisPromptModal] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Step 1: Upload images to Minio and get download URLs
@@ -96,6 +98,10 @@ export const useItemUpload = () => {
             total: imageURLs.length,
             message: `Successfully added ${count} item${count > 1 ? 's' : ''}!`,
           });
+          // Show analysis prompt modal after successful upload
+          if (itemIds.length > 0) {
+            setShowAnalysisPromptModal(true);
+          }
           return { success: true, failedImages: [] };
         }
       }
@@ -128,6 +134,10 @@ export const useItemUpload = () => {
               total: imageURLs.length,
               message: `Successfully added ${successfulItems.count} item${successfulItems.count > 1 ? 's' : ''}!`,
             });
+            // Show analysis prompt modal after successful upload
+            if (successfulItems.itemIds.length > 0) {
+              setShowAnalysisPromptModal(true);
+            }
           }
           
           return { success: failedItems.count === 0, failedImages: failedItems.items };
@@ -165,6 +175,8 @@ export const useItemUpload = () => {
         });
         
         setFailedImages([]);
+        // Note: Manual upload doesn't return itemIds in response
+        // Analysis prompt is only shown after auto upload
       }
 
       return response;
@@ -276,6 +288,38 @@ export const useItemUpload = () => {
     }
   }, [uploadImagesToMinio, autoClassifyItems]);
 
+  // Handle analysis of selected items
+  const handleAnalyzeItems = useCallback(async (selectedItemIds: number[], onSuccess?: (message: string) => void, onError?: (message: string) => void) => {
+    if (selectedItemIds.length === 0) {
+      return;
+    }
+
+    setIsAnalyzing(true);
+    // Don't close modal here - let it close after analysis completes
+
+    try {
+      const response = await AnalyzeItems(selectedItemIds);
+      
+      if (response.statusCode === 200) {
+        // Success - call onSuccess callback if provided
+        const message = `Successfully analyzed ${selectedItemIds.length} item${selectedItemIds.length > 1 ? 's' : ''}!`;
+        onSuccess?.(message);
+        return { success: true, count: selectedItemIds.length };
+      } else {
+        const errorMessage = 'Failed to analyze items. Please try again.';
+        onError?.(errorMessage);
+        return { success: false };
+      }
+    } catch (err: any) {
+      console.error('Error analyzing items:', err);
+      const errorMessage = err.message || 'Failed to analyze items. Please try again.';
+      onError?.(errorMessage);
+      return { success: false };
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, []);
+
   const resetUpload = useCallback(() => {
     setUploadProgress({
       phase: 'uploading',
@@ -287,6 +331,8 @@ export const useItemUpload = () => {
     setFailedImages([]);
     setSuccessfulItemIds([]);
     setShowManualCategoryModal(false);
+    setShowAnalysisPromptModal(false);
+    setIsAnalyzing(false);
     setError(null);
   }, []);
 
@@ -299,6 +345,10 @@ export const useItemUpload = () => {
     successfulItemIds,
     showManualCategoryModal,
     setShowManualCategoryModal,
+    showAnalysisPromptModal,
+    setShowAnalysisPromptModal,
+    handleAnalyzeItems,
+    isAnalyzing,
     submitManualCategories,
     error,
     resetUpload,
