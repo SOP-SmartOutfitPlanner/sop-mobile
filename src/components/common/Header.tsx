@@ -5,6 +5,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { Bell, MessageCircle, ArrowLeft } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS, SPACING, SHADOWS } from "../../constants/homeStyles";
+import { useAuth } from "@/hooks/auth";
+import { Image } from "expo-image";
 
 interface HeaderProps {
   title?: string;
@@ -31,6 +33,7 @@ export const Header: React.FC<HeaderProps> = ({
   onProfilePress,
   subtitle,
 }) => {
+  const { user, isGuest, logout, loadUserProfile } = useAuth();
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <LinearGradient
@@ -80,7 +83,11 @@ export const Header: React.FC<HeaderProps> = ({
                 activeOpacity={0.9}
               >
                 <View style={styles.avatar}>
-                  <Ionicons name="person" size={18} color={COLORS.white} />
+                  {user?.avtUrl ? (
+                    <Image source={{ uri: user.avtUrl }} style={styles.avatar} />
+                  ) : (
+                    <Ionicons name="person" size={18} color={COLORS.white} />
+                  )}
                 </View>
               </TouchableOpacity>
             )}
@@ -157,13 +164,13 @@ const styles = StyleSheet.create({
     marginLeft: SPACING.xs,
   },
   avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.primary,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.08)",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.35)",
+    borderColor: "rgba(255,255,255,0.12)",
   },
 });
