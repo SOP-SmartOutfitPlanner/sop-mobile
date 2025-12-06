@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Alert } from "react-native";
 import {
   forgotPassword,
   verifyOtpReset,
@@ -18,7 +17,8 @@ export const useForgotPassword = () => {
   const [expiryMinutes, setExpiryMinutes] = useState(0);
 
   // Step 1: Send OTP to email
-  const sendOtp = async (emailAddress: string): Promise<boolean> => {
+  // Returns { success: boolean, message?: string }
+  const sendOtp = async (emailAddress: string): Promise<{ success: boolean; message?: string }> => {
     setIsLoading(true);
     try {
       const data: forgotPasswordRequest = {
@@ -29,10 +29,9 @@ export const useForgotPassword = () => {
 
       if (response.statusCode === 200) {
         setEmail(emailAddress);
-        Alert.alert("Success", "OTP code has been sent to your email");
-        return true;
+        return { success: true, message: "OTP code has been sent to your email" };
       }
-      return false;
+      return { success: false, message: "Failed to send OTP" };
     } catch (error: any) {
       let errorMessage = "Failed to send OTP";
 
@@ -42,22 +41,20 @@ export const useForgotPassword = () => {
         errorMessage = error.message;
       }
 
-      Alert.alert("Error", errorMessage);
-      return false;
+      return { success: false, message: errorMessage };
     } finally {
       setIsLoading(false);
     }
   };
 
   // Step 2: Verify OTP and get reset token
-  // Returns resetToken string on success, or null on failure
+  // Returns { success: boolean, token?: string, message?: string, expiryMinutes?: number }
   const verifyOtp = async (
     emailAddress: string,
     otp: string
-  ): Promise<string | null> => {
+  ): Promise<{ success: boolean; token?: string; message?: string; expiryMinutes?: number }> => {
     if (!emailAddress) {
-      Alert.alert("Error", "Email is not defined");
-      return null;
+      return { success: false, message: "Email is not defined" };
     }
 
     setIsLoading(true);
@@ -74,13 +71,14 @@ export const useForgotPassword = () => {
         setEmail(emailAddress);
         setResetToken(token);
         setExpiryMinutes(response.data.expiryMinutes);
-        Alert.alert(
-          "Success",
-          `OTP is valid. Please reset your password within ${response.data.expiryMinutes} minutes`
-        );
-        return token;
+        return {
+          success: true,
+          token,
+          message: `OTP is valid. Please reset your password within ${response.data.expiryMinutes} minutes`,
+          expiryMinutes: response.data.expiryMinutes,
+        };
       }
-      return null;
+      return { success: false, message: "OTP verification failed" };
     } catch (error: any) {
       let errorMessage = "OTP verification failed";
 
@@ -90,28 +88,26 @@ export const useForgotPassword = () => {
         errorMessage = error.message;
       }
 
-      Alert.alert("Error", errorMessage);
-      return null;
+      return { success: false, message: errorMessage };
     } finally {
       setIsLoading(false);
     }
   };
 
   // Step 3: Reset password with new password
+  // Returns { success: boolean, message?: string }
   const resetPass = async (
     emailAddress: string,
     resetTokenParam: string,
     newPassword: string,
     confirmPassword: string
-  ): Promise<boolean> => {
+  ): Promise<{ success: boolean; message?: string }> => {
     if (!emailAddress || !resetTokenParam) {
-      Alert.alert("Error", "Invalid authentication information");
-      return false;
+      return { success: false, message: "Invalid authentication information" };
     }
 
     if (newPassword !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match");
-      return false;
+      return { success: false, message: "Passwords do not match" };
     }
 
     setIsLoading(true);
@@ -126,14 +122,13 @@ export const useForgotPassword = () => {
       const response = await resetPassword(data);
 
       if (response.statusCode === 200) {
-        Alert.alert("Success", "Password has been reset successfully");
         // Reset state
         setEmail("");
         setResetToken("");
         setExpiryMinutes(0);
-        return true;
+        return { success: true, message: "Password has been reset successfully" };
       }
-      return false;
+      return { success: false, message: "Password reset failed" };
     } catch (error: any) {
       let errorMessage = "Password reset failed";
 
@@ -143,8 +138,7 @@ export const useForgotPassword = () => {
         errorMessage = error.message;
       }
 
-      Alert.alert("Error", errorMessage);
-      return false;
+      return { success: false, message: errorMessage };
     } finally {
       setIsLoading(false);
     }

@@ -58,9 +58,11 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
           />
 
           <View style={styles.badgeRow}>
-            <View style={styles.aiBadge}>
-              <Text style={styles.aiBadgeText}>AI</Text>
-            </View>
+            {item.isAnalyzed && (
+              <View style={styles.aiBadge}>
+                <Text style={styles.aiBadgeText}>AI</Text>
+              </View>
+            )}
             {item.categoryName && (
               <View style={styles.categoryBadge}>
                 <Text style={styles.categoryBadgeText}>

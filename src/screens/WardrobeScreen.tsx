@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   RefreshControl,
   TextInput,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Header } from "../components/common/Header";
@@ -19,8 +20,9 @@ import { WardrobeLoadingGrid } from "../components/wardrobe/WardrobeLoadingGrid"
 import { ItemDetailModal } from "../components/wardrobe/ItemDetailModal";
 import { AddItemModal } from "../components/wardrobe/modal/AddItemModal";
 import { EditItemModal } from "../components/wardrobe/modal/EditItemModal";
+import { FilterModal } from "../components/wardrobe/FilterModal";
+import { AnalyzeItemsButton } from "../components/wardrobe/AnalyzeItemsButton";
 import { useAIDetection } from "../contexts/AIDetectionContext";
-import { useAuth } from "../hooks/auth";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { getUserId } from "../services/api/apiClient";
@@ -29,31 +31,53 @@ const WardrobeScreen = ({ navigation }: any) => {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [isEditItemModalOpen, setIsEditItemModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
-  // const { user } = useAuth(); 
   const { shouldOpenModal, setShouldOpenModal, hasCompletedDetection, createdItem, clearDetection, setOnItemCreated } = useAIDetection();
   const {
     items,
+    totalCount,
+    searchQuery,
+    setSearchQuery,
     loading,
     isRefreshing,
     handleRefresh,
+    loadMore,
+    hasMorePages,
+    isLoadingMore,
     refetch,
     editItem,
     deleteItem,
-  } = useWardrobe();
+    clearFilters,
+    selectedCategoryId,
+    selectedSeasonId,
+    selectedStyleId,
+    selectedOccasionId,
+    isAnalyzedFilter,
+    setCategoryFilter,
+    setSeasonFilter,
+    setStyleFilter,
+    setOccasionFilter,
+    setAnalyzedFilter,
+  } = useWardrobe({ takeAll: false, pageSize: 10 });
 
-  // Refetch items when screen is focused (handles login/logout)
+  // Track if this is the first mount to avoid duplicate API calls
+  const isFirstMount = useRef(true);
+
+  // Refetch items when screen is focused (but not on first mount)
+  // This handles cases like login/logout or returning from other screens
   useFocusEffect(
     useCallback(() => {
-      console.log('🔄 Screen focused, refetching wardrobe...');
+      if (isFirstMount.current) {
+        isFirstMount.current = false;
+        // Skip refetch on first mount - useWardrobe already fetches on mount
+        return;
+      }
       refetch();
     }, [refetch])
   );
 
-  // Memoize the callback to prevent infinite loop
   const handleItemCreated = useCallback(() => {
-    console.log('🔄 Refreshing wardrobe after item creation...');
     refetch();
   }, [refetch]);
 
@@ -84,17 +108,8 @@ const WardrobeScreen = ({ navigation }: any) => {
   const handleUseInOutfit = useCallback((item: Item) => {
     setSelectedItem(null);
     // TODO: Navigate to outfit builder with selected item
-    console.log("Use in outfit:", item.name);
   }, []);
 
-  const handleViewFavorites = useCallback(() => {
-    // Navigate to favorites screen
-    console.log("View favorites");
-  }, []);
-
-  const handleViewSuggestion = useCallback(() => {
-    navigation.navigate("Suggestion");
-  }, [navigation]);
 
   const handleProfilePress = useCallback(() => {
     navigation.navigate("Profile");
@@ -105,29 +120,31 @@ const WardrobeScreen = ({ navigation }: any) => {
   const handleNotificationPress = useCallback(() => {
     navigation.navigate("Notifications");
   }, [navigation]);
-  const handleMessagePress = useCallback(() => {}, []);
-
-  const favoriteItems = useMemo(
-    () => items.slice(0, Math.min(4, items.length)),
-    [items]
-  );
-
-  const filteredItems = useMemo(() => {
-    if (!searchQuery.trim()) return items;
-    return items.filter((item) =>
-      item.name.toLowerCase().includes(searchQuery.trim().toLowerCase())
-    );
-  }, [items, searchQuery]);
 
   const analyzedCount = useMemo(
     () => items.filter((item) => item.isAnalyzed).length,
     [items]
   );
 
-  const displayedFavorites = useMemo(
-    () => favoriteItems.slice(0, 3),
-    [favoriteItems]
+  const activeFiltersCount = useMemo(
+    () =>
+      [
+        selectedCategoryId,
+        selectedSeasonId,
+        selectedStyleId,
+        selectedOccasionId,
+        isAnalyzedFilter,
+      ].filter((filter) => filter !== undefined).length,
+    [
+      selectedCategoryId,
+      selectedSeasonId,
+      selectedStyleId,
+      selectedOccasionId,
+      isAnalyzedFilter,
+    ]
   );
+
+  const totalItems = totalCount || items.length;
 
 
   // Memoize modal handlers
@@ -145,14 +162,8 @@ const WardrobeScreen = ({ navigation }: any) => {
 
   const handleSuccessAddItem = useCallback(async () => {
     const userId = await getUserId();
-    
-    if (!userId) {
-      console.log('⚠️ No userId found, skipping refresh');
-      return;
-    }
-    
-    console.log('✅ Items uploaded successfully, refreshing wardrobe...');
-    await refetch(); // Refresh wardrobe items
+    if (!userId) return;
+    await refetch();
   }, [refetch]);
 
   const handleCloseEditItem = useCallback(() => {
@@ -164,9 +175,36 @@ const WardrobeScreen = ({ navigation }: any) => {
   const handleSaveEditItem = useCallback(async () => {
     setIsEditItemModalOpen(false);
     setSelectedItem(null);
-    clearDetection(); // Clear AI detection data
-    await handleRefresh(); // Refresh wardrobe after editing item
+    clearDetection();
+    await handleRefresh();
   }, [clearDetection, handleRefresh]);
+
+  const handleOpenFilterModal = useCallback(() => {
+    setIsFilterModalOpen(true);
+  }, []);
+
+  const handleCloseFilterModal = useCallback(() => {
+    setIsFilterModalOpen(false);
+  }, []);
+
+  const handleOpenAddItemModal = useCallback(async () => {
+    const userId = await getUserId();
+    if (!userId) return;
+    setIsAddItemModalOpen(true);
+  }, []);
+
+  const handleClearSearch = useCallback(() => {
+    setSearchQuery("");
+  }, [setSearchQuery]);
+
+  const handleEmptyWardrobeCreate = useCallback(async () => {
+    const userId = await getUserId();
+    if (userId) {
+      setIsAddItemModalOpen(true);
+    } else {
+      navigation.navigate("Auth", { screen: "Login" });
+    }
+  }, [navigation]);
 
   if (loading) {
     return (
@@ -176,7 +214,6 @@ const WardrobeScreen = ({ navigation }: any) => {
           showBackButton={false}
           onBackPress={handleBackPress}
           onNotificationPress={handleNotificationPress}
-          onMessagePress={handleMessagePress}
           onProfilePress={handleProfilePress}
         />
         <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -194,7 +231,6 @@ const WardrobeScreen = ({ navigation }: any) => {
         showBackButton={false}
         onBackPress={handleBackPress}
         onNotificationPress={handleNotificationPress}
-        onMessagePress={handleMessagePress}
         onProfilePress={handleProfilePress}
       />
       <ScrollView
@@ -232,96 +268,96 @@ const WardrobeScreen = ({ navigation }: any) => {
               </View>
             </View>
 
-            <View style={styles.heroActions}>
-              <TouchableOpacity
-                style={styles.heroActionButton}
-                onPress={handleViewFavorites}
-              >
-                <Ionicons name="heart-outline" size={16} color="#e0f2fe" />
-                <Text style={styles.heroActionText}>Favorites</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.heroActionButton}
-                onPress={handleViewSuggestion}
-              >
-                <Ionicons name="sparkles-outline" size={16} color="#e0f2fe" />
-                <Text style={styles.heroActionText}>Ideas</Text>
-              </TouchableOpacity>
-            </View>
+            
           </LinearGradient>
         </View>
 
-        <View style={styles.searchRow}>
-          <View style={styles.searchInput}>
+        <View style={styles.controlsContainer}>
+          <View style={styles.searchContainer}>
             <Ionicons name="search" size={18} color="#94a3b8" />
             <TextInput
-              style={styles.searchText}
+              style={styles.searchInput}
               placeholder="Search your wardrobe..."
               placeholderTextColor="#94a3b8"
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={handleClearSearch}>
+                <Ionicons name="close-circle" size={18} color="#94a3b8" />
+              </TouchableOpacity>
+            )}
           </View>
 
           <TouchableOpacity
-            style={styles.iconButton}
-            onPress={handleRefresh}
-            activeOpacity={0.8}
+            style={styles.filterButton}
+            onPress={handleOpenFilterModal}
+            activeOpacity={0.85}
           >
-            <Ionicons name="refresh" size={18} color="#e0f2fe" />
+            <Ionicons name="options-outline" size={20} color="#0f172a" />
+            {activeFiltersCount > 0 && (
+              <View style={styles.filterBadge}>
+                <Text style={styles.filterBadgeText}>
+                  {activeFiltersCount}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.addButton}
-            onPress={async () => {
-              const userId = await getUserId();
-              
-              if (!userId) {
-                console.log('⚠️ No userId found, cannot add item');
-                // User stays on current screen, modal won't open
-                return;
-              }
-              
-              setIsAddItemModalOpen(true);
-            }}
+            onPress={handleOpenAddItemModal}
             activeOpacity={0.85}
           >
             <Ionicons name="add" size={20} color="#0f172a" />
           </TouchableOpacity>
         </View>
 
-        {/* Wardrobe Section */}
-        <WardrobeSection
-          title="Wardrobe"
-          showViewMore={filteredItems.length > 1}
-          viewMoreText="View All"
-          onViewMore={() => navigation.navigate("AllWardrobe")}
-        >
-          {filteredItems.length === 0 ? (
-            <EmptyWardrobe onCreateWardrobe={() => getUserId().then(userId => userId ? setIsAddItemModalOpen(true) : navigation.navigate("Auth", { screen: "Login" }))} />
-          ) : (
-            <WardrobeItemGrid
-              items={filteredItems}
-              onItemClick={handleItemClick}
-              columns={2}
-            />
+        <View style={styles.itemCountContainer}>
+          <Text style={styles.itemCountText}>
+            Showing {items.length} / {totalItems} items
+          </Text>
+          {activeFiltersCount > 0 && (
+            <TouchableOpacity onPress={clearFilters}>
+              <Text style={styles.clearFiltersText}>Clear filters</Text>
+            </TouchableOpacity>
           )}
-        </WardrobeSection>
+        </View>
 
-        {/* Favorites Section */}
-        {/* {favoriteItems.length > 0 && (
-          <WardrobeSection
-            title="Favorites list"
-            showViewMore
-            viewMoreText="View All"
-            onViewMore={handleViewFavorites}
+        {/* Analyze Items Button */}
+        <AnalyzeItemsButton items={items} onAnalysisComplete={handleRefresh} />
+
+        {/* Items Grid */}
+        {items.length > 0 ? (
+          <WardrobeItemGrid
+            items={items}
+            onItemClick={handleItemClick}
+            columns={2}
+          />
+        ) : (
+          <View style={styles.emptyContainer}>
+            <EmptyWardrobe onCreateWardrobe={handleEmptyWardrobeCreate} />
+          </View>
+        )}
+
+        {/* Load more */}
+        {hasMorePages && (
+          <TouchableOpacity
+            style={styles.loadMoreButton}
+            onPress={loadMore}
+            disabled={isLoadingMore}
+            activeOpacity={0.85}
           >
-            <WardrobeItemGrid
-              items={displayedFavorites}
-              onItemClick={handleItemClick}
-              columns={2}
-            />
-          </WardrobeSection>
-        )} */}
+            {isLoadingMore ? (
+              <>
+                <ActivityIndicator color="#0f172a" size="small" />
+                <Text style={styles.loadMoreText}>Loading...</Text>
+              </>
+            ) : (
+              <Text style={styles.loadMoreText}>Load more</Text>
+            )}
+          </TouchableOpacity>
+        )}
 
         {/* Bottom spacing */}
         <View style={styles.bottomSpacing} />
@@ -330,7 +366,7 @@ const WardrobeScreen = ({ navigation }: any) => {
       {/* Modals */}
       <ItemDetailModal
         visible={!!selectedItem}
-        onClose={() => setSelectedItem(null)}
+        onClose={handleCloseItemDetail}
         item={selectedItem}
         onUseInOutfit={handleUseInOutfit}
         onRefresh={handleRefresh}
@@ -347,19 +383,26 @@ const WardrobeScreen = ({ navigation }: any) => {
 
       <EditItemModal
         visible={isEditItemModalOpen}
-        onClose={() => {
-          setIsEditItemModalOpen(false);
-          setSelectedItem(null);
-          clearDetection(); // Clear AI detection data
-        }}
-        onSave={async () => {
-          setIsEditItemModalOpen(false);
-          setSelectedItem(null);
-          clearDetection(); // Clear AI detection data
-          await handleRefresh(); // Refresh wardrobe after editing item
-        }}
+        onClose={handleCloseEditItem}
+        onSave={handleSaveEditItem}
         item={selectedItem}
         editItem={editItem}
+      />
+
+      <FilterModal
+        visible={isFilterModalOpen}
+        onClose={handleCloseFilterModal}
+        selectedCategoryId={selectedCategoryId}
+        selectedSeasonId={selectedSeasonId}
+        selectedStyleId={selectedStyleId}
+        selectedOccasionId={selectedOccasionId}
+        isAnalyzed={isAnalyzedFilter}
+        onCategorySelect={setCategoryFilter}
+        onSeasonSelect={setSeasonFilter}
+        onStyleSelect={setStyleFilter}
+        onOccasionSelect={setOccasionFilter}
+        onAnalyzedToggle={setAnalyzedFilter}
+        onClearFilters={clearFilters}
       />
     </View>
   );
@@ -444,67 +487,95 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
   },
-  heroActions: {
+  controlsContainer: {
     flexDirection: "row",
+    paddingHorizontal: 16,
     gap: 12,
   },
-  heroActionButton: {
+  searchContainer: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 10,
-    borderRadius: 12,
+    backgroundColor: "rgba(15,23,42,0.85)",
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     borderWidth: 1,
-    borderColor: "rgba(224,242,254,0.3)",
-    backgroundColor: "rgba(15,23,42,0.2)",
-  },
-  heroActionText: {
-    color: "#e0f2fe",
-    fontWeight: "600",
-    fontSize: 13,
-  },
-  searchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    gap: 12,
+    borderColor: "rgba(148,163,184,0.25)",
+    gap: 8,
   },
   searchInput: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 16,
-    backgroundColor: "rgba(15,23,42,0.8)",
-    borderWidth: 1,
-    borderColor: "rgba(148,163,184,0.25)",
-  },
-  searchText: {
-    flex: 1,
+    fontSize: 15,
     color: "#e2e8f0",
-    fontSize: 14,
   },
-  iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(224,242,254,0.3)",
+  filterButton: {
+    width: 60,
+    height: 60,
+    backgroundColor: "#38bdf8",
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(15,23,42,0.6)",
+    position: "relative",
+  },
+  filterBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "#0f172a",
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 6,
+  },
+  filterBadgeText: {
+    color: "#38bdf8",
+    fontSize: 11,
+    fontWeight: "bold",
   },
   addButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 60,
+    height: 60,
+    borderRadius: 18,
     backgroundColor: "#38bdf8",
     justifyContent: "center",
     alignItems: "center",
+  },
+  itemCountContainer: {
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 8,
+  },
+  itemCountText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#e2e8f0",
+  },
+  clearFiltersText: {
+    fontSize: 13,
+    color: "#94a3b8",
+  },
+  loadMoreButton: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    borderRadius: 16,
+    backgroundColor: "#38bdf8",
+    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
+  },
+  loadMoreText: {
+    color: "#0f172a",
+    fontWeight: "600",
+  },
+  emptyContainer: {
+    paddingHorizontal: 16,
   },
   bottomSpacing: {
     height: 80,

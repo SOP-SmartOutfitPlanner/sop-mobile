@@ -16,6 +16,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useForgotPassword } from "../../hooks/auth/useForgotPassword";
 import AnimatedBackground from "../../components/common/AnimatedBackground";
+import NotificationModal from "../../components/notification/NotificationModal";
+import { useNotification } from "../../hooks";
 
 const { height } = Dimensions.get("window");
 
@@ -28,21 +30,49 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordProps> = ({
 }) => {
   const [email, setEmail] = useState("");
   const { isLoading, sendOtp } = useForgotPassword();
+  const { visible, config, showNotification, hideNotification } = useNotification();
 
   const handleSendOtp = async () => {
     // Validation
     if (!email.trim()) {
+      showNotification({
+        type: "error",
+        title: "Validation Error",
+        message: "Please enter your email address",
+        confirmText: "OK",
+      });
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
+      showNotification({
+        type: "error",
+        title: "Validation Error",
+        message: "Please enter a valid email address",
+        confirmText: "OK",
+      });
       return;
     }
 
-    const success = await sendOtp(email);
-    if (success) {
-      navigation.navigate("VerifyOtpReset", { email });
+    const result = await sendOtp(email);
+    if (result.success) {
+      showNotification({
+        type: "success",
+        title: "OTP Sent",
+        message: result.message || "OTP code has been sent to your email",
+        confirmText: "Continue",
+        onConfirm: () => {
+          navigation.navigate("VerifyOtpReset", { email });
+        },
+      });
+    } else {
+      showNotification({
+        type: "error",
+        title: "Failed to Send OTP",
+        message: result.message || "Failed to send OTP. Please try again.",
+        confirmText: "OK",
+      });
     }
   };
 
@@ -143,6 +173,19 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordProps> = ({
           </KeyboardAvoidingView>
         </SafeAreaView>
       </AnimatedBackground>
+
+      {/* Notification Modal */}
+      <NotificationModal
+        isVisible={visible}
+        type={config.type}
+        title={config.title}
+        message={config.message}
+        onClose={hideNotification}
+        confirmText={config.confirmText}
+        cancelText={config.cancelText}
+        onConfirm={config.onConfirm}
+        showCancel={config.showCancel}
+      />
     </View>
   );
 };

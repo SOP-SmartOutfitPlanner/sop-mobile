@@ -73,16 +73,6 @@ export const Header: React.FC<HeaderProps> = ({
               </TouchableOpacity>
             )}
 
-            {showMessage && (
-              <TouchableOpacity
-                style={styles.iconButton}
-                onPress={onMessagePress}
-                activeOpacity={0.85}
-              >
-                <MessageCircle size={18} color="#e2e8f0" />
-              </TouchableOpacity>
-            )}
-
             {showProfile && (
               <TouchableOpacity
                 style={styles.profileButton}

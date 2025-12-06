@@ -76,11 +76,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#1e293b",
+    color: "#ffffff",
   },
   count: {
     fontSize: 14,
-    color: "#64748b",
+    color: "rgba(226,232,240,0.7)",
   },
   cardsGrid: {
     flexDirection: "row",

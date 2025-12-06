@@ -12,6 +12,7 @@ import { Header } from "../../components/common/Header";
 import { AllOutfitsSection } from "../../components/outfit/AllOutfitsSection";
 import { OutfitDetailModal } from "../../components/outfit/OutfitDetailModal";
 import NotificationModal from "../../components/notification/NotificationModal";
+import AnimatedBackground from "../../components/common/AnimatedBackground";
 import { useOutfits } from "../../hooks/outfit/useOutfits";
 import { Outfit } from "../../types/outfit";
 
@@ -102,94 +103,100 @@ const AllOutfitScreen = ({ navigation }: any) => {
 
   if (loading && outfits.length === 0) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3b82f6" />
-        <Text style={styles.loadingText}>Loading outfits...</Text>
+      <View style={styles.container}>
+        <AnimatedBackground>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#38bdf8" />
+            <Text style={styles.loadingText}>Loading outfits...</Text>
+          </View>
+        </AnimatedBackground>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Header
-        title="All Outfits"
-        showBackButton
-        onBackPress={handleBack}
-        onNotificationPress={handleNotificationPress}
-        onMessagePress={() => {}}
-        onProfilePress={() => navigation.navigate("Profile")}
-      />
-
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
-        }
-        onScroll={({ nativeEvent }) => {
-          const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-          const paddingToBottom = 20;
-          const isCloseToBottom =
-            layoutMeasurement.height + contentOffset.y >=
-            contentSize.height - paddingToBottom;
-
-          if (
-            isCloseToBottom &&
-            metadata?.hasNext &&
-            !loadingMore &&
-            !loading &&
-            loadMoreOutfits
-          ) {
-            loadMoreOutfits();
-          }
-        }}
-        scrollEventThrottle={400}
-        showsVerticalScrollIndicator={false}
-      >
-        <AllOutfitsSection
-          outfits={transformedOutfits}
+      <AnimatedBackground>
+        <Header
           title="All Outfits"
-          emptyMessage="You have not created any outfits yet"
-          onViewOutfit={handleViewOutfit}
-          totalCount={metadata?.totalCount}
+          showBackButton
+          onBackPress={handleBack}
+          onNotificationPress={handleNotificationPress}
+          onMessagePress={() => {}}
+          onProfilePress={() => navigation.navigate("Profile")}
         />
-        {metadata?.hasNext && !loadingMore && !loading && (
-          <TouchableOpacity
-            style={styles.loadMoreButton}
-            onPress={() => loadMoreOutfits()}
-          >
-            <Text style={styles.loadMoreButtonText}>Load more outfits</Text>
-          </TouchableOpacity>
-        )}
-        {loadingMore && (
-          <View style={styles.loadMoreContainer}>
-            <ActivityIndicator size="small" color="#3b82f6" />
-            <Text style={styles.loadMoreText}>Loading more outfits...</Text>
-          </View>
-        )}
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
 
-      <NotificationModal
-        isVisible={visible}
-        type={config.type}
-        title={config.title}
-        message={config.message}
-        confirmText={config.confirmText}
-        cancelText={config.cancelText}
-        showCancel={config.showCancel}
-        onConfirm={config.onConfirm}
-        onClose={hideNotification}
-      />
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
+          }
+          onScroll={({ nativeEvent }) => {
+            const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+            const paddingToBottom = 20;
+            const isCloseToBottom =
+              layoutMeasurement.height + contentOffset.y >=
+              contentSize.height - paddingToBottom;
 
-      <OutfitDetailModal
-        visible={isDetailVisible}
-        outfit={selectedOutfit}
-        onClose={handleCloseDetail}
-        onToggleFavorite={handleFavoriteToggle}
-        onDeleteOutfit={handleDeleteOutfit}
-        onEditOutfit={handleEditOutfit}
-      />
+            if (
+              isCloseToBottom &&
+              metadata?.hasNext &&
+              !loadingMore &&
+              !loading &&
+              loadMoreOutfits
+            ) {
+              loadMoreOutfits();
+            }
+          }}
+          scrollEventThrottle={400}
+          showsVerticalScrollIndicator={false}
+        >
+          <AllOutfitsSection
+            outfits={transformedOutfits}
+            title="All Outfits"
+            emptyMessage="You have not created any outfits yet"
+            onViewOutfit={handleViewOutfit}
+            totalCount={metadata?.totalCount}
+          />
+          {metadata?.hasNext && !loadingMore && !loading && (
+            <TouchableOpacity
+              style={styles.loadMoreButton}
+              onPress={() => loadMoreOutfits()}
+            >
+              <Text style={styles.loadMoreButtonText}>Load more outfits</Text>
+            </TouchableOpacity>
+          )}
+          {loadingMore && (
+            <View style={styles.loadMoreContainer}>
+              <ActivityIndicator size="small" color="#38bdf8" />
+              <Text style={styles.loadMoreText}>Loading more outfits...</Text>
+            </View>
+          )}
+          <View style={styles.bottomSpacing} />
+        </ScrollView>
+
+        <NotificationModal
+          isVisible={visible}
+          type={config.type}
+          title={config.title}
+          message={config.message}
+          confirmText={config.confirmText}
+          cancelText={config.cancelText}
+          showCancel={config.showCancel}
+          onConfirm={config.onConfirm}
+          onClose={hideNotification}
+        />
+
+        <OutfitDetailModal
+          visible={isDetailVisible}
+          outfit={selectedOutfit}
+          onClose={handleCloseDetail}
+          onToggleFavorite={handleFavoriteToggle}
+          onDeleteOutfit={handleDeleteOutfit}
+          onEditOutfit={handleEditOutfit}
+        />
+      </AnimatedBackground>
     </View>
   );
 };
@@ -197,7 +204,7 @@ const AllOutfitScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#020617",
   },
   scrollView: {
     flex: 1,
@@ -215,12 +222,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 999,
-    backgroundColor: "#e5edff",
+    backgroundColor: "rgba(56,189,248,0.2)",
+    borderWidth: 1,
+    borderColor: "rgba(56,189,248,0.3)",
   },
   loadMoreButtonText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#1d4ed8",
+    color: "#38bdf8",
   },
   loadMoreContainer: {
     flexDirection: "row",
@@ -231,18 +240,17 @@ const styles = StyleSheet.create({
   },
   loadMoreText: {
     fontSize: 14,
-    color: "#64748b",
+    color: "rgba(226,232,240,0.7)",
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f8fafc",
     gap: 12,
   },
   loadingText: {
     fontSize: 16,
-    color: "#64748b",
+    color: "rgba(226,232,240,0.9)",
     fontWeight: "500",
   },
 });

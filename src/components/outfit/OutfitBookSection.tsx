@@ -15,18 +15,12 @@ interface OutfitBookSectionProps {
   onViewAllOutfits: () => void;
 }
 
-const BRAND_COLORS = {
-  navy: "#0F172A",
-  blue: "#1D4ED8",
-  accent: "#F97316",
-} as const;
-
 // Gradient colors - using minimal color palette with blue variations
-// Focused on blue tones that match the dark theme
 const cardGradients: [string, string][] = [
-  ["#1e3a8a", "#172554"], // Blue gradient (same as WardrobeScreen hero)
-  // ["#2563eb", "#1e40af"], // Bright blue gradient
+  ["#1e3a8a", "#172554"], // Blue gradient
   ["#1e40af", "#1e3a8a"], // Darker blue gradient
+  ["#2563eb", "#1e40af"], // Bright blue gradient
+  ["#3b82f6", "#2563eb"], // Lighter blue gradient
 ];
 
 export const OutfitBookSection: React.FC<OutfitBookSectionProps> = ({
@@ -62,41 +56,43 @@ export const OutfitBookSection: React.FC<OutfitBookSectionProps> = ({
             <TouchableOpacity
               key={outfit.id}
               style={styles.cardWrapper}
-              activeOpacity={0.9}
+              activeOpacity={0.85}
               onPress={() => onViewOutfit(outfit.id)}
             >
               <LinearGradient colors={colors} style={styles.outfitCard}>
-                <View style={styles.cardTopRow}>
-                  <View style={styles.cardLabel}>
-                    <Ionicons name="layers-outline" size={14} color="#fff" />
-                    <Text style={styles.cardLabelText}>Look #{index + 1}</Text>
-                  </View>
+                <View style={styles.cardHeader}>
                   <View style={styles.cardChip}>
-                    <Text style={styles.cardChipText}>{outfit.items.length} items</Text>
+                    <Ionicons name="shirt" size={12} color="#fff" />
+                    <Text style={styles.cardChipText}>{outfit.items.length}</Text>
                   </View>
+                  <TouchableOpacity 
+                    style={styles.viewButton}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      onViewOutfit(outfit.id);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="eye-outline" size={14} color="#38bdf8" />
+                  </TouchableOpacity>
                 </View>
 
                 <View style={styles.outfitItems}>
                   {Array.from({ length: 4 }).map((_, slot) => {
                     const imageUri = items[slot];
                     return (
-                      <View key={slot} style={styles.circleItemContainer}>
+                      <View key={slot} style={styles.itemContainer}>
                         {imageUri ? (
-                          <Image source={{ uri: imageUri }} style={styles.circleItemImage} />
+                          <Image source={{ uri: imageUri }} style={styles.itemImage} />
                         ) : (
-                          <View style={styles.circleItemPlaceholder}>
-                            <Ionicons name="shirt-outline" size={18} color="#cbd5e1" />
+                          <View style={styles.itemPlaceholder}>
+                            <Ionicons name="shirt-outline" size={20} color="rgba(203,213,225,0.5)" />
                           </View>
                         )}
                       </View>
                     );
                   })}
                 </View>
-
-                <Text numberOfLines={1} style={styles.cardTitle}>
-                  {outfit.name || "Unnamed outfit"}
-                </Text>
-                <Text style={styles.cardMeta}>Tap to view details</Text>
               </LinearGradient>
             </TouchableOpacity>
           );
@@ -151,86 +147,75 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   cardWrapper: {
-    width: 180,
+    width: 200,
   },
   outfitCard: {
-    borderRadius: 22,
-    padding: 16,
-    height: 210,
+    borderRadius: 24,
+    padding: 18,
+    height: 240,
     justifyContent: "space-between",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(255,255,255,0.1)",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  cardTopRow: {
+  cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 12,
   },
-  cardLabel: {
+  cardChip: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "rgba(15,23,42,0.5)",
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 6,
     borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.25)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-  },
-  cardLabelText: {
-    color: "rgba(255,255,255,0.85)",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  cardChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
+    borderColor: "rgba(255,255,255,0.2)",
   },
   cardChipText: {
     color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  viewButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(56,189,248,0.2)",
+    borderWidth: 1,
+    borderColor: "rgba(56,189,248,0.3)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   outfitItems: {
     flex: 1,
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    alignContent: "space-between",
+    marginBottom: 12,
+    minHeight: 140,
   },
-  circleItemContainer: {
-    width: "48%",
+  itemContainer: {
+    width: "47%",
     aspectRatio: 1,
-    borderRadius: 18,
+    borderRadius: 16,
     overflow: "hidden",
-    backgroundColor: "rgba(15,23,42,0.4)",
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.15)",
-  },
-  circleItemImage: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "cover",
-  },
-  circleItemPlaceholder: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    // backgroundColor: "#f8fafc",
-  },
-  itemPreview: {
-    flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "rgba(15,23,42,0.5)",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.2)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+    marginBottom: 10,
   },
   itemImage: {
     width: "100%",
@@ -238,17 +223,15 @@ const styles = StyleSheet.create({
     resizeMode: "cover",
   },
   itemPlaceholder: {
-    flex: 1,
+    width: "100%",
+    height: "100%",
     justifyContent: "center",
     alignItems: "center",
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#fff",
+    backgroundColor: "rgba(15,23,42,0.6)",
   },
   cardMeta: {
-    fontSize: 12,
-    color: "rgba(255,255,255,0.75)",
+    fontSize: 11,
+    color: "rgba(255,255,255,0.7)",
+    fontWeight: "500",
   },
 });

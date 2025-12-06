@@ -1,32 +1,48 @@
-import React, { useEffect, useMemo, useRef, useCallback } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
-  useColorScheme,
-  Image,
-  ImageSourcePropType,
   Animated,
   ScrollView,
+  StyleSheet,
 } from "react-native";
-import type { ViewStyle } from "react-native";
 import Modal from "react-native-modal";
-
-import { Info, X } from "lucide-react-native";
-import { chooseDefaultIcon } from "react-native-notificated/lib/commonjs/defaultConfig/choseDefaultIcon";
-import { chooseDefaultAccentColor } from "react-native-notificated/lib/commonjs/defaultConfig/stylesUtils";
-import { themeBase } from "react-native-notificated/lib/commonjs/defaultConfig/components/theme";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 
 export type NotificationType = "success" | "error" | "warning" | "info";
 
-type NotificatedTheme = "regular" | "dark";
-
-const TYPE_LABELS: Record<NotificationType, string> = {
-  success: "Success",
-  error: "Error",
-  warning: "Warning",
-  info: "Info",
+const TYPE_CONFIG: Record<NotificationType, {
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  gradient: [string, string];
+  accent: string;
+}> = {
+  success: {
+    label: "Success",
+    icon: "checkmark-circle",
+    gradient: ["#10b981", "#059669"],
+    accent: "#10b981",
+  },
+  error: {
+    label: "Error",
+    icon: "close-circle",
+    gradient: ["#ef4444", "#dc2626"],
+    accent: "#ef4444",
+  },
+  warning: {
+    label: "Warning",
+    icon: "warning",
+    gradient: ["#f59e0b", "#d97706"],
+    accent: "#f59e0b",
+  },
+  info: {
+    label: "Info",
+    icon: "information-circle",
+    gradient: ["#38bdf8", "#0ea5e9"],
+    accent: "#38bdf8",
+  },
 };
 
 interface NotificationModalProps {
@@ -46,25 +62,6 @@ interface NotificationModalProps {
   maxContentHeight?: number;
 }
 
-const hexToRgba = (hex?: string, alpha = 1) => {
-  if (!hex) {
-    return undefined;
-  }
-
-  const sanitizedHex = hex.replace("#", "");
-  const parsed = Number.parseInt(sanitizedHex, 16);
-
-  if (Number.isNaN(parsed)) {
-    return undefined;
-  }
-
-  const r = (parsed >> 16) & 255;
-  const g = (parsed >> 8) & 255;
-  const b = parsed & 255;
-
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-};
-
 const NotificationModal: React.FC<NotificationModalProps> = ({
   isVisible,
   type = "info",
@@ -81,13 +78,11 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
   onAutoDismiss,
   maxContentHeight = 180,
 }) => {
-  const colorScheme = useColorScheme();
-  const themeMode: NotificatedTheme =
-    colorScheme === "dark" ? "dark" : "regular";
-
   const autoDismissDuration = autoDismissMs ?? 0;
   const progress = useRef(new Animated.Value(0)).current;
   const showProgressBar = autoDismissDuration >= 1500;
+
+  const typeConfig = TYPE_CONFIG[type];
 
   const handleConfirm = () => {
     onConfirm?.();
@@ -130,76 +125,6 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
     }
   }, [autoDismissDuration, handleAutoDismiss, isVisible, showProgressBar]);
 
-  const typeProps = useMemo(() => {
-    const accent =
-      chooseDefaultAccentColor(type) ?? themeBase.color.info ?? "#3B82F6";
-    const iconSource = chooseDefaultIcon(type, themeMode === "dark", "color");
-
-    return {
-      accent,
-      iconSource: iconSource as ImageSourcePropType | undefined,
-      iconBg:
-        hexToRgba(accent, themeMode === "dark" ? 0.35 : 0.15) ??
-        "rgba(59,130,246,0.1)",
-      badgeBg:
-        hexToRgba(accent, themeMode === "dark" ? 0.3 : 0.12) ??
-        "rgba(59,130,246,0.12)",
-      badgeTextColor: themeMode === "dark" ? "#E2E8F0" : accent || "#1D4ED8",
-    };
-  }, [themeMode, type]);
-
-  const backgroundColor = themeBase.bgColor[themeMode];
-  const primaryTextColor = themeBase.fontColor[themeMode];
-  const secondaryTextColor =
-    themeMode === "dark" ? "rgba(226,232,240,0.9)" : "#475569";
-  const timestampColor =
-    themeMode === "dark" ? "rgba(148,163,184,0.85)" : "#94A3B8";
-  const cancelBackground =
-    themeMode === "dark" ? "rgba(255,255,255,0.08)" : "#F3F4F6";
-  const cancelTextColor = themeMode === "dark" ? "#E2E8F0" : "#475569";
-  const closeButtonBg =
-    themeMode === "dark" ? "rgba(148,163,184,0.16)" : "#F1F5F9";
-  const closeIconColor = themeMode === "dark" ? "#E2E8F0" : "#94A3B8";
-  const dividerColor =
-    themeMode === "dark" ? "rgba(148,163,184,0.35)" : "rgba(148,163,184,0.2)";
-
-  const containerStyle = useMemo(
-    () => ({
-      borderTopColor: typeProps.accent,
-      backgroundColor,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: themeMode === "dark" ? 0.05 : 0.15,
-      shadowRadius: 18,
-      elevation: 5,
-    }),
-    [backgroundColor, themeMode, typeProps.accent]
-  );
-
-  const iconContainerStyle = useMemo<ViewStyle>(
-    () => ({
-      width: 56,
-      height: 56,
-      borderRadius: themeBase.borderRadius.rounded,
-      alignItems: "center",
-      justifyContent: "center",
-    }),
-    []
-  );
-
-  const renderIcon = () => {
-    if (typeProps.iconSource) {
-      return (
-        <Image
-          source={typeProps.iconSource}
-          style={{ width: 34, height: 34, resizeMode: "contain" }}
-        />
-      );
-    }
-
-    return <Info color={typeProps.accent} size={32} />;
-  };
-
   return (
     <Modal
       isVisible={isVisible}
@@ -207,158 +132,259 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
       onBackButtonPress={onClose}
       animationIn="fadeInUp"
       animationOut="fadeOutDown"
-      backdropOpacity={0.6}
+      backdropOpacity={0.7}
       useNativeDriver
       hideModalContentWhileAnimating
     >
-      <View
-        className="space-y-4 rounded-3xl border-t-4 p-6"
-        style={containerStyle}
-      >
-        <View className="flex-row items-center gap-4">
-          <LinearGradient
-            colors={[
-              typeProps.iconBg,
-              hexToRgba(typeProps.accent, 0.35) ?? typeProps.iconBg,
-            ]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={iconContainerStyle}
-          >
-            {renderIcon()}
-          </LinearGradient>
-
-          <View className="flex-1 gap-1">
-            {!!title && (
-              <Text
-                className="text-lg font-bold"
-                style={{ color: primaryTextColor }}
-              >
-                {title}
-              </Text>
-            )}
-            {!!subtitle && (
-              <Text className="text-sm" style={{ color: secondaryTextColor }}>
-                {subtitle}
-              </Text>
-            )}
-
-            <View className="mt-1.5 flex-row flex-wrap items-center gap-2">
-              <View
-                className="rounded-full border px-3 py-1"
-                style={{
-                  backgroundColor: typeProps.badgeBg,
-                  borderColor:
-                    themeMode === "dark"
-                      ? "rgba(255,255,255,0.08)"
-                      : "transparent",
-                }}
-              >
-                <Text
-                  className="text-xs font-semibold uppercase tracking-wide"
-                  style={{ color: typeProps.badgeTextColor }}
-                >
-                  {TYPE_LABELS[type]}
-                </Text>
+      <View style={styles.modalContainer}>
+        {/* Header with Gradient */}
+        <LinearGradient
+          colors={typeConfig.gradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.headerGradient}
+        >
+          <View style={styles.headerContent}>
+            <View style={styles.headerLeft}>
+              <View style={styles.iconContainer}>
+                <Ionicons 
+                  name={typeConfig.icon} 
+                  size={28} 
+                  color="#fff" 
+                />
               </View>
-              {!!timestamp && (
-                <Text className="text-xs" style={{ color: timestampColor }}>
-                  {timestamp}
-                </Text>
-              )}
+              <View style={styles.headerTextContainer}>
+                {!!title && (
+                  <Text style={styles.title}>{title}</Text>
+                )}
+                {!!subtitle && (
+                  <Text style={styles.subtitle}>{subtitle}</Text>
+                )}
+              </View>
             </View>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={onClose}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="close" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
+
+        {/* Content */}
+        <View style={styles.contentContainer}>
+          <View style={styles.badgeContainer}>
+            <View style={[styles.badge, { backgroundColor: `${typeConfig.accent}20` }]}>
+              <Text style={[styles.badgeText, { color: typeConfig.accent }]}>
+                {typeConfig.label}
+              </Text>
+            </View>
+            {!!timestamp && (
+              <Text style={styles.timestamp}>{timestamp}</Text>
+            )}
           </View>
 
-          <TouchableOpacity
-            className="size-9 items-center justify-center rounded-full"
-            style={{ backgroundColor: closeButtonBg }}
-            onPress={onClose}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <X color={closeIconColor} size={18} />
-          </TouchableOpacity>
-        </View>
-
-        <View
-          className="w-full"
-          style={{ backgroundColor: dividerColor, height: 1 }}
-        />
-
-        <View className="w-full pb-1">
-          <ScrollView
-            style={{ maxHeight: maxContentHeight }}
-            contentContainerStyle={{ paddingBottom: themeBase.spacing.xs }}
-            showsVerticalScrollIndicator={false}
-          >
-            <Text
-              className="text-base font-medium leading-6"
-              style={{ color: secondaryTextColor }}
+          <View style={styles.messageContainer}>
+            <ScrollView
+              style={{ maxHeight: maxContentHeight }}
+              showsVerticalScrollIndicator={false}
             >
-              {message}
-            </Text>
-          </ScrollView>
-        </View>
+              <Text style={styles.message}>{message}</Text>
+            </ScrollView>
+          </View>
 
-        <View className="flex-row gap-3">
-          {showCancel && (
+          {/* Buttons */}
+          <View style={styles.buttonsContainer}>
+            {showCancel && (
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={onClose}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.cancelButtonText}>{cancelText}</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
-              className="flex-1 items-center justify-center rounded-2xl px-6 py-3"
-              style={{
-                backgroundColor: cancelBackground,
-                borderWidth: themeMode === "dark" ? 1 : 0,
-                borderColor:
-                  themeMode === "dark"
-                    ? "rgba(255,255,255,0.12)"
-                    : "transparent",
-              }}
-              onPress={onClose}
+              style={[styles.confirmButton, { backgroundColor: typeConfig.accent }]}
+              onPress={handleConfirm}
               activeOpacity={0.7}
             >
-              <Text
-                className="text-base font-semibold"
-                style={{ color: cancelTextColor }}
-              >
-                {cancelText}
-              </Text>
+              <Text style={styles.confirmButtonText}>{confirmText}</Text>
             </TouchableOpacity>
-          )}
-          <TouchableOpacity
-            className="flex-1 items-center justify-center rounded-2xl px-6 py-3"
-            style={{ backgroundColor: typeProps.accent }}
-            onPress={handleConfirm}
-            activeOpacity={0.7}
-          >
-            <Text
-              className="text-base font-semibold text-white"
-              style={{ textTransform: "capitalize" }}
-            >
-              {confirmText}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {showProgressBar && (
-          <View
-            className="-mt-1 h-1 w-full overflow-hidden rounded-full"
-            style={{ backgroundColor: hexToRgba(typeProps.accent, 0.15) }}
-          >
-            <Animated.View
-              style={{
-                height: "100%",
-                borderRadius: 999,
-                backgroundColor: typeProps.accent,
-                width: progress.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ["0%", "100%"],
-                }),
-              }}
-            />
           </View>
-        )}
+
+          {/* Progress Bar */}
+          {showProgressBar && (
+            <View style={styles.progressBarContainer}>
+              <View style={[styles.progressBarBackground, { backgroundColor: `${typeConfig.accent}20` }]}>
+                <Animated.View
+                  style={[
+                    styles.progressBarFill,
+                    {
+                      backgroundColor: typeConfig.accent,
+                      width: progress.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ["0%", "100%"],
+                      }),
+                    },
+                  ]}
+                />
+              </View>
+            </View>
+          )}
+        </View>
       </View>
     </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  modalContainer: {
+    borderRadius: 24,
+    overflow: "hidden",
+    backgroundColor: "#0f172a",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 10,
+    maxWidth: 400,
+    width: "90%",
+  },
+  headerGradient: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  headerLeft: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.3)",
+  },
+  headerTextContainer: {
+    flex: 1,
+    gap: 4,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  subtitle: {
+    fontSize: 14,
+    color: "rgba(255,255,255,0.85)",
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  contentContainer: {
+    padding: 20,
+    gap: 16,
+  },
+  badgeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flexWrap: "wrap",
+  },
+  badge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  timestamp: {
+    fontSize: 12,
+    color: "rgba(203,213,229,0.7)",
+  },
+  messageContainer: {
+    minHeight: 40,
+  },
+  message: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: "#cbd5f5",
+    fontWeight: "500",
+  },
+  buttonsContainer: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 4,
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cancelButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#cbd5f5",
+  },
+  confirmButton: {
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  confirmButtonText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  progressBarContainer: {
+    marginTop: 8,
+  },
+  progressBarBackground: {
+    height: 4,
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  progressBarFill: {
+    height: "100%",
+    borderRadius: 2,
+  },
+});
 
 export default NotificationModal;
 
