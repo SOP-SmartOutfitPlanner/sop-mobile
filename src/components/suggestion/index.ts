@@ -12,3 +12,7 @@ export { default as MatchBadges } from "./MatchBadges";
 export { default as ActionButtons } from "./ActionButtons";
 export { default as PreferenceDropdown } from "./PreferenceDropdown";
 export { default as OutfitCountDropdown } from "./OutfitCountDropdown";
+export { default as GapDaysSlider } from "./GapDaysSlider";
+export { default as AdvancedSettings } from "./AdvancedSettings";
+export { default as DatePickerButton } from "./DatePickerButton";
+export { default as UserOccasionsList } from "./UserOccasionsList";

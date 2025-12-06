@@ -11,8 +11,15 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AnimatedBackground, Header } from "../components/common";
-import { MainSuggestionCard, WeatherContext } from "../components/suggestion";
+import {
+  MainSuggestionCard,
+  WeatherContext,
+  AdvancedSettings,
+  DatePickerButton,
+  UserOccasionsList,
+} from "../components/suggestion";
 import OccasionDropdown from "../components/suggestion/OccasionDropdown";
 import OutfitCountDropdown from "../components/suggestion/OutfitCountDropdown";
 import { useWeather } from "../hooks/useWeather";
@@ -28,6 +35,9 @@ import { useNotification } from "../hooks/notification/useNotification";
 import { getUserId } from "../services/api/apiClient";
 import { GetOccasionsAPI } from "../services/endpoint/occasion";
 import { Occasion } from "../types/occasion";
+import { format } from "date-fns";
+
+const GAP_DAY_STORAGE_KEY = "@sop_gap_day";
 
 const SuggestionScreen = ({ navigation }: any) => {
   const { user } = useAuth();
@@ -58,6 +68,13 @@ const SuggestionScreen = ({ navigation }: any) => {
   >(undefined);
   const [occasions, setOccasions] = useState<Occasion[]>([]);
 
+  // Phase 2: Date Picker & User Occasions
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedUserOccasionId, setSelectedUserOccasionId] = useState<number | null>(null);
+
+  // Advanced Settings - Gap Days
+  const [gapDay, setGapDay] = useState<number>(3);
+
   const [isLoadingSuggestion, setIsLoadingSuggestion] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUsingToday, setIsUsingToday] = useState(false);
@@ -66,6 +83,36 @@ const SuggestionScreen = ({ navigation }: any) => {
     context: "save" | "use";
     message: string;
   } | null>(null);
+
+  // Reset user occasion selection when date changes
+  useEffect(() => {
+    setSelectedUserOccasionId(null);
+  }, [selectedDate]);
+
+  // Load saved gapDay from storage
+  useEffect(() => {
+    const loadGapDay = async () => {
+      try {
+        const savedGapDay = await AsyncStorage.getItem(GAP_DAY_STORAGE_KEY);
+        if (savedGapDay !== null) {
+          setGapDay(parseInt(savedGapDay, 10));
+        }
+      } catch (error) {
+        console.log("Failed to load gapDay from storage:", error);
+      }
+    };
+    loadGapDay();
+  }, []);
+
+  // Save gapDay to storage when it changes
+  const handleGapDayChange = async (value: number) => {
+    setGapDay(value);
+    try {
+      await AsyncStorage.setItem(GAP_DAY_STORAGE_KEY, value.toString());
+    } catch (error) {
+      console.log("Failed to save gapDay to storage:", error);
+    }
+  };
 
   // Fetch occasions to get IDs
   useEffect(() => {
@@ -129,11 +176,17 @@ const SuggestionScreen = ({ navigation }: any) => {
         todayForecast.temperature
       )}°C, Feels like: ${Math.round(todayForecast.feelsLike)}°C`;
 
+      // Format target date as yyyy-MM-dd (using selected date instead of today)
+      const targetDateStr = format(selectedDate, "yyyy-MM-dd");
+
       const response = await GetOutfitSuggestionV2API(
         userId,
         totalOutfit,
         selectedOccasionId,
-        weatherString
+        weatherString,
+        gapDay, // Pass gapDay to avoid recently worn items
+        targetDateStr, // Pass selected date as target
+        selectedUserOccasionId ?? undefined // Pass user occasion ID if selected
       );
 
       if (response.statusCode === 200 && response.data) {
@@ -411,6 +464,14 @@ const SuggestionScreen = ({ navigation }: any) => {
             </Text>
           </View>
 
+          {/* Date Picker Section */}
+          <View style={styles.dateSection}>
+            <DatePickerButton
+              selectedDate={selectedDate}
+              onDateChange={setSelectedDate}
+            />
+          </View>
+
           {/* Weather Section */}
           <View style={styles.weatherSection}>
             {/* Loading State */}
@@ -439,6 +500,15 @@ const SuggestionScreen = ({ navigation }: any) => {
                 forecast={todayForecast}
               />
             ) : null}
+          </View>
+
+          {/* User Occasions Section - Shows events for selected date */}
+          <View style={styles.occasionsSection}>
+            <UserOccasionsList
+              selectedDate={selectedDate}
+              selectedOccasionId={selectedUserOccasionId}
+              onOccasionSelect={setSelectedUserOccasionId}
+            />
           </View>
 
           {/* Occasion Dropdown, Outfit Count, and Generate Button - Always visible when weather is available */}
@@ -480,6 +550,12 @@ const SuggestionScreen = ({ navigation }: any) => {
                   )}
                 </TouchableOpacity>
               </View>
+
+              {/* Advanced Settings - Gap Days */}
+              <AdvancedSettings
+                gapDay={gapDay}
+                onGapDayChange={handleGapDayChange}
+              />
             </View>
           )}
 
@@ -779,6 +855,16 @@ const styles = StyleSheet.create({
     color: "rgba(255, 255, 255, 0.7)",
     lineHeight: 22,
     letterSpacing: 0.1,
+  },
+  // Date Section
+  dateSection: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  // User Occasions Section
+  occasionsSection: {
+    marginHorizontal: 16,
+    marginBottom: 16,
   },
   // Weather Section
   weatherSection: {
