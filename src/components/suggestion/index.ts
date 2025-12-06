@@ -16,3 +16,8 @@ export { default as GapDaysSlider } from "./GapDaysSlider";
 export { default as AdvancedSettings } from "./AdvancedSettings";
 export { default as DatePickerButton } from "./DatePickerButton";
 export { default as UserOccasionsList } from "./UserOccasionsList";
+// New compact components for optimized UX
+export { default as CompactDateWeatherCard } from "./CompactDateWeatherCard";
+export { default as CompactUserEvents } from "./CompactUserEvents";
+export { default as OccasionSelector } from "./OccasionSelector";
+export { default as GenerateControls } from "./GenerateControls";

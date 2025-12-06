@@ -1,0 +1,158 @@
+import React from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { format } from "date-fns";
+
+interface UserEvent {
+  id: string;
+  occasionId: string;
+  occasionName: string;
+  note?: string;
+  date: string;
+  time?: string;
+}
+
+interface CompactUserEventsProps {
+  events: UserEvent[];
+  selectedEventId: string | null;
+  onSelectEvent: (eventId: string, occasionId: string) => void;
+  isLoading?: boolean;
+}
+
+const CompactUserEvents: React.FC<CompactUserEventsProps> = ({
+  events,
+  selectedEventId,
+  onSelectEvent,
+  isLoading,
+}) => {
+  // Don't render anything if no events
+  if (!isLoading && events.length === 0) {
+    return null;
+  }
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>Loading events...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Ionicons name="calendar-outline" size={14} color="#22D3EE" />
+        <Text style={styles.headerText}>Your Events Today</Text>
+      </View>
+      <View style={styles.eventsList}>
+        {events.map((event) => {
+          const isSelected = selectedEventId === event.id;
+          return (
+            <TouchableOpacity
+              key={event.id}
+              style={[styles.eventChip, isSelected && styles.eventChipSelected]}
+              onPress={() => onSelectEvent(event.id, event.occasionId)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.eventContent}>
+                <Text
+                  style={[
+                    styles.eventName,
+                    isSelected && styles.eventNameSelected,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {event.occasionName}
+                </Text>
+                {event.time && (
+                  <Text style={styles.eventTime}>
+                    {format(new Date(event.time), "HH:mm")}
+                  </Text>
+                )}
+              </View>
+              {isSelected && (
+                <View style={styles.checkIcon}>
+                  <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    gap: 8,
+  },
+  loadingContainer: {
+    paddingVertical: 8,
+  },
+  loadingText: {
+    fontSize: 13,
+    color: "#9CA3AF",
+    textAlign: "center",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  headerText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#22D3EE",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  eventsList: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  eventChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: "rgba(34, 211, 238, 0.1)",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(34, 211, 238, 0.3)",
+  },
+  eventChipSelected: {
+    backgroundColor: "rgba(34, 211, 238, 0.9)",
+    borderColor: "#22D3EE",
+  },
+  eventContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  eventName: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#22D3EE",
+  },
+  eventNameSelected: {
+    color: "#FFFFFF",
+  },
+  eventTime: {
+    fontSize: 11,
+    color: "#9CA3AF",
+    fontWeight: "500",
+  },
+  checkIcon: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: "rgba(0, 0, 0, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});
+
+export default CompactUserEvents;
