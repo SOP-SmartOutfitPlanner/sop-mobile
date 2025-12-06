@@ -75,17 +75,40 @@ class WeatherAPI {
         throw new Error("Location permission not granted");
       }
 
-      // Get current position
+      // Check if location services are enabled
+      const isEnabled = await Location.hasServicesEnabledAsync();
+      if (!isEnabled) {
+        throw new Error("Location services are disabled. Please enable GPS.");
+      }
+
+      // Try to get last known location first (faster, works better on emulator)
+      try {
+        const lastKnown = await Location.getLastKnownPositionAsync();
+        if (lastKnown) {
+          console.log("📍 Using last known location:", lastKnown.coords);
+          return {
+            latitude: lastKnown.coords.latitude,
+            longitude: lastKnown.coords.longitude,
+          };
+        }
+      } catch (lastKnownError) {
+        console.log("⚠️ Last known location not available, trying current position...");
+      }
+
+      // Get current position with timeout
       const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
+        accuracy: Location.Accuracy.Low, // Use Low accuracy for faster response on emulator
+        timeInterval: 5000,
+        mayShowUserSettingsDialog: true,
       });
 
+      console.log("📍 Got current location:", location.coords);
       return {
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
       };
     } catch (error) {
-      console.error("Failed to get current location:", error);
+      console.error("❌ Failed to get current location:", error);
       throw error;
     }
   }
