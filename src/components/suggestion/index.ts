@@ -21,3 +21,4 @@ export { default as CompactDateWeatherCard } from "./CompactDateWeatherCard";
 export { default as CompactUserEvents } from "./CompactUserEvents";
 export { default as OccasionSelector } from "./OccasionSelector";
 export { default as GenerateControls } from "./GenerateControls";
+export { default as CreateOccasionModal } from "./CreateOccasionModal";

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -18,6 +18,7 @@ import {
   CompactDateWeatherCard,
   CompactUserEvents,
   GenerateControls,
+  CreateOccasionModal,
 } from "../components/suggestion";
 import { useWeather } from "../hooks/useWeather";
 import { useAuth } from "../hooks/auth/useAuth";
@@ -73,6 +74,9 @@ const SuggestionScreen = ({ navigation }: any) => {
     time?: string;
   }>>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+
+  // Create Occasion Modal
+  const [showCreateOccasionModal, setShowCreateOccasionModal] = useState(false);
 
   // Advanced Settings - Gap Days
   const [gapDay, setGapDay] = useState<number>(3);
@@ -142,41 +146,49 @@ const SuggestionScreen = ({ navigation }: any) => {
     fetchOccasions();
   }, []);
 
+  // Fetch user events function - reusable
+  const fetchUserEvents = useCallback(async () => {
+    setIsLoadingEvents(true);
+    try {
+      const dateStr = format(selectedDate, "yyyy-MM-dd");
+      const response = await CalenderAPI.getUserOccasions({
+        PageIndex: 1,
+        PageSize: 100,
+        StartDate: dateStr,
+        EndDate: dateStr,
+      });
+      if (response.statusCode === 200 && response.data?.data) {
+        const events = response.data.data.map((event) => ({
+          id: event.id.toString(),
+          occasionId: event.occasionId.toString(),
+          occasionName: event.occasionName || event.name,
+          note: event.description,
+          date: event.dateOccasion,
+          time: event.startTime,
+        }));
+        setUserEvents(events);
+      } else {
+        setUserEvents([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user events:", error);
+      setUserEvents([]);
+    } finally {
+      setIsLoadingEvents(false);
+    }
+  }, [selectedDate]);
+
   // Fetch user events when date changes
   useEffect(() => {
-    const fetchUserEvents = async () => {
-      setIsLoadingEvents(true);
-      setSelectedUserOccasionId(null); // Reset selection when date changes
-      try {
-        const dateStr = format(selectedDate, "yyyy-MM-dd");
-        const response = await CalenderAPI.getUserOccasions({
-          PageIndex: 1,
-          PageSize: 100,
-          StartDate: dateStr,
-          EndDate: dateStr,
-        });
-        if (response.statusCode === 200 && response.data?.data) {
-          const events = response.data.data.map((event) => ({
-            id: event.id.toString(),
-            occasionId: event.occasionId.toString(),
-            occasionName: event.occasionName || event.name,
-            note: event.description,
-            date: event.dateOccasion,
-            time: event.startTime,
-          }));
-          setUserEvents(events);
-        } else {
-          setUserEvents([]);
-        }
-      } catch (error) {
-        console.error("Failed to fetch user events:", error);
-        setUserEvents([]);
-      } finally {
-        setIsLoadingEvents(false);
-      }
-    };
+    setSelectedUserOccasionId(null); // Reset selection when date changes
     fetchUserEvents();
-  }, [selectedDate]);
+  }, [fetchUserEvents]);
+
+  // Handle create occasion success
+  const handleCreateOccasionSuccess = () => {
+    showSuccess("Occasion created successfully!");
+    fetchUserEvents(); // Refresh events list
+  };
 
   // Handle user event selection - also update occasion
   const handleUserEventSelect = (eventId: string, occasionId: string) => {
@@ -509,17 +521,16 @@ const SuggestionScreen = ({ navigation }: any) => {
             />
           </View>
 
-          {/* User Events - Only shows if there are events */}
-          {(userEvents.length > 0 || isLoadingEvents) && (
-            <View style={styles.eventsSection}>
-              <CompactUserEvents
-                events={userEvents}
-                selectedEventId={selectedUserOccasionId}
-                onSelectEvent={handleUserEventSelect}
-                isLoading={isLoadingEvents}
-              />
-            </View>
-          )}
+          {/* User Events - Always show with Create button */}
+          <View style={styles.eventsSection}>
+            <CompactUserEvents
+              events={userEvents}
+              selectedEventId={selectedUserOccasionId}
+              onSelectEvent={handleUserEventSelect}
+              isLoading={isLoadingEvents}
+              onCreatePress={() => setShowCreateOccasionModal(true)}
+            />
+          </View>
 
           {/* Generate Controls */}
           <View style={styles.controlsSection}>
@@ -734,6 +745,19 @@ const SuggestionScreen = ({ navigation }: any) => {
           </View>
         </Modal>
       )}
+
+      {/* Create Occasion Modal */}
+      <CreateOccasionModal
+        visible={showCreateOccasionModal}
+        onClose={() => setShowCreateOccasionModal(false)}
+        onSuccess={handleCreateOccasionSuccess}
+        initialDate={selectedDate}
+        weatherSnapshot={
+          todayForecast
+            ? `${todayForecast.description}, ${Math.round(todayForecast.temperature)}°C`
+            : ""
+        }
+      />
     </SafeAreaView>
   );
 };

@@ -17,6 +17,7 @@ interface CompactUserEventsProps {
   selectedEventId: string | null;
   onSelectEvent: (eventId: string, occasionId: string) => void;
   isLoading?: boolean;
+  onCreatePress?: () => void;
 }
 
 const CompactUserEvents: React.FC<CompactUserEventsProps> = ({
@@ -24,12 +25,8 @@ const CompactUserEvents: React.FC<CompactUserEventsProps> = ({
   selectedEventId,
   onSelectEvent,
   isLoading,
+  onCreatePress,
 }) => {
-  // Don't render anything if no events
-  if (!isLoading && events.length === 0) {
-    return null;
-  }
-
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -41,51 +38,75 @@ const CompactUserEvents: React.FC<CompactUserEventsProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Ionicons name="calendar-outline" size={14} color="#22D3EE" />
-        <Text style={styles.headerText}>Your Events Today</Text>
+        <View style={styles.headerLeft}>
+          <Ionicons name="calendar-outline" size={14} color="#22D3EE" />
+          <Text style={styles.headerText}>Your Events</Text>
+        </View>
+        {onCreatePress && (
+          <TouchableOpacity
+            style={styles.createButton}
+            onPress={onCreatePress}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="add" size={16} color="#22D3EE" />
+            <Text style={styles.createButtonText}>Create</Text>
+          </TouchableOpacity>
+        )}
       </View>
-      <View style={styles.eventsList}>
-        {events.map((event) => {
-          const isSelected = selectedEventId === event.id;
-          return (
-            <TouchableOpacity
-              key={event.id}
-              style={[styles.eventChip, isSelected && styles.eventChipSelected]}
-              onPress={() => onSelectEvent(event.id, event.occasionId)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.eventContent}>
-                <Text
-                  style={[
-                    styles.eventName,
-                    isSelected && styles.eventNameSelected,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {event.occasionName}
-                </Text>
-                {event.time && (
-                  <Text style={styles.eventTime}>
-                    {format(new Date(event.time), "HH:mm")}
+      
+      {events.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyText}>No events scheduled</Text>
+        </View>
+      ) : (
+        <View style={styles.eventsList}>
+          {events.map((event) => {
+            const isSelected = selectedEventId === event.id;
+            return (
+              <TouchableOpacity
+                key={event.id}
+                style={[styles.eventChip, isSelected && styles.eventChipSelected]}
+                onPress={() => onSelectEvent(event.id, event.occasionId)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.eventContent}>
+                  <Text
+                    style={[
+                      styles.eventName,
+                      isSelected && styles.eventNameSelected,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {event.occasionName}
                   </Text>
-                )}
-              </View>
-              {isSelected && (
-                <View style={styles.checkIcon}>
-                  <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                  {event.time && (
+                    <Text style={styles.eventTime}>
+                      {format(new Date(event.time), "HH:mm")}
+                    </Text>
+                  )}
                 </View>
-              )}
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+                {isSelected && (
+                  <View style={styles.checkIcon}>
+                    <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    gap: 8,
+    gap: 10,
+    backgroundColor: "rgba(30, 41, 59, 0.9)",
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "rgba(34, 211, 238, 0.15)",
   },
   loadingContainer: {
     paddingVertical: 8,
@@ -98,6 +119,11 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   headerText: {
@@ -106,6 +132,30 @@ const styles = StyleSheet.create({
     color: "#22D3EE",
     textTransform: "uppercase",
     letterSpacing: 0.5,
+  },
+  createButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: "rgba(34, 211, 238, 0.15)",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(34, 211, 238, 0.3)",
+  },
+  createButtonText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#22D3EE",
+  },
+  emptyState: {
+    paddingVertical: 8,
+  },
+  emptyText: {
+    fontSize: 13,
+    color: "#6B7280",
+    textAlign: "center",
   },
   eventsList: {
     flexDirection: "row",
