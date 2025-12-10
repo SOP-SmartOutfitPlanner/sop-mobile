@@ -33,6 +33,7 @@ import { MonthlyCalendar } from "../components/calendar/MonthlyCalendar";
 import { CalendarDayDetailModal } from "../components/calendar/CalendarDayDetailModal";
 import { getUserId } from "../services/api/apiClient";
 import { AnimatedBackground } from "@/components/common";
+import { CalenderAPI } from "../services/endpoint/calendar";
 
 const OutfitScreen = ({ navigation, route }: any) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
@@ -107,7 +108,6 @@ const OutfitScreen = ({ navigation, route }: any) => {
 
     // Fetch user occasions
     try {
-      const { CalenderAPI } = await import("../services/endpoint/calendar");
       const today = new Date();
       const response = await CalenderAPI.getUserOccasions({
         PageIndex: 1,
