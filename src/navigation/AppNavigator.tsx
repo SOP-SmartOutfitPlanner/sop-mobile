@@ -62,7 +62,6 @@ export const AppNavigator: React.FC = () => {
           <Stack.Screen name="Community" component={CommunityScreen} />
           <Stack.Screen name="Onboarding" component={OnboardingScreen} />
           <Stack.Screen name="Verify" component={VerifyScreen} />
-          <Stack.Screen name="AllWardrobe" component={AllWardrobeScreen} />
           <Stack.Screen name="AllOutfit" component={AllOutfitScreen} />
           <Stack.Screen name="Suggestion" component={SuggestionScreen} />
           <Stack.Screen name="Notifications" component={NotificationScreen} />

@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AnimatedBackground, Header } from "../components/common";
 import {
   MainSuggestionCard,
@@ -33,8 +32,6 @@ import { useNotification } from "../hooks/notification/useNotification";
 import { GetOccasionsAPI } from "../services/endpoint/occasion";
 import { Occasion } from "../types/occasion";
 import { format } from "date-fns";
-
-const GAP_DAY_STORAGE_KEY = "@sop_gap_day";
 
 const SuggestionScreen = ({ navigation }: any) => {
   const { user } = useAuth();
@@ -58,7 +55,7 @@ const SuggestionScreen = ({ navigation }: any) => {
   const [selectedOutfitIndexes, setSelectedOutfitIndexes] = useState<number[]>(
     []
   );
-  const [totalOutfit, setTotalOutfit] = useState<number>(1);
+  const [totalOutfit] = useState<number>(4);
   const [selectedOccasion, setSelectedOccasion] = useState<Occasion | null>(null);
   const [occasions, setOccasions] = useState<Occasion[]>([]);
 
@@ -78,8 +75,8 @@ const SuggestionScreen = ({ navigation }: any) => {
   // Create Occasion Modal
   const [showCreateOccasionModal, setShowCreateOccasionModal] = useState(false);
 
-  // Advanced Settings - Gap Days
-  const [gapDay, setGapDay] = useState<number>(3);
+  // Advanced Settings - Gap Days (fixed at 2, no UI)
+  const [gapDay] = useState<number>(2);
 
   const [isLoadingSuggestion, setIsLoadingSuggestion] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -95,30 +92,9 @@ const SuggestionScreen = ({ navigation }: any) => {
     setSelectedUserOccasionId(null);
   }, [selectedDate]);
 
-  // Load saved gapDay from storage
-  useEffect(() => {
-    const loadGapDay = async () => {
-      try {
-        const savedGapDay = await AsyncStorage.getItem(GAP_DAY_STORAGE_KEY);
-        if (savedGapDay !== null) {
-          setGapDay(parseInt(savedGapDay, 10));
-        }
-      } catch (error) {
-        console.log("Failed to load gapDay from storage:", error);
-      }
-    };
-    loadGapDay();
-  }, []);
+  
 
-  // Save gapDay to storage when it changes
-  const handleGapDayChange = async (value: number) => {
-    setGapDay(value);
-    try {
-      await AsyncStorage.setItem(GAP_DAY_STORAGE_KEY, value.toString());
-    } catch (error) {
-      console.log("Failed to save gapDay to storage:", error);
-    }
-  };
+  
 
   // Fetch occasions to get IDs
   useEffect(() => {
@@ -541,10 +517,6 @@ const SuggestionScreen = ({ navigation }: any) => {
                 const found = occasions.find((o) => o.id.toString() === occ.id);
                 if (found) setSelectedOccasion(found);
               }}
-              outfitCount={totalOutfit}
-              onOutfitCountChange={setTotalOutfit}
-              gapDay={gapDay}
-              onGapDayChange={handleGapDayChange}
               onGenerate={handleGenerate}
               isGenerating={isLoadingSuggestion}
             />
