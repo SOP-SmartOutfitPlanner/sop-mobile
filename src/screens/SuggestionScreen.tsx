@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -11,10 +11,15 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AnimatedBackground, Header } from "../components/common";
-import { MainSuggestionCard, WeatherContext } from "../components/suggestion";
-import OccasionDropdown from "../components/suggestion/OccasionDropdown";
-import OutfitCountDropdown from "../components/suggestion/OutfitCountDropdown";
+import {
+  MainSuggestionCard,
+  CompactDateWeatherCard,
+  CompactUserEvents,
+  GenerateControls,
+  CreateOccasionModal,
+} from "../components/suggestion";
 import { useWeather } from "../hooks/useWeather";
 import { useAuth } from "../hooks/auth/useAuth";
 import {
@@ -25,9 +30,11 @@ import {
 import { CalenderAPI } from "../services/endpoint/calendar";
 import { SuggestedItem } from "../types/outfit";
 import { useNotification } from "../hooks/notification/useNotification";
-import { getUserId } from "../services/api/apiClient";
 import { GetOccasionsAPI } from "../services/endpoint/occasion";
 import { Occasion } from "../types/occasion";
+import { format } from "date-fns";
+
+const GAP_DAY_STORAGE_KEY = "@sop_gap_day";
 
 const SuggestionScreen = ({ navigation }: any) => {
   const { user } = useAuth();
@@ -52,11 +59,27 @@ const SuggestionScreen = ({ navigation }: any) => {
     []
   );
   const [totalOutfit, setTotalOutfit] = useState<number>(1);
-  const [selectedOccasion, setSelectedOccasion] = useState<string>("Casual");
-  const [selectedOccasionId, setSelectedOccasionId] = useState<
-    number | undefined
-  >(undefined);
+  const [selectedOccasion, setSelectedOccasion] = useState<Occasion | null>(null);
   const [occasions, setOccasions] = useState<Occasion[]>([]);
+
+  // Phase 2: Date Picker & User Occasions
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedUserOccasionId, setSelectedUserOccasionId] = useState<string | null>(null);
+  const [userEvents, setUserEvents] = useState<Array<{
+    id: string;
+    occasionId: string;
+    occasionName: string;
+    note?: string;
+    date: string;
+    time?: string;
+  }>>([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+
+  // Create Occasion Modal
+  const [showCreateOccasionModal, setShowCreateOccasionModal] = useState(false);
+
+  // Advanced Settings - Gap Days
+  const [gapDay, setGapDay] = useState<number>(3);
 
   const [isLoadingSuggestion, setIsLoadingSuggestion] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -66,6 +89,36 @@ const SuggestionScreen = ({ navigation }: any) => {
     context: "save" | "use";
     message: string;
   } | null>(null);
+
+  // Reset user occasion selection when date changes
+  useEffect(() => {
+    setSelectedUserOccasionId(null);
+  }, [selectedDate]);
+
+  // Load saved gapDay from storage
+  useEffect(() => {
+    const loadGapDay = async () => {
+      try {
+        const savedGapDay = await AsyncStorage.getItem(GAP_DAY_STORAGE_KEY);
+        if (savedGapDay !== null) {
+          setGapDay(parseInt(savedGapDay, 10));
+        }
+      } catch (error) {
+        console.log("Failed to load gapDay from storage:", error);
+      }
+    };
+    loadGapDay();
+  }, []);
+
+  // Save gapDay to storage when it changes
+  const handleGapDayChange = async (value: number) => {
+    setGapDay(value);
+    try {
+      await AsyncStorage.setItem(GAP_DAY_STORAGE_KEY, value.toString());
+    } catch (error) {
+      console.log("Failed to save gapDay to storage:", error);
+    }
+  };
 
   // Fetch occasions to get IDs
   useEffect(() => {
@@ -78,12 +131,12 @@ const SuggestionScreen = ({ navigation }: any) => {
         });
         if (response.statusCode === 200 && response.data?.data) {
           setOccasions(response.data.data);
-          // Set default occasion ID
+          // Set default occasion
           const defaultOccasion = response.data.data.find(
             (o: Occasion) => o.name === "Casual"
           );
           if (defaultOccasion) {
-            setSelectedOccasionId(defaultOccasion.id);
+            setSelectedOccasion(defaultOccasion);
           }
         }
       } catch (error) {
@@ -93,15 +146,61 @@ const SuggestionScreen = ({ navigation }: any) => {
     fetchOccasions();
   }, []);
 
-  // Update occasion ID when name changes
-  useEffect(() => {
-    const occasion = occasions.find((o) => o.name === selectedOccasion);
-    if (occasion) {
-      setSelectedOccasionId(occasion.id);
-    } else {
-      setSelectedOccasionId(undefined);
+  // Fetch user events function - reusable
+  const fetchUserEvents = useCallback(async () => {
+    setIsLoadingEvents(true);
+    try {
+      const dateStr = format(selectedDate, "yyyy-MM-dd");
+      const response = await CalenderAPI.getUserOccasions({
+        PageIndex: 1,
+        PageSize: 100,
+        StartDate: dateStr,
+        EndDate: dateStr,
+      });
+      if (response.statusCode === 200 && response.data?.data) {
+        const events = response.data.data.map((event) => ({
+          id: event.id.toString(),
+          occasionId: event.occasionId.toString(),
+          occasionName: event.occasionName || event.name,
+          note: event.description,
+          date: event.dateOccasion,
+          time: event.startTime,
+        }));
+        setUserEvents(events);
+      } else {
+        setUserEvents([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user events:", error);
+      setUserEvents([]);
+    } finally {
+      setIsLoadingEvents(false);
     }
-  }, [selectedOccasion, occasions]);
+  }, [selectedDate]);
+
+  // Fetch user events when date changes
+  useEffect(() => {
+    setSelectedUserOccasionId(null); // Reset selection when date changes
+    fetchUserEvents();
+  }, [fetchUserEvents]);
+
+  // Handle create occasion success
+  const handleCreateOccasionSuccess = () => {
+    showSuccess("Occasion created successfully!");
+    fetchUserEvents(); // Refresh events list
+  };
+
+  // Handle user event selection - also update occasion
+  const handleUserEventSelect = (eventId: string, occasionId: string) => {
+    setSelectedUserOccasionId(eventId);
+    // Find and select the matching occasion
+    const matchingOccasion = occasions.find(
+      (o) => o.id.toString() === occasionId
+    );
+    if (matchingOccasion) {
+      setSelectedOccasion(matchingOccasion);
+    }
+  };
 
   // Generate outfit suggestion using V2 API
   const handleGenerate = async () => {
@@ -129,11 +228,17 @@ const SuggestionScreen = ({ navigation }: any) => {
         todayForecast.temperature
       )}°C, Feels like: ${Math.round(todayForecast.feelsLike)}°C`;
 
+      // Format target date as yyyy-MM-dd (using selected date instead of today)
+      const targetDateStr = format(selectedDate, "yyyy-MM-dd");
+
       const response = await GetOutfitSuggestionV2API(
         userId,
         totalOutfit,
-        selectedOccasionId,
-        weatherString
+        selectedOccasion?.id,
+        weatherString,
+        gapDay, // Pass gapDay to avoid recently worn items
+        targetDateStr, // Pass selected date as target
+        selectedUserOccasionId ? parseInt(selectedUserOccasionId, 10) : undefined // Pass user occasion ID if selected
       );
 
       if (response.statusCode === 200 && response.data) {
@@ -402,84 +507,59 @@ const SuggestionScreen = ({ navigation }: any) => {
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
         >
-          {/* Header Section */}
-          <View style={styles.headerSection}>
-            <Text style={styles.headerTitle}>What to wear today?</Text>
-            <Text style={styles.headerSubtitle}>
-              AI-powered outfit suggestions
-            </Text>
+          {/* Compact Date + Weather Card */}
+          <View style={styles.topSection}>
+            <CompactDateWeatherCard
+              selectedDate={selectedDate}
+              onDateChange={setSelectedDate}
+              temperature={todayForecast ? Math.round(todayForecast.temperature) : undefined}
+              weatherDescription={todayForecast?.description}
+              cityName={cityName}
+              isLoadingWeather={isLoadingWeather}
+            />
           </View>
 
-          {/* Weather Section */}
-          <View style={styles.weatherSection}>
-            {/* Loading State */}
-            {isLoadingWeather && !todayForecast ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#6366F1" />
-                <Text style={styles.loadingText}>Loading weather...</Text>
-              </View>
-            ) : weatherError && !todayForecast ? (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{weatherError}</Text>
-                <TouchableOpacity
-                  style={styles.retryButton}
-                  onPress={handleWeatherRefresh}
-                >
-                  <Text style={styles.retryButtonText}>Retry</Text>
-                </TouchableOpacity>
-              </View>
-            ) : todayForecast ? (
-              <WeatherContext
-                temperature={Math.round(todayForecast.temperature)}
-                description={todayForecast.description}
-                condition={todayForecast.description}
-                onRefresh={handleWeatherRefresh}
-                cityName={cityName}
-                forecast={todayForecast}
-              />
-            ) : null}
+          {/* User Events - Always show with Create button */}
+          <View style={styles.eventsSection}>
+            <CompactUserEvents
+              events={userEvents}
+              selectedEventId={selectedUserOccasionId}
+              onSelectEvent={handleUserEventSelect}
+              isLoading={isLoadingEvents}
+              onCreatePress={() => setShowCreateOccasionModal(true)}
+            />
           </View>
 
-          {/* Occasion Dropdown, Outfit Count, and Generate Button - Always visible when weather is available */}
-          {todayForecast && (
-            <View style={styles.suggestSection}>
-              <View style={styles.controlsRow}>
-                <View style={styles.occasionContainer}>
-                  <OccasionDropdown
-                    value={selectedOccasion}
-                    onSelect={setSelectedOccasion}
-                  />
-                </View>
-                <View style={styles.countContainer}>
-                  <OutfitCountDropdown
-                    value={totalOutfit}
-                    onSelect={setTotalOutfit}
-                  />
-                </View>
-                <TouchableOpacity
-                  style={[
-                    styles.generateButton,
-                    (isLoadingSuggestion || !todayForecast) &&
-                      styles.generateButtonDisabled,
-                  ]}
-                  onPress={handleGenerate}
-                  disabled={isLoadingSuggestion || !todayForecast}
-                >
-                  {isLoadingSuggestion ? (
-                    <>
-                      <ActivityIndicator size="small" color="#FFFFFF" />
-                      <Text style={styles.generateButtonText} numberOfLines={1}>
-                        Generating...
-                      </Text>
-                    </>
-                  ) : (
-                    <Text style={styles.generateButtonText} numberOfLines={1}>
-                      Generate
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              </View>
+          {/* Generate Controls */}
+          <View style={styles.controlsSection}>
+            <GenerateControls
+              selectedOccasion={selectedOccasion ? { id: selectedOccasion.id.toString(), name: selectedOccasion.name } : null}
+              occasions={occasions.map((o) => ({ id: o.id.toString(), name: o.name }))}
+              onSelectOccasion={(occ) => {
+                const found = occasions.find((o) => o.id.toString() === occ.id);
+                if (found) setSelectedOccasion(found);
+              }}
+              outfitCount={totalOutfit}
+              onOutfitCountChange={setTotalOutfit}
+              gapDay={gapDay}
+              onGapDayChange={handleGapDayChange}
+              onGenerate={handleGenerate}
+              isGenerating={isLoadingSuggestion}
+            />
+          </View>
+
+          {/* Weather Error */}
+          {weatherError && !todayForecast && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{weatherError}</Text>
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={handleWeatherRefresh}
+              >
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -499,7 +579,7 @@ const SuggestionScreen = ({ navigation }: any) => {
                       )}
                     </View>
                     <Text style={styles.resultsSubtitle}>
-                      {selectedOccasion} •{" "}
+                      {selectedOccasion?.name || "Casual"} •{" "}
                       {todayForecast
                         ? `${Math.round(todayForecast.temperature)}°C`
                         : ""}
@@ -665,6 +745,19 @@ const SuggestionScreen = ({ navigation }: any) => {
           </View>
         </Modal>
       )}
+
+      {/* Create Occasion Modal */}
+      <CreateOccasionModal
+        visible={showCreateOccasionModal}
+        onClose={() => setShowCreateOccasionModal(false)}
+        onSuccess={handleCreateOccasionSuccess}
+        initialDate={selectedDate}
+        weatherSnapshot={
+          todayForecast
+            ? `${todayForecast.description}, ${Math.round(todayForecast.temperature)}°C`
+            : ""
+        }
+      />
     </SafeAreaView>
   );
 };
@@ -760,25 +853,33 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#FFFFFF",
   },
-  // Header Section
-  headerSection: {
+  // New compact layout styles
+  scrollContent: {
+    paddingTop: 12,
+    paddingBottom: 80,
+  },
+  topSection: {
     marginHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 24,
+    marginBottom: 12,
   },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    marginBottom: 8,
-    letterSpacing: -0.5,
-    lineHeight: 34,
+  eventsSection: {
+    marginHorizontal: 16,
+    marginBottom: 12,
   },
-  headerSubtitle: {
-    fontSize: 15,
-    color: "rgba(255, 255, 255, 0.7)",
-    lineHeight: 22,
-    letterSpacing: 0.1,
+  controlsSection: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  // Legacy styles kept for compatibility
+  // Date Section
+  dateSection: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  // User Occasions Section
+  occasionsSection: {
+    marginHorizontal: 16,
+    marginBottom: 16,
   },
   // Weather Section
   weatherSection: {

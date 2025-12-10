@@ -92,13 +92,19 @@ export const GetOutfitSuggestionAPI = async(weather: string, userId: number): Pr
  * @param totalOutfit - Number of outfit suggestions to generate (1-4)
  * @param occasionId - Optional occasion ID for filtering suggestions
  * @param weather - Optional weather string (format: "description, Temperature: X°C, Feels like: Y°C")
+ * @param gapDay - Optional number of days to avoid recently worn items (0-14)
+ * @param targetDate - Optional target date for the outfit suggestion (format: yyyy-MM-dd)
+ * @param userOccasionId - Optional user's specific occasion/event ID
  * @returns Promise with array of suggested outfits
  */
 export const GetOutfitSuggestionV2API = async(
     userId: number,
     totalOutfit: number,
     occasionId?: number,
-    weather?: string
+    weather?: string,
+    gapDay?: number,
+    targetDate?: string,
+    userOccasionId?: number
 ): Promise<OutfitSuggestionV2Response> => {
     const params: Record<string, string | number> = {
         userId,
@@ -111,6 +117,18 @@ export const GetOutfitSuggestionV2API = async(
 
     if (weather) {
         params.weather = weather;
+    }
+
+    if (gapDay !== undefined) {
+        params.gapDay = gapDay;
+    }
+
+    if (targetDate) {
+        params.targetDate = targetDate;
+    }
+
+    if (userOccasionId !== undefined) {
+        params.userOccasionId = userOccasionId;
     }
 
     try {
