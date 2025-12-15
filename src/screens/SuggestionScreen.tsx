@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -8,8 +8,11 @@ import {
   Text,
   TouchableOpacity,
   Modal,
+  Animated,
+  Easing,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import LottieView from "lottie-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AnimatedBackground, Header } from "../components/common";
 import {
@@ -535,6 +538,62 @@ const SuggestionScreen = ({ navigation }: any) => {
             </View>
           )}
 
+          {/* Loading Animation - When generating */}
+          {isLoadingSuggestion && (
+            <View style={styles.loadingContainer}>
+              <View style={styles.loadingAnimationWrapper}>
+                <LottieView
+                  source={require("../../assets/animations/ai-loading.json")}
+                  autoPlay
+                  loop
+                  style={styles.loadingAnimation}
+                />
+              </View>
+              <Text style={styles.loadingTitle}>AI is styling your outfit...</Text>
+              <Text style={styles.loadingSubtitle}>
+                Analyzing your wardrobe and weather conditions
+              </Text>
+              <View style={styles.loadingDots}>
+                <View style={[styles.loadingDot, styles.loadingDot1]} />
+                <View style={[styles.loadingDot, styles.loadingDot2]} />
+                <View style={[styles.loadingDot, styles.loadingDot3]} />
+              </View>
+            </View>
+          )}
+
+          {/* Empty State - When no suggestions yet */}
+          {suggestionResults.length === 0 && !isLoadingSuggestion && (
+            <View style={styles.emptyStateContainer}>
+              <View style={styles.emptyStateIconContainer}>
+                <Ionicons name="sparkles" size={48} color="#22D3EE" />
+              </View>
+              <Text style={styles.emptyStateTitle}>Ready to get styled?</Text>
+              {/* <Text style={styles.emptyStateDescription}>
+                Select a date, choose an occasion, and tap Generate to get AI-powered outfit suggestions based on your wardrobe and weather.
+              </Text> */}
+              {/* <View style={styles.emptyStateHints}>
+                <View style={styles.emptyStateHint}>
+                  <View style={styles.emptyStateHintIcon}>
+                    <Ionicons name="calendar-outline" size={18} color="#22D3EE" />
+                  </View>
+                  <Text style={styles.emptyStateHintText}>Pick a date for your outfit</Text>
+                </View>
+                <View style={styles.emptyStateHint}>
+                  <View style={styles.emptyStateHintIcon}>
+                    <Ionicons name="pricetag-outline" size={18} color="#fbbf24" />
+                  </View>
+                  <Text style={styles.emptyStateHintText}>Choose an occasion style</Text>
+                </View>
+                <View style={styles.emptyStateHint}>
+                  <View style={styles.emptyStateHintIcon}>
+                    <Ionicons name="sparkles-outline" size={18} color="#34d399" />
+                  </View>
+                  <Text style={styles.emptyStateHintText}>Get AI suggestions instantly</Text>
+                </View>
+              </View> */}
+            </View>
+          )}
+
           {/* Suggestion Results - Multiple Outfits */}
           {suggestionResults.length > 0 && (
             <View style={styles.resultsSection}>
@@ -842,6 +901,124 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 16,
   },
+  // Loading Animation Styles
+  loadingContainer: {
+    marginHorizontal: 16,
+    marginTop: 32,
+    padding: 32,
+    backgroundColor: "rgba(15, 23, 42, 0.9)",
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: "rgba(34, 211, 238, 0.2)",
+    alignItems: "center",
+  },
+  loadingAnimationWrapper: {
+    width: 160,
+    height: 160,
+    marginBottom: 16,
+  },
+  loadingAnimation: {
+    width: "100%",
+    height: "100%",
+  },
+  loadingTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#f1f5f9",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  loadingSubtitle: {
+    fontSize: 14,
+    color: "#94a3b8",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  loadingDots: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  loadingDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#22D3EE",
+  },
+  loadingDot1: {
+    opacity: 1,
+  },
+  loadingDot2: {
+    opacity: 0.6,
+  },
+  loadingDot3: {
+    opacity: 0.3,
+  },
+  // Empty State
+  emptyStateContainer: {
+    marginHorizontal: 16,
+    marginTop: 24,
+    padding: 28,
+    backgroundColor: "rgba(15, 23, 42, 0.8)",
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.06)",
+    alignItems: "center",
+  },
+  emptyStateIconContainer: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: "rgba(34, 211, 238, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "rgba(34, 211, 238, 0.2)",
+  },
+  emptyStateTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#f1f5f9",
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  emptyStateDescription: {
+    fontSize: 14,
+    color: "#94a3b8",
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: 24,
+    paddingHorizontal: 8,
+  },
+  emptyStateHints: {
+    width: "100%",
+    gap: 12,
+  },
+  emptyStateHint: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.06)",
+  },
+  emptyStateHintIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyStateHintText: {
+    flex: 1,
+    fontSize: 14,
+    color: "#cbd5e1",
+    fontWeight: "500",
+  },
   // Legacy styles kept for compatibility
   // Date Section
   dateSection: {
@@ -904,19 +1081,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#FFFFFF",
-  },
-  loadingContainer: {
-    padding: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(30, 41, 59, 0.8)",
-    borderRadius: 16,
-    minHeight: 200,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.7)",
   },
   errorContainer: {
     padding: 16,
