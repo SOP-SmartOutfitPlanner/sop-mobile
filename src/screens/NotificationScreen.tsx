@@ -16,14 +16,26 @@ import {
   ArrowLeft,
   Bell,
   ChevronRight,
+  CircleDot,
   Clock,
-  Filter,
+  ExternalLink,
+  Inbox,
+  Megaphone,
   Settings2,
+  Sparkles,
+  User,
+  Users,
+  X,
 } from "lucide-react-native";
+import { Image } from "react-native";
 import { useAuth } from "../hooks/auth";
 import NotificationCard from "../components/notification/NotificationCard";
 import { NotificationFilterKey } from "../components/notification/NotificationFilters";
-import { NotificationItem, NotificationMeta } from "../types/notification";
+import {
+  NotificationItem,
+  NotificationMeta,
+  NotificationType,
+} from "../types/notification";
 import AnimatedBackground from "../components/common/AnimatedBackground";
 import {
   deleteNotifications,
@@ -34,8 +46,69 @@ import {
 } from "../services/endpoint/notification";
 import { cn } from "@/lib/utils";
 import { formatRelativeTime } from "../utils/dateUtils";
+import { LinearGradient } from "expo-linear-gradient";
 
 const PAGE_SIZE = 10;
+
+// Strip HTML tags helper
+const stripHtml = (html?: string): string => {
+  if (!html) return "";
+  return html
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim();
+};
+
+// Get notification type config
+const getNotificationTypeConfig = (type: NotificationType) => {
+  switch (type) {
+    case "USER":
+      return {
+        icon: <User size={20} color="#a5b4fc" />,
+        label: "User Activity",
+        bgColor: "bg-indigo-500/20",
+        borderColor: "border-indigo-400/30",
+        gradient: ["#312e81", "#1e1b4b"] as [string, string],
+      };
+    case "SYSTEM":
+      return {
+        icon: <Bell size={20} color="#60a5fa" />,
+        label: "System Update",
+        bgColor: "bg-blue-500/20",
+        borderColor: "border-blue-400/30",
+        gradient: ["#1e3a8a", "#172554"] as [string, string],
+      };
+    case "AI":
+      return {
+        icon: <Sparkles size={20} color="#34d399" />,
+        label: "AI Suggestion",
+        bgColor: "bg-emerald-500/20",
+        borderColor: "border-emerald-400/30",
+        gradient: ["#065f46", "#064e3b"] as [string, string],
+      };
+    case "PROMO":
+      return {
+        icon: <Megaphone size={20} color="#fbbf24" />,
+        label: "Promotion",
+        bgColor: "bg-amber-500/20",
+        borderColor: "border-amber-400/30",
+        gradient: ["#92400e", "#78350f"] as [string, string],
+      };
+    default:
+      return {
+        icon: <Bell size={20} color="#94a3b8" />,
+        label: "Notification",
+        bgColor: "bg-white/10",
+        borderColor: "border-white/20",
+        gradient: ["#1e293b", "#0f172a"] as [string, string],
+      };
+  }
+};
 
 export const NotificationScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -197,12 +270,20 @@ export const NotificationScreen: React.FC = () => {
   const filterOptions: Array<{
     key: NotificationFilterKey;
     label: string;
-    description: string;
+    icon: React.ReactNode;
   }> = [
-    { key: "all", label: "All", description: "Every notification" },
-    { key: "unread", label: "Unread", description: "Needs attention" },
-    { key: "system", label: "System", description: "Product updates" },
-    { key: "user", label: "User", description: "Direct mentions" },
+    { key: "all", label: "All", icon: <Inbox size={16} color="#a5b4fc" /> },
+    {
+      key: "unread",
+      label: "Unread",
+      icon: <CircleDot size={16} color="#f97316" />,
+    },
+    {
+      key: "system",
+      label: "System",
+      icon: <Settings2 size={16} color="#60a5fa" />,
+    },
+    { key: "user", label: "User", icon: <Users size={16} color="#34d399" /> },
   ];
 
   const renderSelectionToolbar = () => {
@@ -293,7 +374,7 @@ export const NotificationScreen: React.FC = () => {
               onPress={toggleSelectionMode}
             >
               {selectionMode ? (
-                <Filter size={18} color="#e2e8f0" />
+                <X size={18} color="#e2e8f0" />
               ) : (
                 <Settings2 size={18} color="#e2e8f0" />
               )}
@@ -326,49 +407,62 @@ export const NotificationScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
           <View className="flex-row items-center justify-between">
-            <Text className="text-sm font-semibold text-white/80">
-              Filter feed ({unreadCount} unread)
+            <Text className="text-sm text-white/70">
+              {unreadCount > 0
+                ? `${unreadCount} unread notification${
+                    unreadCount > 1 ? "s" : ""
+                  }`
+                : "No unread notifications"}
             </Text>
             <TouchableOpacity
               className={cn(
-                "rounded-2xl px-4 py-2",
+                "rounded-full px-3 py-1.5",
                 selectionMode
-                  ? "bg-primary/20"
+                  ? "bg-primary/30"
                   : "border border-white/20 bg-transparent"
               )}
               onPress={toggleSelectionMode}
             >
-              <Text className="text-sm font-semibold text-white">
-                {selectionMode ? "Exit select" : "Select"}
+              <Text className="text-xs font-semibold text-white">
+                {selectionMode ? "Done" : "Select"}
               </Text>
             </TouchableOpacity>
           </View>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingVertical: 4 }}
+            contentContainerStyle={{ gap: 10, paddingRight: 8 }}
           >
-            <View className="flex-row gap-3">
-              {filterOptions.map((option) => (
-                <TouchableOpacity
-                  key={option.key}
-                  onPress={() => setFilter(option.key)}
+            {filterOptions.map((option) => (
+              <TouchableOpacity
+                key={option.key}
+                onPress={() => setFilter(option.key)}
+                className={cn(
+                  "flex-row items-center gap-2.5 rounded-2xl border px-4 py-2.5",
+                  option.key === filter
+                    ? "border-primary bg-primary/25"
+                    : "border-white/20 bg-white/5"
+                )}
+                activeOpacity={0.7}
+              >
+                {option.icon}
+                <Text
                   className={cn(
-                    "min-w-[130px] rounded-2xl border px-4 py-3",
-                    option.key === filter
-                      ? "border-primary bg-primary/15"
-                      : "border-white/15 bg-white/5"
+                    "text-sm font-semibold",
+                    option.key === filter ? "text-white" : "text-white/70"
                   )}
                 >
-                  <Text className="text-base font-semibold text-white">
-                    {option.label}
-                  </Text>
-                  <Text className="text-xs text-white/70">
-                    {option.description}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+                  {option.label}
+                </Text>
+                {option.key === "unread" && unreadCount > 0 && (
+                  <View className="min-w-[22px] items-center rounded-full bg-orange-500 px-1.5 py-0.5">
+                    <Text className="text-[10px] font-bold text-white">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
           </ScrollView>
         </View>
         {renderSelectionToolbar()}
@@ -437,54 +531,146 @@ export const NotificationScreen: React.FC = () => {
         animationType="slide"
         onRequestClose={() => setDetailOpen(false)}
       >
-        <View className="flex-1 justify-end bg-black/60">
-          <View className="rounded-t-3xl bg-[#0f172a] p-5">
-            {activeNotification && (
-              <View className="gap-4">
-                <View className="flex-row items-center gap-3">
-                  <View className="rounded-full border border-white/20 p-2">
-                    <Bell size={18} color="#e2e8f0" />
+        <TouchableOpacity
+          className="flex-1 bg-black/70"
+          activeOpacity={1}
+          onPress={() => setDetailOpen(false)}
+        >
+          <View className="flex-1" />
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View className="rounded-t-[32px] overflow-hidden">
+              {activeNotification && (
+                <LinearGradient
+                  colors={
+                    getNotificationTypeConfig(activeNotification.type).gradient
+                  }
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  className="px-5 pb-10 pt-4"
+                >
+                  {/* Handle bar */}
+                  <View className="mb-5 self-center h-1.5 w-14 rounded-full bg-white/30" />
+
+                  {/* Close button */}
+                  <TouchableOpacity
+                    className="absolute right-4 top-4 rounded-full bg-white/10 p-2"
+                    onPress={() => setDetailOpen(false)}
+                  >
+                    <X size={20} color="#fff" />
+                  </TouchableOpacity>
+
+                  {/* Type Badge */}
+                  {/* <View
+                    className={cn(
+                      "self-start flex-row items-center gap-2 rounded-full px-3 py-1.5 mb-4",
+                      getNotificationTypeConfig(activeNotification.type)
+                        .bgColor,
+                      "border",
+                      getNotificationTypeConfig(activeNotification.type)
+                        .borderColor
+                    )}
+                  >
+                    {getNotificationTypeConfig(activeNotification.type).icon}
+                    <Text className="text-xs font-semibold text-white/90">
+                      {getNotificationTypeConfig(activeNotification.type).label}
+                    </Text>
+                  </View> */}
+
+                  {/* Avatar + Title */}
+                  <View className="flex-row items-start gap-4 mb-4">
+                    {activeNotification.actorAvatarUrl ? (
+                      <Image
+                        source={{ uri: activeNotification.actorAvatarUrl }}
+                        className="size-14 rounded-2xl"
+                        style={{ backgroundColor: "rgba(255,255,255,0.1)" }}
+                      />
+                    ) : (
+                      <View
+                        className={cn(
+                          "size-14 items-center justify-center rounded-2xl",
+                          getNotificationTypeConfig(activeNotification.type)
+                            .bgColor
+                        )}
+                      >
+                        {
+                          getNotificationTypeConfig(activeNotification.type)
+                            .icon
+                        }
+                      </View>
+                    )}
+                    <View className="flex-1 gap-1">
+                      <Text className="text-xl font-bold text-white leading-7">
+                        {stripHtml(activeNotification.title) || "Notification"}
+                      </Text>
+                      {activeNotification.actorDisplayName && (
+                        <Text className="text-sm font-medium text-white/70">
+                          by {stripHtml(activeNotification.actorDisplayName)}
+                        </Text>
+                      )}
+                    </View>
                   </View>
-                  <Text className="flex-1 text-lg font-semibold text-white">
-                    {activeNotification.title}
-                  </Text>
-                </View>
-                <View className="flex-row items-center gap-2">
-                  <Clock size={16} color="rgba(226,232,240,0.7)" />
-                  <Text className="text-sm text-white/70">
-                    {formatRelativeTime(activeNotification.createdAt)}
-                  </Text>
-                </View>
-                <Text className="text-base leading-6 text-white/80">
-                  {activeNotification.message}
-                </Text>
-                {activeNotification.href &&
-                  activeNotification.href !== "string" && (
+
+                  {/* Time + Read Status */}
+                  <View className="flex-row items-center gap-4 mb-5 px-1">
+                    <View className="flex-row items-center gap-2">
+                      <Clock size={14} color="rgba(255,255,255,0.6)" />
+                      <Text className="text-sm text-white/60">
+                        {formatRelativeTime(activeNotification.createdAt)}
+                      </Text>
+                    </View>
+                    {!activeNotification.isRead && (
+                      <View className="flex-row items-center gap-1.5">
+                        <View className="size-2 rounded-full bg-primary" />
+                        <Text className="text-xs font-medium text-primary">
+                          Unread
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Message Content */}
+                  <View className="rounded-2xl bg-black/20 p-4 mb-5">
+                    <Text className="text-base leading-7 text-white/90">
+                      {stripHtml(activeNotification.message) ||
+                        "No content available."}
+                    </Text>
+                  </View>
+
+                  {/* Actions */}
+                  <View className="gap-3">
+                    {/* {activeNotification.href &&
+                      activeNotification.href !== "string" && (
+                        <TouchableOpacity
+                          className="flex-row items-center justify-center gap-2.5 rounded-2xl bg-white px-5 py-4"
+                          onPress={() =>
+                            Linking.openURL(activeNotification.href!).catch(() => {})
+                          }
+                          activeOpacity={0.85}
+                        >
+                          <ExternalLink size={18} color="#1e293b" />
+                          <Text className="text-base font-bold text-slate-800">
+                            View Details
+                          </Text>
+                        </TouchableOpacity>
+                      )} */}
                     <TouchableOpacity
-                      className="rounded-2xl bg-primary px-4 py-3"
-                      onPress={() =>
-                        Linking.openURL(activeNotification.href!).catch(
-                          () => {}
-                        )
-                      }
+                      className="rounded-2xl border-2 border-white/20 px-5 py-3.5"
+                      onPress={() => setDetailOpen(false)}
+                      activeOpacity={0.7}
                     >
-                      <Text className="text-center text-sm font-semibold text-white">
-                        Open related link
+                      <Text className="text-center text-base font-semibold text-white/80">
+                        Dismiss
                       </Text>
                     </TouchableOpacity>
-                  )}
-                <TouchableOpacity
-                  className="rounded-2xl border border-white/20 px-4 py-3"
-                  onPress={() => setDetailOpen(false)}
-                >
-                  <Text className="text-center text-sm font-semibold text-white">
-                    Dismiss
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </View>
+                  </View>
+                </LinearGradient>
+              )}
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
     </SafeAreaView>
   );
