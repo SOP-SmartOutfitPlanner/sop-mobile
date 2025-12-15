@@ -244,9 +244,9 @@ export const OnboardingStep1: React.FC<OnboardingStep1Props> = ({
                 dropdownIconColor="#FFFFFF"
                 enabled={!isLoadingProvinces}
               >
-                <Picker.Item label="Select Province" value="" color="#999999" />
+                <Picker.Item label="Select Province" value="" />
                 {provinces.map((p) => (
-                  <Picker.Item key={p.id} label={p.name} value={p.id} color="#FFFFFF" />
+                  <Picker.Item key={p.id} label={p.name} value={p.id} />
                 ))}
               </Picker>
               {isLoadingProvinces && (
@@ -270,9 +270,9 @@ export const OnboardingStep1: React.FC<OnboardingStep1Props> = ({
                   dropdownIconColor="#FFFFFF"
                   enabled={!isLoadingDistricts && districts.length > 0}
                 >
-                  <Picker.Item label="Select District" value="" color="#999999" />
+                  <Picker.Item label="Select District" value="" />
                   {districts.map((d) => (
-                    <Picker.Item key={d.id} label={d.name} value={d.id} color="#FFFFFF" />
+                    <Picker.Item key={d.id} label={d.name} value={d.id} />
                   ))}
                 </Picker>
                 {isLoadingDistricts && (
@@ -297,9 +297,9 @@ export const OnboardingStep1: React.FC<OnboardingStep1Props> = ({
                   dropdownIconColor="#FFFFFF"
                   enabled={!isLoadingWards && wards.length > 0}
                 >
-                  <Picker.Item label="Select Ward (Optional)" value="" color="#ffffffff" />
+                  <Picker.Item label="Select Ward (Optional)" value="" />
                   {wards.map((w) => (
-                    <Picker.Item key={w.id} label={w.name} value={w.id} color="#FFFFFF" />
+                    <Picker.Item key={w.id} label={w.name} value={w.id} />
                   ))}
                 </Picker>
                 {isLoadingWards && (

@@ -58,7 +58,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
   const formOpacity = useSharedValue(0);
   const shakeAnimation = useSharedValue(0);
   const floatingAnimation = useSharedValue(0);
-
+  
   // Initialize animations on mount
   useEffect(() => {
     // Logo animation with glow effect
@@ -229,46 +229,6 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
     }
   };
 
-  const handleGoogleRegister = async () => {
-    try {
-      const decodedToken = await loginWithGoogle();
-
-      // Check if first time login (string "True" from API)
-      if (decodedToken.FirstTime === "True") {
-        showNotification({
-          type: "success",
-          title: "Registration Successful",
-          message: "Welcome! Let's get you started with onboarding.",
-          confirmText: "OK",
-        });
-        // Auto navigate after showing notification
-        setTimeout(() => {
-          navigation.replace("Onboarding");
-        }, 1500);
-      } else {
-        showNotification({
-          type: "success",
-          title: "Login Successful",
-          message: "Welcome back!",
-          confirmText: "OK",
-        });
-        // Auto navigate after showing notification
-        setTimeout(() => {
-          navigation.replace("Main");
-        }, 1500);
-      }
-    } catch (error: any) {
-      // Only show error notification if it's not a cancellation
-      if (error?.message && !error?.message.includes("cancel")) {
-        showNotification({
-          type: "error",
-          title: "Google Registration Failed",
-          message: error?.message || "Failed to register with Google",
-          confirmText: "Try Again",
-        });
-      }
-    }
-  };
 
   const navigateToLogin = () => {
     navigation.navigate("Login");

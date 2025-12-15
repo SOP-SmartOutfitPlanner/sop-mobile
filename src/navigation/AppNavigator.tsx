@@ -36,16 +36,16 @@ export type RootStackParamList = {
 const Stack = createStackNavigator<RootStackParamList>();
 
 export const AppNavigator: React.FC = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  // const { isAuthenticated, isLoading } = useAuth();
 
   // Show loading screen while checking authentication status
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3B82F6" />
-      </View>
-    );
-  }
+  // if (isLoading) {
+  //   return (
+  //     <View style={styles.loadingContainer}>
+  //       <ActivityIndicator size="large" color="#3B82F6" />
+  //     </View>
+  //   );
+  // }
 
   return (
     <Stack.Navigator
@@ -53,10 +53,9 @@ export const AppNavigator: React.FC = () => {
         headerShown: false,
       }}
     >
-      {isAuthenticated ? (
-        // User is authenticated - show main app screens
         <>
           <Stack.Screen name="Main" component={BottomTabNavigator} />
+          <Stack.Screen name="Auth" component={AuthNavigator} />
           <Stack.Screen name="Profile" component={ProfileScreen} />
           <Stack.Screen name="EditProfile" component={EditProfileScreen} />
           <Stack.Screen name="Community" component={CommunityScreen} />
@@ -70,10 +69,7 @@ export const AppNavigator: React.FC = () => {
           <Stack.Screen name="CreateCollection" component={CreateCollectionScreen} />
           <Stack.Screen name="Calendar" component={CalendarScreen} />
         </>
-      ) : (
-        // User is not authenticated - show auth screens
-        <Stack.Screen name="Auth" component={AuthNavigator} />
-      )}
+ 
     </Stack.Navigator>
   );
 };
