@@ -6,6 +6,10 @@ import {
   Text,
   PanResponder,
   TouchableOpacity,
+  Modal,
+  ScrollView,
+  Image,
+  Dimensions,
 } from "react-native";
 import { Image as RNImage } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,6 +18,8 @@ import OutfitItemCard from "./OutfitItemCard";
 import MatchBadges from "./MatchBadges";
 import ActionButtons from "./ActionButtons";
 import PaginationDots from "./PaginationDots";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 interface OutfitItemData {
   id: number;
@@ -45,6 +51,35 @@ interface MainSuggestionCardProps {
   reason?: string;
 }
 
+// Helper to parse color from JSON string
+const parseColor = (
+  colorStr?: string
+): Array<{ hex: string; name: string }> => {
+  if (!colorStr) return [];
+  try {
+    const colors = JSON.parse(colorStr);
+    if (Array.isArray(colors) && colors.length > 0) {
+      return colors.map((c: any) => ({
+        hex: c.hex || c,
+        name: c.name || c,
+      }));
+    }
+  } catch {
+    return [{ hex: colorStr, name: colorStr }];
+  }
+  return [];
+};
+
+// Get season gradient colors
+const getSeasonGradient = (seasonName: string): [string, string] => {
+  const s = seasonName.toLowerCase();
+  if (s === "spring") return ["#EC4899", "#F472B6"];
+  if (s === "summer") return ["#F59E0B", "#FBBF24"];
+  if (s === "fall" || s === "autumn") return ["#EA580C", "#F97316"];
+  if (s === "winter") return ["#0EA5E9", "#38BDF8"];
+  return ["#8B5CF6", "#A78BFA"];
+};
+
 const MainSuggestionCard: React.FC<MainSuggestionCardProps> = ({
   items,
   currentIndex,
@@ -66,6 +101,15 @@ const MainSuggestionCard: React.FC<MainSuggestionCardProps> = ({
 
   // Expand/collapse state for AI Recommendation
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Item detail modal state
+  const [selectedItem, setSelectedItem] = useState<OutfitItemData | null>(null);
+  const [showItemModal, setShowItemModal] = useState(false);
+
+  const handleItemPress = (item: OutfitItemData) => {
+    setSelectedItem(item);
+    setShowItemModal(true);
+  };
 
   // Swipe gesture handler
   const panResponder = useRef(
@@ -182,6 +226,7 @@ const MainSuggestionCard: React.FC<MainSuggestionCardProps> = ({
                 isAnalyzed={item.isAnalyzed}
                 aiConfidence={item.aiConfidence}
                 itemType={item.itemType}
+                onPress={() => handleItemPress(item)}
               />
             </View>
           ))}
@@ -200,6 +245,232 @@ const MainSuggestionCard: React.FC<MainSuggestionCardProps> = ({
         isSaving={isSaving}
         isUsingToday={isUsingToday}
       />
+
+      {/* Item Detail Modal */}
+      <Modal
+        visible={showItemModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowItemModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            {/* Modal Header */}
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHandle} />
+            </View>
+
+            {selectedItem && (
+              <ScrollView
+                style={styles.modalContent}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.modalScrollContent}
+              >
+                {/* Item Image with Gradient Background */}
+                <LinearGradient
+                  colors={["#0F172A", "#1E293B", "#0F172A"]}
+                  style={styles.modalImageContainer}
+                >
+                  {selectedItem.imageUrl ? (
+                    <Image
+                      source={{ uri: selectedItem.imageUrl }}
+                      style={styles.modalImage}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <View style={styles.modalImagePlaceholder}>
+                      <Ionicons
+                        name="shirt-outline"
+                        size={80}
+                        color="#64748B"
+                      />
+                    </View>
+                  )}
+
+                  {/* AI Badge on image */}
+                  {selectedItem.isAnalyzed && (
+                    <LinearGradient
+                      colors={["#8B5CF6", "#A855F7"]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.modalAIBadge}
+                    >
+                      <Ionicons name="sparkles" size={14} color="#FFFFFF" />
+                      <Text style={styles.modalAIBadgeText}>AI Analyzed</Text>
+                    </LinearGradient>
+                  )}
+
+                  {/* Close button overlay */}
+                  <TouchableOpacity
+                    style={styles.modalCloseBtnOverlay}
+                    onPress={() => setShowItemModal(false)}
+                  >
+                    <Ionicons name="close" size={22} color="#FFFFFF" />
+                  </TouchableOpacity>
+                </LinearGradient>
+
+                {/* Item Info */}
+                <View style={styles.modalInfo}>
+                  {/* Header: Name & Category */}
+                  <View style={styles.modalHeaderInfo}>
+                    <Text style={styles.modalItemName}>
+                      {selectedItem.name}
+                    </Text>
+                    {selectedItem.categoryName && (
+                      <View style={styles.modalCategoryBadge}>
+                        <Ionicons name="pricetag" size={12} color="#64748B" />
+                        <Text style={styles.modalCategory}>
+                          {selectedItem.categoryName}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  <View style={styles.modalDivider} />
+
+                  {/* Color Section */}
+                  {selectedItem.color &&
+                    parseColor(selectedItem.color).length > 0 && (
+                      <View style={styles.modalSection}>
+                        <Text style={styles.modalSectionTitle}>Colors</Text>
+                        <View style={styles.modalColorsRow}>
+                          {parseColor(selectedItem.color).map((c, idx) => (
+                            <View key={idx} style={styles.modalColorItem}>
+                              <View
+                                style={[
+                                  styles.modalColorDot,
+                                  { backgroundColor: c.hex },
+                                ]}
+                              />
+                              <Text style={styles.modalColorName}>
+                                {c.name}
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
+                      </View>
+                    )}
+
+                  {/* Details Grid */}
+                  <View style={styles.modalDetailsGrid}>
+                    {selectedItem.fabric && (
+                      <LinearGradient
+                        colors={[
+                          "rgba(6, 182, 212, 0.15)",
+                          "rgba(6, 182, 212, 0.05)",
+                        ]}
+                        style={styles.modalDetailItem}
+                      >
+                        <View style={styles.modalDetailIcon}>
+                          <Ionicons
+                            name="layers-outline"
+                            size={20}
+                            color="#06B6D4"
+                          />
+                        </View>
+                        <Text style={styles.modalDetailLabel}>Fabric</Text>
+                        <Text style={styles.modalDetailValue}>
+                          {selectedItem.fabric}
+                        </Text>
+                      </LinearGradient>
+                    )}
+                    {selectedItem.weatherSuitable && (
+                      <LinearGradient
+                        colors={[
+                          "rgba(245, 158, 11, 0.15)",
+                          "rgba(245, 158, 11, 0.05)",
+                        ]}
+                        style={styles.modalDetailItem}
+                      >
+                        <View style={styles.modalDetailIcon}>
+                          <Ionicons
+                            name="partly-sunny-outline"
+                            size={20}
+                            color="#F59E0B"
+                          />
+                        </View>
+                        <Text style={styles.modalDetailLabel}>Weather</Text>
+                        <Text style={styles.modalDetailValue}>
+                          {selectedItem.weatherSuitable}
+                        </Text>
+                      </LinearGradient>
+                    )}
+                    {selectedItem.aiConfidence && (
+                      <LinearGradient
+                        colors={[
+                          "rgba(139, 92, 246, 0.15)",
+                          "rgba(139, 92, 246, 0.05)",
+                        ]}
+                        style={styles.modalDetailItem}
+                      >
+                        <View style={styles.modalDetailIcon}>
+                          <Ionicons
+                            name="analytics-outline"
+                            size={20}
+                            color="#8B5CF6"
+                          />
+                        </View>
+                        <Text style={styles.modalDetailLabel}>
+                          AI Confidence
+                        </Text>
+                        <Text
+                          style={[
+                            styles.modalDetailValue,
+                            { color: "#A78BFA" },
+                          ]}
+                        >
+                          {selectedItem.aiConfidence}%
+                        </Text>
+                      </LinearGradient>
+                    )}
+                  </View>
+
+                  {/* Seasons */}
+                  {selectedItem.seasons && selectedItem.seasons.length > 0 && (
+                    <View style={styles.modalSection}>
+                      <Text style={styles.modalSectionTitle}>Seasons</Text>
+                      <View style={styles.modalBadgesRow}>
+                        {selectedItem.seasons.map((season) => {
+                          const gradientColors = getSeasonGradient(season.name);
+                          return (
+                            <LinearGradient
+                              key={season.id}
+                              colors={gradientColors}
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 1, y: 0 }}
+                              style={styles.modalSeasonBadge}
+                            >
+                              <Text style={styles.modalSeasonText}>
+                                {season.name}
+                              </Text>
+                            </LinearGradient>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Styles */}
+                  {selectedItem.styles && selectedItem.styles.length > 0 && (
+                    <View style={styles.modalSection}>
+                      <Text style={styles.modalSectionTitle}>Styles</Text>
+                      <View style={styles.modalBadgesRow}>
+                        {selectedItem.styles.map((style) => (
+                          <View key={style.id} style={styles.modalStyleBadge}>
+                            <Text style={styles.modalStyleText}>
+                              {style.name}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  )}
+                </View>
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -319,6 +590,238 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     letterSpacing: 0,
     marginTop: 8,
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "flex-end",
+  },
+  modalContainer: {
+    backgroundColor: "#1E293B",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: "85%",
+    borderWidth: 1,
+    borderColor: "rgba(6, 182, 212, 0.3)",
+  },
+  modalHeader: {
+    alignItems: "center",
+    paddingTop: 12,
+    paddingBottom: 8,
+    paddingHorizontal: 16,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    borderRadius: 2,
+  },
+  modalCloseBtn: {
+    position: "absolute",
+    right: 16,
+    top: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalCloseBtnOverlay: {
+    position: "absolute",
+    right: 12,
+    top: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+  },
+  modalContent: {
+    paddingHorizontal: 20,
+  },
+  modalScrollContent: {
+    paddingBottom: 50,
+  },
+  modalImageContainer: {
+    width: "100%",
+    aspectRatio: 1.2,
+    borderRadius: 20,
+    overflow: "hidden",
+    marginBottom: 24,
+    position: "relative",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalImage: {
+    width: "85%",
+    height: "85%",
+  },
+  modalImagePlaceholder: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#1E293B",
+  },
+  modalAIBadge: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(139, 92, 246, 0.9)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  modalAIBadgeText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  modalInfo: {
+    gap: 20,
+  },
+  modalHeaderInfo: {
+    gap: 8,
+  },
+  modalItemName: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    letterSpacing: -0.5,
+  },
+  modalCategoryBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  modalCategory: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#94A3B8",
+  },
+  modalDivider: {
+    height: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    marginVertical: 4,
+  },
+  modalSection: {
+    gap: 10,
+  },
+  modalSectionTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#64748B",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  modalColorsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  modalColorItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  modalColorDot: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+  },
+  modalColorName: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    textTransform: "capitalize",
+  },
+  modalDetailsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  modalDetailItem: {
+    flex: 1,
+    minWidth: "30%",
+    borderRadius: 16,
+    padding: 14,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  modalDetailIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  modalDetailLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#64748B",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  modalDetailValue: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    textTransform: "capitalize",
+  },
+  modalBadgesRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  modalSeasonBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  modalSeasonText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    textTransform: "capitalize",
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  modalStyleBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "rgba(139, 92, 246, 0.3)",
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.5)",
+  },
+  modalStyleText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#C4B5FD",
+    textTransform: "capitalize",
   },
 });
 

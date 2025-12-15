@@ -6,9 +6,11 @@ import {
   ImageSourcePropType,
   Image,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import { Image as RNImage } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import AIBadge from "./AIBadge";
 import ColorDots from "./ColorDots";
 
@@ -41,6 +43,7 @@ interface OutfitItemCardProps {
   isAnalyzed?: boolean;
   aiConfidence?: number;
   itemType?: string;
+  onPress?: () => void;
 }
 
 const OutfitItemCard: React.FC<OutfitItemCardProps> = ({
@@ -57,6 +60,7 @@ const OutfitItemCard: React.FC<OutfitItemCardProps> = ({
   isAnalyzed,
   aiConfidence,
   itemType,
+  onPress,
 }) => {
   // Parse color from JSON string
   const parseColor = (colorStr?: string): Color[] => {
@@ -98,12 +102,34 @@ const OutfitItemCard: React.FC<OutfitItemCardProps> = ({
     setImageLoading(true);
   }, [imageUrl, name, hasValidImageUrl]);
 
+  // Get season gradient colors
+  const getSeasonGradient = (seasonName: string): [string, string] => {
+    const s = seasonName.toLowerCase();
+    if (s === "spring") return ["#EC4899", "#F472B6"];
+    if (s === "summer") return ["#F59E0B", "#FBBF24"];
+    if (s === "fall" || s === "autumn") return ["#EA580C", "#F97316"];
+    if (s === "winter") return ["#0EA5E9", "#38BDF8"];
+    return ["#8B5CF6", "#A78BFA"];
+  };
+
   return (
-    <View style={styles.container}>
+    <TouchableOpacity 
+      style={styles.container} 
+      onPress={onPress}
+      activeOpacity={0.85}
+      disabled={!onPress}
+    >
       <View style={styles.imageContainer}>
         {showAIBadge && <AIBadge type="ai" confidence={aiConfidence} />}
         {/* {showSuggestBadge && <AIBadge type="suggest" type="ai"  />} */}
         {showSuggestBadge && <AIBadge type="ai" />}
+        
+        {/* Expand indicator */}
+        {onPress && (
+          <View style={styles.expandIndicator}>
+            <Ionicons name="expand-outline" size={14} color="#FFFFFF" />
+          </View>
+        )}
 
         {hasValidImageUrl && !imageError ? (
           <>
@@ -160,32 +186,41 @@ const OutfitItemCard: React.FC<OutfitItemCardProps> = ({
         {/* Color Dots */}
         {colors.length > 0 && <ColorDots colors={colors} />}
 
-        {/* Season Badge Only */}
-        {seasons && seasons.length > 0 && (
-          <View style={styles.seasonContainer}>
-            {seasons.slice(0, 1).map((season) => {
-              const getSeasonColor = (seasonName: string) => {
-                const s = seasonName.toLowerCase();
-                if (s === "spring") return "#EC4899";
-                if (s === "summer") return "#FCD34D";
-                if (s === "fall" || s === "autumn") return "#F97316";
-                if (s === "winter") return "#06B6D4";
-                return "#EC4899";
-              };
-              const bgColor = getSeasonColor(season.name);
-              return (
-                <View
-                  key={season.id}
-                  style={[styles.seasonBadge, { backgroundColor: bgColor }]}
-                >
-                  <Text style={styles.seasonText}>{season.name}</Text>
+        {/* Season & Style Badges */}
+        <View style={styles.badgesContainer}>
+          {/* Season Badges */}
+          {seasons && seasons.length > 0 && (
+            <View style={styles.badgesRow}>
+              {seasons.slice(0, 2).map((season) => {
+                const gradientColors = getSeasonGradient(season.name);
+                return (
+                  <LinearGradient
+                    key={season.id}
+                    colors={gradientColors}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.seasonBadge}
+                  >
+                    <Text style={styles.seasonText}>{season.name}</Text>
+                  </LinearGradient>
+                );
+              })}
+            </View>
+          )}
+          
+          {/* Style Badges */}
+          {itemStyles && itemStyles.length > 0 && (
+            <View style={styles.badgesRow}>
+              {itemStyles.slice(0, 1).map((style) => (
+                <View key={style.id} style={styles.styleBadge}>
+                  <Text style={styles.styleText}>{style.name}</Text>
                 </View>
-              );
-            })}
-          </View>
-        )}
+              ))}
+            </View>
+          )}
+        </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -193,25 +228,34 @@ const styles = StyleSheet.create({
   container: {
     width: "100%",
     backgroundColor: "#1E293B",
-    borderRadius: 14,
-    padding: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    borderRadius: 16,
+    padding: 10,
+    shadowColor: "#06B6D4",
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: 12,
+    elevation: 6,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: "rgba(6, 182, 212, 0.2)",
   },
   imageContainer: {
     position: "relative",
     width: "100%",
     aspectRatio: 1,
-    minHeight: 120,
-    borderRadius: 10,
+    minHeight: 100,
+    borderRadius: 12,
     overflow: "hidden",
     backgroundColor: "#374151",
-    marginBottom: 6,
+    marginBottom: 8,
+  },
+  expandIndicator: {
+    position: "absolute",
+    bottom: 6,
+    right: 6,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    borderRadius: 8,
+    padding: 4,
+    backdropFilter: "blur(4px)",
   },
   image: {
     width: "100%",
@@ -246,32 +290,53 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   name: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "700",
     color: "#FFFFFF",
-    lineHeight: 16,
+    lineHeight: 18,
     letterSpacing: -0.2,
     marginBottom: 2,
   },
   categoryText: {
     fontSize: 11,
     fontWeight: "500",
-    color: "#CBD5E1",
-    marginBottom: 4,
+    color: "#94A3B8",
+    marginBottom: 6,
   },
-  seasonContainer: {
-    marginTop: 2,
+  badgesContainer: {
+    gap: 4,
+  },
+  badgesRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 4,
   },
   seasonBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 10,
-    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   seasonText: {
     fontSize: 10,
     fontWeight: "700",
-    color: "#000000",
+    color: "#FFFFFF",
+    textTransform: "capitalize",
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  styleBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: "rgba(139, 92, 246, 0.3)",
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.5)",
+  },
+  styleText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#C4B5FD",
     textTransform: "capitalize",
   },
 });
