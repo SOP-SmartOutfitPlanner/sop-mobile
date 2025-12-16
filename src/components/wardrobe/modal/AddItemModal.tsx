@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   ScrollView,
   Image,
   Alert,
+  Animated,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from 'expo-image-picker';
@@ -20,11 +22,13 @@ import { getUserId } from "../../../services/api/apiClient";
 import { useNotification } from "../../../hooks";
 import NotificationModal from "@/components/notification/NotificationModal";
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
 interface AddItemModalProps {
   visible: boolean;
   onClose: () => void;
   onSave?: () => void;
-  onSuccess?: () => void; // Callback after successful upload
+  onSuccess?: () => void;
 }
 export const AddItemModal: React.FC<AddItemModalProps> = ({
   visible,
@@ -33,7 +37,43 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
   onSuccess,
 }) => {
   const [selectedImages, setSelectedImages] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'multiple' | 'ai'>('multiple');
   const notification = useNotification();
+  
+  // Animations
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+  const tabIndicatorAnim = useRef(new Animated.Value(0)).current;
+  
+  useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.spring(slideAnim, {
+          toValue: 0,
+          tension: 50,
+          friction: 8,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      fadeAnim.setValue(0);
+      slideAnim.setValue(30);
+    }
+  }, [visible]);
+
+  useEffect(() => {
+    Animated.spring(tabIndicatorAnim, {
+      toValue: activeTab === 'multiple' ? 0 : 1,
+      tension: 50,
+      friction: 8,
+      useNativeDriver: true,
+    }).start();
+  }, [activeTab]);
   
   const {
     uploadItems,
@@ -128,12 +168,16 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     await uploadItems(selectedImages);
   };
 
-  const handleSplitOutfitUpload = async () => {
+  const handleSplitOutfitUpload = async (fromCamera: boolean) => {
     try {
       const hasPermissions = await requestPermissions();
       if (!hasPermissions) return;
 
-      const result = await ImagePicker.launchImageLibraryAsync({
+      const pickerFn = fromCamera 
+        ? ImagePicker.launchCameraAsync 
+        : ImagePicker.launchImageLibraryAsync;
+
+      const result = await pickerFn({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [3, 5],
@@ -245,6 +289,11 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     }
   }, [uploadProgress.phase, showManualCategoryModal, showAnalysisPromptModal]);
 
+  const tabIndicatorTranslate = tabIndicatorAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, (SCREEN_WIDTH - 48) / 2],
+  });
+
   return (
     <>
       <Modal
@@ -253,20 +302,70 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
         presentationStyle="fullScreen"
       >
         <View style={styles.fullscreenContainer}>
+          {/* Header */}
           <LinearGradient
-            colors={["rgba(56,189,248,0.25)", "rgba(124,58,237,0.2)"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
+            colors={["#0f172a", "#1e293b"]}
             style={styles.heroCard}
           >
             <View style={styles.header}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.title}>Add Items to Wardrobe</Text>
-                <Text style={styles.subtitle}>Choose how you want to add items</Text>
+                <Text style={styles.title}>Add to Wardrobe</Text>
+                <Text style={styles.subtitle}>Upload your clothing items</Text>
               </View>
               <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-                <Ionicons name="close" size={22} color="#e2e8f0" />
+                <LinearGradient
+                  colors={["rgba(255,255,255,0.1)", "rgba(255,255,255,0.05)"]}
+                  style={styles.closeButtonBg}
+                >
+                  <Ionicons name="close" size={20} color="#94a3b8" />
+                </LinearGradient>
               </TouchableOpacity>
+            </View>
+
+            {/* Tab Selector */}
+            <View style={styles.tabContainer}>
+              <View style={styles.tabBackground}>
+                <Animated.View 
+                  style={[
+                    styles.tabIndicator,
+                    { transform: [{ translateX: tabIndicatorTranslate }] }
+                  ]} 
+                />
+                <TouchableOpacity
+                  style={styles.tab}
+                  onPress={() => setActiveTab('multiple')}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons 
+                    name="images" 
+                    size={18} 
+                    color={activeTab === 'multiple' ? "#fff" : "#64748b"} 
+                  />
+                  <Text style={[
+                    styles.tabText,
+                    activeTab === 'multiple' && styles.tabTextActive
+                  ]}>
+                    Multiple Items
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.tab}
+                  onPress={() => setActiveTab('ai')}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons 
+                    name="sparkles" 
+                    size={18} 
+                    color={activeTab === 'ai' ? "#fff" : "#64748b"} 
+                  />
+                  <Text style={[
+                    styles.tabText,
+                    activeTab === 'ai' && styles.tabTextActive
+                  ]}>
+                    AI Split
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </LinearGradient>
 
@@ -276,91 +375,199 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.contentContainer}
             >
-              <View style={styles.card}>
-                <View style={styles.cardHeaderRow}>
-                  <Ionicons name="images" size={28} color="#38bdf8" />
-                  <Text style={styles.cardLabel}>Multiple Items</Text>
-                </View>
-                <Text style={styles.cardTitle}>Upload up to 10 items</Text>
-                <View style={styles.actionButtons}>
-                  <TouchableOpacity
-                    style={[styles.actionButton, styles.cameraButton]}
-                    onPress={() => handlePickImage(true)}
-                    disabled={selectedImages.length >= 10}
-                  >
-                    <Ionicons name="camera" size={22} color="#fff" />
-                    <Text style={styles.actionButtonText}>Camera</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.actionButton, styles.galleryButton]}
-                    onPress={() => handlePickImage(false)}
-                    disabled={selectedImages.length >= 10}
-                  >
-                    <Ionicons name="images" size={22} color="#fff" />
-                    <Text style={styles.actionButtonText}>Gallery</Text>
-                  </TouchableOpacity>
-                </View>
-
-                {selectedImages.length > 0 && (
-                  <>
-                    <View style={styles.previewHeader}>
-                      <Text style={styles.previewTitle}>Selected ({selectedImages.length}/10)</Text>
-                      <TouchableOpacity onPress={() => setSelectedImages([])}>
-                        <Text style={styles.clearPreview}>Clear all</Text>
-                      </TouchableOpacity>
-                    </View>
-                    <View style={styles.imagesGrid}>
-                      {selectedImages.map((image, index) => (
-                        <View key={`${image.uri}-${index}`} style={styles.imageCard}>
-                          <Image source={{ uri: image.uri }} style={styles.selectedImage} />
-                          <TouchableOpacity
-                            style={styles.removeButton}
-                            onPress={() => handleRemoveImage(index)}
+              <Animated.View 
+                style={{ 
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }]
+                }}
+              >
+                {/* Multiple Items Tab */}
+                {activeTab === 'multiple' && (
+                  <View style={styles.tabContent}>
+                    {/* Upload Area */}
+                    {selectedImages.length === 0 ? (
+                      <View style={styles.uploadArea}>
+                        <View style={styles.uploadIconContainer}>
+                          <LinearGradient
+                            colors={["#3b82f6", "#8b5cf6"]}
+                            style={styles.uploadIconBg}
                           >
-                            <Ionicons name="close" size={14} color="#0f172a" />
+                            <Ionicons name="cloud-upload" size={32} color="#fff" />
+                          </LinearGradient>
+                        </View>
+                        <Text style={styles.uploadAreaTitle}>Upload Your Items</Text>
+                        <Text style={styles.uploadAreaSubtitle}>
+                          Take photos or select from gallery
+                        </Text>
+                        <Text style={styles.uploadLimit}>Up to 10 items at once</Text>
+                        
+                        <View style={styles.uploadButtons}>
+                          <TouchableOpacity
+                            style={styles.uploadOptionButton}
+                            onPress={() => handlePickImage(true)}
+                            activeOpacity={0.8}
+                          >
+                            <LinearGradient
+                              colors={["#3b82f6", "#2563eb"]}
+                              style={styles.uploadOptionGradient}
+                            >
+                              <View style={styles.uploadOptionIcon}>
+                                <Ionicons name="camera" size={24} color="#fff" />
+                              </View>
+                              <Text style={styles.uploadOptionText}>Camera</Text>
+                              <Text style={styles.uploadOptionHint}>Take a photo</Text>
+                            </LinearGradient>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            style={styles.uploadOptionButton}
+                            onPress={() => handlePickImage(false)}
+                            activeOpacity={0.8}
+                          >
+                            <LinearGradient
+                              colors={["#8b5cf6", "#7c3aed"]}
+                              style={styles.uploadOptionGradient}
+                            >
+                              <View style={styles.uploadOptionIcon}>
+                                <Ionicons name="images" size={24} color="#fff" />
+                              </View>
+                              <Text style={styles.uploadOptionText}>Gallery</Text>
+                              <Text style={styles.uploadOptionHint}>Choose photos</Text>
+                            </LinearGradient>
                           </TouchableOpacity>
                         </View>
-                      ))}
+                      </View>
+                    ) : (
+                      <View style={styles.selectedImagesContainer}>
+                        <View style={styles.previewHeader}>
+                          <View style={styles.previewTitleRow}>
+                            <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
+                            <Text style={styles.previewTitle}>
+                              {selectedImages.length} item{selectedImages.length > 1 ? 's' : ''} selected
+                            </Text>
+                          </View>
+                          <TouchableOpacity 
+                            onPress={() => setSelectedImages([])}
+                            style={styles.clearButton}
+                          >
+                            <Text style={styles.clearPreview}>Clear all</Text>
+                          </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.imagesGrid}>
+                          {selectedImages.map((image, index) => (
+                            <View key={`${image.uri}-${index}`} style={styles.imageCard}>
+                              <Image source={{ uri: image.uri }} style={styles.selectedImage} />
+                              <TouchableOpacity
+                                style={styles.removeButton}
+                                onPress={() => handleRemoveImage(index)}
+                              >
+                                <Ionicons name="close" size={12} color="#fff" />
+                              </TouchableOpacity>
+                              <View style={styles.imageIndex}>
+                                <Text style={styles.imageIndexText}>{index + 1}</Text>
+                              </View>
+                            </View>
+                          ))}
+                          
+                          {/* Add more button */}
+                          {selectedImages.length < 10 && (
+                            <TouchableOpacity 
+                              style={styles.addMoreCard}
+                              onPress={() => handlePickImage(false)}
+                            >
+                              <Ionicons name="add" size={28} color="#64748b" />
+                              <Text style={styles.addMoreText}>Add</Text>
+                            </TouchableOpacity>
+                          )}
+                        </View>
+
+                        {/* Upload Button */}
+                        <TouchableOpacity
+                          style={styles.mainUploadButton}
+                          onPress={handleUpload}
+                          disabled={isUploading}
+                          activeOpacity={0.8}
+                        >
+                          <LinearGradient
+                            colors={["#22c55e", "#16a34a"]}
+                            style={styles.mainUploadGradient}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                          >
+                            <Ionicons name="cloud-upload" size={22} color="#fff" />
+                            <Text style={styles.mainUploadText}>
+                              {isUploading ? "Uploading..." : `Upload ${selectedImages.length} Item${selectedImages.length > 1 ? 's' : ''}`}
+                            </Text>
+                          </LinearGradient>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                {/* AI Split Tab */}
+                {activeTab === 'ai' && (
+                  <View style={styles.tabContent}>
+                    {/* AI Feature Card */}
+                    <LinearGradient
+                      colors={["rgba(168,85,247,0.15)", "rgba(236,72,153,0.1)"]}
+                      style={styles.aiFeatureCard}
+                    >
+                      <View style={styles.aiBadge}>
+                        <Ionicons name="sparkles" size={12} color="#fff" />
+                        <Text style={styles.aiBadgeText}>AI POWERED</Text>
+                      </View>
+                      
+                      <View style={styles.aiIconContainer}>
+                        <LinearGradient
+                          colors={["#a855f7", "#ec4899"]}
+                          style={styles.aiIconBg}
+                        >
+                          <Ionicons name="shirt" size={36} color="#fff" />
+                        </LinearGradient>
+                      </View>
+
+                      <Text style={styles.aiTitle}>Smart Outfit Split</Text>
+                    </LinearGradient>
+
+                    {/* AI Upload Buttons */}
+                    <View style={styles.aiUploadButtons}>
+                      <TouchableOpacity
+                        style={styles.aiUploadButton}
+                        onPress={() => handleSplitOutfitUpload(true)}
+                        disabled={isUploading}
+                        activeOpacity={0.8}
+                      >
+                        <LinearGradient
+                          colors={["#f97316", "#ea580c"]}
+                          style={styles.aiUploadGradient}
+                        >
+                          <Ionicons name="camera" size={26} color="#fff" />
+                          <Text style={styles.aiUploadText}>Camera</Text>
+                          <Text style={styles.aiUploadHint}>Take a full-body photo</Text>
+                        </LinearGradient>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.aiUploadButton}
+                        onPress={() => handleSplitOutfitUpload(false)}
+                        disabled={isUploading}
+                        activeOpacity={0.8}
+                      >
+                        <LinearGradient
+                          colors={["#ec4899", "#db2777"]}
+                          style={styles.aiUploadGradient}
+                        >
+                          <Ionicons name="images" size={26} color="#fff" />
+                          <Text style={styles.aiUploadText}>Gallery</Text>
+                          <Text style={styles.aiUploadHint}>Choose from photos</Text>
+                        </LinearGradient>
+                      </TouchableOpacity>
                     </View>
-                  </>
+                  </View>
                 )}
-
-                {selectedImages.length > 0 && (
-                  <TouchableOpacity
-                    style={styles.uploadButton}
-                    onPress={handleUpload}
-                    disabled={isUploading}
-                  >
-                    <Ionicons name="cloud-upload" size={20} color="#0f172a" />
-                    <Text style={styles.uploadButtonText}>
-                      {isUploading ? "Uploading..." : `Upload ${selectedImages.length} item${selectedImages.length > 1 ? "s" : ""}`}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              <View style={styles.card}>
-                <View style={styles.cardHeaderRow}>
-                  <Ionicons name="sparkles" size={28} color="#c084fc" />
-                  <Text style={styles.cardLabel}>Outfit Image</Text>
-                </View>
-                <Text style={styles.cardTitle}>AI Outfit Split</Text>
-                <View style={styles.tipCard}>
-                  <Ionicons name="information-circle-outline" size={16} color="#fcd34d" />
-                  <Text style={styles.tipText}>
-                    Tip: Use full-body photos with good lighting for best splits.
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.splitButton]}
-                  onPress={handleSplitOutfitUpload}
-                  disabled={isUploading}
-                >
-                  <Ionicons name="shirt" size={22} color="#fff" />
-                  <Text style={styles.actionButtonText}>Choose Outfit Photo</Text>
-                </TouchableOpacity>
-              </View>
+              </Animated.View>
             </ScrollView>
           </View>
         </View>
@@ -407,221 +614,344 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
 const styles = StyleSheet.create({
   fullscreenContainer: {
     flex: 1,
-    backgroundColor: "#040816",
+    backgroundColor: "#0a0f1a",
   },
   sheet: {
     flex: 1,
-    backgroundColor: "#050818",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-    paddingTop: 12,
+    backgroundColor: "#0a0f1a",
   },
   heroCard: {
     paddingTop: 56,
     paddingHorizontal: 24,
-    paddingBottom: 20,
+    paddingBottom: 16,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 20,
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "700",
     color: "#f8fafc",
   },
   subtitle: {
     fontSize: 14,
-    color: "#cbd5f5",
+    color: "#64748b",
     marginTop: 4,
   },
   closeButton: {
-    padding: 8,
-  },
-  heroStats: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 14,
-  },
-  heroStat: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(255,255,255,0.35)",
-    borderRadius: 999,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-  },
-  heroStatText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#0f172a",
-  },
-  content: {
-    flex: 1,
-    marginTop: 8,
-  },
-  contentContainer: {
-    paddingBottom: 16,
-    gap: 16,
-  },
-  card: {
-    backgroundColor: "rgba(255,255,255,0.05)",
-    borderColor: "rgba(255,255,255,0.08)",
-    borderWidth: 1,
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 20,
-    gap: 12,
-  },
-  cardHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  cardLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#cbd5f5",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  cardTitle: {
-    color: "#f8fafc",
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  cardDescription: {
-    color: "#cbd5f5",
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  imagesGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    marginBottom: 16,
-  },
-  imageCard: {
-    width: "30%",
-    aspectRatio: 1,
-    borderRadius: 18,
-    position: "relative",
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-  },
-  selectedImage: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 18,
-    backgroundColor: "#11173a",
-  },
-  removeButton: {
-    position: "absolute",
-    top: 6,
-    right: 6,
-    backgroundColor: "rgba(255,255,255,0.9)",
-    borderRadius: 999,
     padding: 4,
   },
-  actionButtons: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 12,
+  closeButtonBg: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  actionButton: {
+  
+  // Tab Styles
+  tabContainer: {
+    paddingHorizontal: 0,
+  },
+  tabBackground: {
+    flexDirection: "row",
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 16,
+    padding: 4,
+    position: "relative",
+  },
+  tabIndicator: {
+    position: "absolute",
+    top: 4,
+    left: 4,
+    width: "50%",
+    height: "100%",
+    backgroundColor: "#3b82f6",
+    borderRadius: 12,
+  },
+  tab: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 14,
-    borderRadius: 16,
+    paddingVertical: 12,
     gap: 8,
+    zIndex: 1,
   },
-  cameraButton: {
-    backgroundColor: "#2563eb",
-  },
-  galleryButton: {
-    backgroundColor: "#7c3aed",
-  },
-  splitButton: {
-    backgroundColor: "#f97316",
-  },
-  actionButtonText: {
-    color: "#fff",
-    fontSize: 15,
+  tabText: {
+    fontSize: 14,
     fontWeight: "600",
+    color: "#64748b",
   },
-  uploadButton: {
-    marginTop: 12,
-    backgroundColor: "#38bdf8",
-    flexDirection: "row",
+  tabTextActive: {
+    color: "#fff",
+  },
+
+  // Content Styles
+  content: {
+    flex: 1,
+  },
+  contentContainer: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  tabContent: {
+    gap: 20,
+  },
+
+  // Upload Area (Empty State)
+  uploadArea: {
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: "rgba(59,130,246,0.3)",
+    borderStyle: "dashed",
+    padding: 32,
+    alignItems: "center",
+  },
+  uploadIconContainer: {
+    marginBottom: 16,
+  },
+  uploadIconBg: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    borderRadius: 18,
-    paddingVertical: 18,
   },
-  uploadButtonText: {
-    color: "#0f172a",
+  uploadAreaTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#f8fafc",
+    marginBottom: 8,
+  },
+  uploadAreaSubtitle: {
+    fontSize: 14,
+    color: "#94a3b8",
+    marginBottom: 4,
+  },
+  uploadLimit: {
+    fontSize: 12,
+    color: "#64748b",
+    marginBottom: 24,
+  },
+  uploadButtons: {
+    flexDirection: "row",
+    gap: 12,
+    width: "100%",
+  },
+  uploadOptionButton: {
+    flex: 1,
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  uploadOptionGradient: {
+    padding: 20,
+    alignItems: "center",
+    gap: 8,
+  },
+  uploadOptionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  uploadOptionText: {
     fontSize: 16,
     fontWeight: "700",
+    color: "#fff",
+  },
+  uploadOptionHint: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.7)",
+  },
+
+  // Selected Images Container
+  selectedImagesContainer: {
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderRadius: 24,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
   },
   previewHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 16,
   },
-  previewTitle: {
-    color: "#f8fafc",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  clearPreview: {
-    color: "#38bdf8",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  highlightGrid: {
+  previewTitleRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
+    alignItems: "center",
     gap: 8,
   },
-  highlightChip: {
+  previewTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#f8fafc",
+  },
+  clearButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  clearPreview: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#ef4444",
+  },
+  imagesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 20,
+  },
+  imageCard: {
+    width: "30%",
+    aspectRatio: 1,
+    borderRadius: 16,
+    overflow: "hidden",
+    backgroundColor: "#1e293b",
+  },
+  selectedImage: {
+    width: "100%",
+    height: "100%",
+  },
+  removeButton: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "rgba(239,68,68,0.9)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  imageIndex: {
+    position: "absolute",
+    bottom: 6,
+    left: 6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  imageIndexText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  addMoreCard: {
+    width: "30%",
+    aspectRatio: 1,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderStyle: "dashed",
+    borderColor: "rgba(255,255,255,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.02)",
+  },
+  addMoreText: {
+    fontSize: 12,
+    color: "#64748b",
+    marginTop: 4,
+  },
+  mainUploadButton: {
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  mainUploadGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    gap: 10,
+  },
+  mainUploadText: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#fff",
+  },
+
+
+
+  // AI Feature Card
+  aiFeatureCard: {
+    borderRadius: 24,
+    padding: 24,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(168,85,247,0.2)",
+  },
+  aiBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+    backgroundColor: "#a855f7",
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-    backgroundColor: "rgba(148,163,184,0.15)",
+    borderRadius: 20,
+    marginBottom: 20,
   },
-  highlightText: {
-    color: "#e2e8f0",
-    fontSize: 12,
+  aiBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#fff",
+    letterSpacing: 0.5,
   },
-  tipCard: {
+  aiIconContainer: {
+    marginBottom: 16,
+  },
+  aiIconBg: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  aiTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#f8fafc",
+    marginBottom: 8,
+  },
+
+  // AI Upload Buttons
+  aiUploadButtons: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    backgroundColor: "rgba(250,204,21,0.12)",
-    borderRadius: 16,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "rgba(250,204,21,0.2)",
+    gap: 12,
   },
-  tipText: {
-    color: "#fef3c7",
+  aiUploadButton: {
     flex: 1,
-    fontSize: 13,
-    lineHeight: 18,
+    borderRadius: 20,
+    overflow: "hidden",
   },
+  aiUploadGradient: {
+    padding: 24,
+    alignItems: "center",
+    gap: 8,
+  },
+  aiUploadText: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  aiUploadHint: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.7)",
+  },
+
+  // AI Tips Card
+ 
 });
 
 

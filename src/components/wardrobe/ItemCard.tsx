@@ -17,20 +17,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
     Winter: "#22d3ee",
   };
 
-  const formattedLastWorn = useMemo(() => {
-    if (!item.lastWornAt) return "Freshly added";
-
-    try {
-      const date = new Date(item.lastWornAt);
-      return date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
-    } catch {
-      return "Recently worn";
-    }
-  }, [item.lastWornAt]);
-
   const displayedSeasons = useMemo(
     () => item.seasons?.slice(0, 3) ?? [],
     [item.seasons]
@@ -118,18 +104,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
             )}
           </View>
 
-          <View style={styles.footer}>
-            <View style={styles.footerInfo}>
-              <Ionicons name="time-outline" size={14} color="#94a3b8" />
-              <Text style={styles.footerText}>{formattedLastWorn}</Text>
-            </View>
-            <View style={styles.footerInfo}>
-              <Ionicons name="analytics-outline" size={14} color="#94a3b8" />
-              <Text style={styles.footerText}>
-                {item.aiConfidence ? `${item.aiConfidence}%` : "Pending"}
-              </Text>
-            </View>
-          </View>
+
         </View>
       </LinearGradient>
     </TouchableOpacity>
@@ -233,21 +208,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "#0f172a",
     fontWeight: "600",
-  },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 4,
-  },
-  footerInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  footerText: {
-    color: "#cbd5f5",
-    fontSize: 12,
   },
 });
 
