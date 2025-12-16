@@ -15,6 +15,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import {
   ArrowLeft,
   Bell,
+  CheckCheck,
   ChevronRight,
   CircleDot,
   Clock,
@@ -23,9 +24,12 @@ import {
   Megaphone,
   Settings2,
   Sparkles,
+  Trash2,
   User,
   Users,
   X,
+  CheckSquare,
+  Square,
 } from "lucide-react-native";
 import { Image } from "react-native";
 import { useAuth } from "../hooks/auth";
@@ -211,6 +215,18 @@ export const NotificationScreen: React.FC = () => {
     );
   };
 
+  const selectAll = () => {
+    const allIds = notifications.map((n) => n.id);
+    setSelectedIds(allIds);
+  };
+
+  const deselectAll = () => {
+    setSelectedIds([]);
+  };
+
+  const isAllSelected = notifications.length > 0 && 
+    selectedIds.length === notifications.length;
+
   const markSelectedAsRead = () => {
     Promise.all(
       selectedIds.map((id) => markNotificationAsRead(id).catch(() => {}))
@@ -287,36 +303,89 @@ export const NotificationScreen: React.FC = () => {
   ];
 
   const renderSelectionToolbar = () => {
-    if (!selectionMode || selectedIds.length === 0) {
+    if (!selectionMode) {
       return null;
     }
 
     return (
-      <View className="mx-5 mt-4 rounded-2xl border border-primary/40 bg-primary/10 p-4">
-        <Text className="text-base font-semibold text-white/90">
-          {selectedIds.length} selected
-        </Text>
-        <View className="mt-3 flex-row gap-3">
+      <LinearGradient
+        colors={["rgba(30, 41, 59, 0.95)", "rgba(15, 23, 42, 0.95)"]}
+        className="mx-4 mt-4 rounded-2xl overflow-hidden"
+        style={{
+          borderWidth: 1,
+          borderColor: selectedIds.length > 0 ? "rgba(6, 182, 212, 0.4)" : "rgba(255, 255, 255, 0.1)",
+        }}
+      >
+        {/* Header Row */}
+        <View className="flex-row items-center justify-between px-4 py-3 border-b border-white/10">
+          <View className="flex-row items-center gap-3">
+            <View 
+              className="w-10 h-10 rounded-xl items-center justify-center"
+              style={{ backgroundColor: selectedIds.length > 0 ? "rgba(6, 182, 212, 0.2)" : "rgba(255, 255, 255, 0.1)" }}
+            >
+              <Text className="text-lg font-bold text-cyan-400">
+                {selectedIds.length}
+              </Text>
+            </View>
+            <View>
+              <Text className="text-base font-bold text-white">
+                {selectedIds.length === 0 ? "Select items" : `${selectedIds.length} selected`}
+              </Text>
+              <Text className="text-xs text-white/50">
+                {notifications.length} total notifications
+              </Text>
+            </View>
+          </View>
+          
+          {/* Select All / Deselect All Toggle */}
           <TouchableOpacity
-            className="flex-1 rounded-2xl bg-white/15 px-4 py-3"
-            onPress={markSelectedAsRead}
-            activeOpacity={0.85}
+            onPress={isAllSelected ? deselectAll : selectAll}
+            activeOpacity={0.7}
+            className="flex-row items-center gap-2 px-3 py-2 rounded-xl"
+            style={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }}
           >
-            <Text className="text-center text-sm font-semibold text-white">
-              Mark read
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="flex-1 rounded-2xl border border-white/20 px-4 py-3"
-            onPress={deleteSelected}
-            activeOpacity={0.85}
-          >
-            <Text className="text-center text-sm font-semibold text-white">
-              Delete
+            {isAllSelected ? (
+              <CheckSquare size={18} color="#06B6D4" />
+            ) : (
+              <Square size={18} color="#94A3B8" />
+            )}
+            <Text className="text-sm font-semibold text-white/80">
+              {isAllSelected ? "Deselect" : "Select all"}
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+
+        {/* Action Buttons */}
+        {selectedIds.length > 0 && (
+          <View className="flex-row gap-3 p-4">
+            {/* Mark as Read Button */}
+            <TouchableOpacity
+              className="flex-1 flex-row items-center justify-center gap-2 rounded-xl py-3"
+              style={{ backgroundColor: "rgba(6, 182, 212, 0.2)" }}
+              onPress={markSelectedAsRead}
+              activeOpacity={0.8}
+            >
+              <CheckCheck size={18} color="#06B6D4" />
+              <Text className="text-sm font-bold text-cyan-400">
+                Mark read
+              </Text>
+            </TouchableOpacity>
+
+            {/* Delete Button */}
+            <TouchableOpacity
+              className="flex-1 flex-row items-center justify-center gap-2 rounded-xl py-3"
+              style={{ backgroundColor: "rgba(239, 68, 68, 0.15)" }}
+              onPress={deleteSelected}
+              activeOpacity={0.8}
+            >
+              <Trash2 size={18} color="#F87171" />
+              <Text className="text-sm font-bold text-red-400">
+                Delete
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </LinearGradient>
     );
   };
 

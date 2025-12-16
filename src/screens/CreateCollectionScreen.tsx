@@ -287,7 +287,7 @@ export const CreateCollectionScreen: React.FC = () => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="chevron-back" size={24} color="#0F172A" />
+          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
           {isEditMode ? "Edit Collection" : "Create Collection"}
@@ -528,7 +528,7 @@ export const CreateCollectionScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#0F172A",
   },
   header: {
     flexDirection: "row",
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
+    borderBottomColor: "rgba(255, 255, 255, 0.1)",
   },
   backButton: {
     padding: 4,
@@ -545,7 +545,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#0F172A",
+    color: "#FFFFFF",
   },
   placeholder: {
     width: 32,
@@ -560,16 +560,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
+    borderBottomColor: "rgba(255, 255, 255, 0.1)",
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#0F172A",
+    color: "#FFFFFF",
     marginBottom: 16,
   },
   required: {
-    color: "#EF4444",
+    color: "#F87171",
   },
   inputGroup: {
     marginBottom: 16,
@@ -577,50 +577,50 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#0F172A",
+    color: "#E2E8F0",
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    color: "#0F172A",
-    backgroundColor: "#FFFFFF",
+    color: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
   },
   inputError: {
-    borderColor: "#EF4444",
+    borderColor: "#F87171",
   },
   textArea: {
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    color: "#0F172A",
-    backgroundColor: "#FFFFFF",
+    color: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     minHeight: 80,
     textAlignVertical: "top",
   },
   charCount: {
     fontSize: 12,
-    color: "#94A3B8",
+    color: "#64748B",
     marginTop: 4,
     textAlign: "right",
   },
   errorText: {
     fontSize: 12,
-    color: "#EF4444",
+    color: "#F87171",
     marginTop: 4,
   },
   imagePicker: {
     borderRadius: 12,
     overflow: "hidden",
     borderWidth: 2,
-    borderColor: "#E2E8F0",
+    borderColor: "rgba(6, 182, 212, 0.4)",
     borderStyle: "dashed",
   },
   imagePreview: {
@@ -637,7 +637,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 8,
     right: 8,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.6)",
     borderRadius: 20,
   },
   imagePlaceholder: {
@@ -645,22 +645,22 @@ const styles = StyleSheet.create({
     height: 200,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
   },
   imagePlaceholderText: {
     marginTop: 8,
     fontSize: 14,
-    color: "#94A3B8",
+    color: "#64748B",
   },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: 12,
     paddingHorizontal: 12,
     marginBottom: 12,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
   },
   searchIcon: {
     marginRight: 8,
@@ -669,7 +669,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     fontSize: 16,
-    color: "#0F172A",
+    color: "#FFFFFF",
   },
   selectedBadge: {
     flexDirection: "row",
@@ -677,15 +677,17 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: "#D1FAE5",
+    backgroundColor: "rgba(16, 185, 129, 0.2)",
     borderRadius: 8,
     marginBottom: 12,
     alignSelf: "flex-start",
+    borderWidth: 1,
+    borderColor: "rgba(16, 185, 129, 0.4)",
   },
   selectedText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#065F46",
+    color: "#34D399",
   },
   outfitsList: {
     gap: 12,
@@ -698,18 +700,18 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 12,
     fontSize: 14,
-    color: "#94A3B8",
+    color: "#64748B",
   },
   outfitCard: {
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 12,
     padding: 12,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
   },
   outfitCardSelected: {
     borderColor: "#10B981",
-    backgroundColor: "#F0FDF4",
+    backgroundColor: "rgba(16, 185, 129, 0.1)",
   },
   selectedIndicator: {
     position: "absolute",
@@ -726,7 +728,7 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 8,
     overflow: "hidden",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
   },
   outfitImage: {
     width: "100%",
@@ -746,39 +748,39 @@ const styles = StyleSheet.create({
   outfitName: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#0F172A",
+    color: "#FFFFFF",
     marginBottom: 4,
   },
   outfitDescription: {
     fontSize: 14,
-    color: "#64748B",
+    color: "#94A3B8",
     marginBottom: 4,
   },
   outfitItemCount: {
     fontSize: 12,
-    color: "#94A3B8",
+    color: "#64748B",
   },
   outfitDescriptionInput: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#E2E8F0",
+    borderTopColor: "rgba(255, 255, 255, 0.1)",
   },
   outfitDescriptionLabel: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#64748B",
+    color: "#94A3B8",
     marginBottom: 8,
   },
   outfitDescriptionTextInput: {
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
     fontSize: 14,
-    color: "#0F172A",
-    backgroundColor: "#FFFFFF",
+    color: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     minHeight: 60,
     textAlignVertical: "top",
   },
@@ -789,12 +791,12 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: 16,
     paddingVertical: 16,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#1E293B",
     borderTopWidth: 1,
-    borderTopColor: "#E2E8F0",
+    borderTopColor: "rgba(255, 255, 255, 0.1)",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 8,
   },
@@ -803,12 +805,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#06B6D4",
     borderRadius: 12,
     paddingVertical: 16,
   },
   submitButtonDisabled: {
-    backgroundColor: "#94A3B8",
+    backgroundColor: "#475569",
     opacity: 0.6,
   },
   submitButtonText: {
