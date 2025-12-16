@@ -102,6 +102,10 @@ export interface Item {
     fabric?: string;
     isAnalyzed: boolean; // Whether item has been analyzed
     aiConfidence?: number; // AI confidence score (0-100)
+    aiDescription?: string; // AI generated description
+    aiAnalyzeJson?: string; // Raw AI analysis JSON
+    itemType?: string; // USER, SYSTEM, etc
+    usageCount?: number; // Number of times item was used
     styles: Array<{ id: number; name: string }>;
     occasions: Array<{ id: number; name: string }>;
     seasons: Array<{ id: number; name: string }>;

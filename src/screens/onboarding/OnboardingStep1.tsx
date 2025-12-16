@@ -166,7 +166,7 @@ export const OnboardingStep1: React.FC<OnboardingStep1Props> = ({
             {/* Gender */}
             <Text style={styles.label}>Gender</Text>
             <View style={styles.buttonGroup}>
-              {["Male", "Female", "Other"].map((option) => (
+              {["Male", "Female"].map((option) => (
                 <TouchableOpacity
                   key={option}
                   style={[

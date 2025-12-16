@@ -6,24 +6,24 @@ import { OnboardingStep2 } from "./OnboardingStep2";
 import { OnboardingStep3 } from "./OnboardingStep3";
 import { OnboardingStep4 } from "./OnboardingStep4";
 import { OnboardingStep5 } from "./OnboardingStep5";
-import { OnboardingComplete } from "./OnboardingComplete";
+import { OnboardingStep6 } from "./OnboardingStep6";
 import { useOnboarding } from "../../hooks/onboarding";
 import { useNotification } from "../../hooks";
 import { Gender, OnboardingRequest } from "../../types/onboarding";
 import { stringToGender } from "../../utils/genderUtils";
 
 interface OnboardingData {
-  // Note: goals from Step 0 is UI only, not saved to API
-  gender?: Gender; // Gender enum: MALE=0, FEMALE=1, OTHER=2
-  dob?: string; // Date of birth in format "YYYY-MM-DD"
-  location?: string; // Location string
-  styleIds?: string[]; // Array of style IDs
-  otherStyles?: string[]; // Array of custom styles
-  jobId?: string; // Job ID as string
-  otherJob?: string; // Custom job title
-  preferedColor?: string[]; // Preferred colors array
-  avoidedColor?: string[]; // Avoided colors array
-  bio?: string; // User bio
+  gender?: Gender; 
+  dob?: string; 
+  location?: string; 
+  styleIds?: string[]; 
+  otherStyles?: string[]; 
+  jobId?: string; 
+  otherJob?: string; 
+  preferedColor?: string[]; 
+  avoidedColor?: string[]; 
+  bio?: string; 
+  tryOnImageUrl?: string; 
 }
 
 interface OnboardingScreenProps {
@@ -107,48 +107,63 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
     setCurrentStep(6);
   };
 
-  const handleComplete = async () => {
+  // Step 6: Try-On Images
+  const handleStep6Next = async (imageUrls: string[]) => {
+    // Update state and wait for it to be set before proceeding
+    const updatedData = {
+      ...onboardingData,
+      tryOnImageUrl: imageUrls.length > 0 ? imageUrls[0] : undefined,
+    };
+    setOnboardingData(updatedData);
+    
+    // Call handleComplete directly with the updated data
+    await handleCompleteWithData(updatedData);
+  };
+
+  const handleCompleteWithData = async (data: OnboardingData) => {
     try {
       // console.log("🔍 Starting onboarding submission...");
-      // console.log("📦 Current onboarding data:", JSON.stringify(onboardingData, null, 2));
+      // console.log("📦 Current onboarding data:", JSON.stringify(data, null, 2));
 
       // Validate all required data
       const hasStyles =
-        (onboardingData.styleIds && onboardingData.styleIds.length > 0) ||
-        (onboardingData.otherStyles && onboardingData.otherStyles.length > 0);
+        (data.styleIds && data.styleIds.length > 0) ||
+        (data.otherStyles && data.otherStyles.length > 0);
 
       if (
-        onboardingData.gender === undefined ||
-        !onboardingData.dob ||
-        !onboardingData.location ||
+        data.gender === undefined ||
+        !data.dob ||
+        !data.location ||
         !hasStyles ||
-        (!onboardingData.jobId && !onboardingData.otherJob) ||
-        !onboardingData.preferedColor ||
-        onboardingData.preferedColor.length === 0 ||
-        !onboardingData.avoidedColor ||
-        onboardingData.avoidedColor.length === 0
+        (!data.jobId && !data.otherJob) ||
+        !data.preferedColor ||
+        data.preferedColor.length === 0 ||
+        !data.avoidedColor ||
+        data.avoidedColor.length === 0 ||
+        !data.tryOnImageUrl
       ) {
         console.log("❌ Validation failed!");
         console.log("Validation details:", {
-          hasGender: onboardingData.gender !== undefined,
-          hasDob: !!onboardingData.dob,
-          hasLocation: !!onboardingData.location,
+          hasGender: data.gender !== undefined,
+          hasDob: !!data.dob,
+          hasLocation: !!data.location,
           hasStyles: hasStyles,
           hasStyleIds: !!(
-            onboardingData.styleIds && onboardingData.styleIds.length > 0
+            data.styleIds && data.styleIds.length > 0
           ),
           hasOtherStyles: !!(
-            onboardingData.otherStyles && onboardingData.otherStyles.length > 0
+            data.otherStyles && data.otherStyles.length > 0
           ),
-          hasJob: !!(onboardingData.jobId || onboardingData.otherJob),
+          hasJob: !!(data.jobId || data.otherJob),
           hasPreferedColor: !!(
-            onboardingData.preferedColor &&
-            onboardingData.preferedColor.length > 0
+            data.preferedColor &&
+            data.preferedColor.length > 0
           ),
           hasAvoidedColor: !!(
-            onboardingData.avoidedColor &&
-            onboardingData.avoidedColor.length > 0
+            data.avoidedColor &&
+            data.avoidedColor.length > 0
           ),
+          hasTryOnImage: !!data.tryOnImageUrl,
         });
         showNotification({
           type: "error",
@@ -173,34 +188,39 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
 
       // Prepare request data
       const requestData: OnboardingRequest = {
-        preferedColor: onboardingData.preferedColor.map(formatColorName),
-        avoidedColor: onboardingData.avoidedColor.map(formatColorName),
-        gender: onboardingData.gender, // Already a number from Gender enum
-        location: onboardingData.location,
-        dob: onboardingData.dob,
-        bio: onboardingData.bio || "",
+        preferedColor: data.preferedColor.map(formatColorName),
+        avoidedColor: data.avoidedColor.map(formatColorName),
+        gender: data.gender, // Already a number from Gender enum
+        location: data.location,
+        dob: data.dob,
+        bio: data.bio || "",
       };
 
       // Only include jobId if user selected a predefined job
-      if (onboardingData.jobId) {
-        requestData.jobId = parseInt(onboardingData.jobId);
+      if (data.jobId) {
+        requestData.jobId = parseInt(data.jobId);
       }
 
       // Only include otherJob if user entered a custom job
-      if (onboardingData.otherJob) {
-        requestData.otherJob = onboardingData.otherJob;
+      if (data.otherJob) {
+        requestData.otherJob = data.otherJob;
       }
 
       // Only include styleIds if user selected predefined styles
-      if (onboardingData.styleIds && onboardingData.styleIds.length > 0) {
-        requestData.styleIds = onboardingData.styleIds.map((id: string) =>
+      if (data.styleIds && data.styleIds.length > 0) {
+        requestData.styleIds = data.styleIds.map((id: string) =>
           parseInt(id)
         );
       }
 
       // Only include otherStyles if user entered custom styles
-      if (onboardingData.otherStyles && onboardingData.otherStyles.length > 0) {
-        requestData.otherStyles = onboardingData.otherStyles;
+      if (data.otherStyles && data.otherStyles.length > 0) {
+        requestData.otherStyles = data.otherStyles;
+      }
+
+      // Include tryOnImageUrl
+      if (data.tryOnImageUrl) {
+        requestData.tryOnImageUrl = data.tryOnImageUrl;
       }
 
       console.log(
@@ -292,9 +312,10 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
         />
       )}
       {currentStep === 6 && (
-        <OnboardingComplete
+        <OnboardingStep6
           navigation={navigation}
-          onComplete={handleComplete}
+          onNext={handleStep6Next}
+          onBack={handleBack}
         />
       )}
     </View>

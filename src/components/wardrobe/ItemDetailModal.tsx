@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Modal,
@@ -7,6 +7,10 @@ import {
   TouchableOpacity,
   Text,
   ActivityIndicator,
+  Animated,
+  LayoutAnimation,
+  Platform,
+  UIManager,
 } from "react-native";
 import { Item, ItemEdit } from "../../types/item";
 import {
@@ -22,6 +26,12 @@ import NotificationModal from "../notification/NotificationModal";
 import { useNotification } from "../../hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { AnalyzeItems } from "../../services/endpoint/upload";
+import { LinearGradient } from "expo-linear-gradient";
+
+// Enable LayoutAnimation for Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 interface ItemDetailModalProps {
   visible: boolean;
@@ -45,7 +55,25 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
   const [showEditModal, setShowEditModal] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [localAnalyzed, setLocalAnalyzed] = useState<boolean>(item?.isAnalyzed || false);
+  const [showAIDescription, setShowAIDescription] = useState(false);
+  const rotateAnim = useRef(new Animated.Value(0)).current;
   const notification = useNotification();
+
+  // Toggle AI Description with animation
+  const toggleAIDescription = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setShowAIDescription(!showAIDescription);
+    Animated.timing(rotateAnim, {
+      toValue: showAIDescription ? 0 : 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const rotateInterpolate = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '180deg'],
+  });
 
   // Reset notification when modal closes or item changes
   useEffect(() => {
@@ -59,6 +87,8 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
     notification.hideNotification();
     setLocalAnalyzed(item?.isAnalyzed || false);
     setIsAnalyzing(false);
+    setShowAIDescription(false);
+    rotateAnim.setValue(0);
   }, [item?.id]);
 
   if (!item) return null;
@@ -160,6 +190,41 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
               brand={item.brand}
               color={item.color}
             />
+
+            {/* AI Description Section */}
+            {item.aiDescription && (
+              <View style={styles.aiDescriptionContainer}>
+                <TouchableOpacity 
+                  style={styles.aiDescriptionHeader}
+                  onPress={toggleAIDescription}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.aiDescriptionTitleRow}>
+                    <LinearGradient
+                      colors={["#8b5cf6", "#6366f1"]}
+                      style={styles.aiIconBg}
+                    >
+                      <Ionicons name="sparkles" size={14} color="#fff" />
+                    </LinearGradient>
+                    <Text style={styles.aiDescriptionTitle}>AI Description</Text>
+                    {item.aiConfidence && (
+                      <View style={styles.confidenceBadge}>
+                        <Text style={styles.confidenceText}>{item.aiConfidence}%</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Animated.View style={{ transform: [{ rotate: rotateInterpolate }] }}>
+                    <Ionicons name="chevron-down" size={20} color="#94a3b8" />
+                  </Animated.View>
+                </TouchableOpacity>
+                
+                {showAIDescription && (
+                  <View style={styles.aiDescriptionContent}>
+                    <Text style={styles.aiDescriptionText}>{item.aiDescription}</Text>
+                  </View>
+                )}
+              </View>
+            )}
 
             <DetailProperties
               category={item.categoryName}
@@ -290,5 +355,59 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 14,
     fontWeight: "700",
+  },
+  // AI Description Styles
+  aiDescriptionContainer: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    backgroundColor: "rgba(139, 92, 246, 0.08)",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.2)",
+    overflow: "hidden",
+  },
+  aiDescriptionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 14,
+  },
+  aiDescriptionTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  aiIconBg: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  aiDescriptionTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#c4b5fd",
+  },
+  confidenceBadge: {
+    backgroundColor: "rgba(34, 197, 94, 0.2)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  confidenceText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#22c55e",
+  },
+  aiDescriptionContent: {
+    paddingHorizontal: 14,
+    paddingBottom: 14,
+    paddingTop: 0,
+  },
+  aiDescriptionText: {
+    fontSize: 14,
+    color: "#e2e8f0",
+    lineHeight: 22,
   },
 });

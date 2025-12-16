@@ -2,7 +2,6 @@
 export enum Gender {
   MALE = 0,
   FEMALE = 1,
-  OTHER = 2,
 }
 export interface OnboardingRequest {
     preferedColor: string[];
@@ -15,46 +14,41 @@ export interface OnboardingRequest {
     bio: string;
     styleIds?: number[];
     otherStyles?: string[];
+    tryOnImageUrl?: string;
 }
 
 export interface OnboardingResponse {
     statusCode: number;
     message: string;
     data: {
+        id: number;
         email: string;
-        passwordHash: string;
-        role: number;
         displayName: string;
+        avtUrl: string | null;
+        tryOnImageUrl: string | null;
+        dob: string;
+        gender: string;
+        preferedColor: string[];
+        avoidedColor: string[];
+        location: string;
+        bio: string;
         isVerifiedEmail: boolean;
-        isStylist: boolean;
         isPremium: boolean;
         isLoginWithGoogle: boolean;
         isFirstTime: boolean;
-        avtUrl: string | null;
-        dob: string;
-        gender: number;
-        preferedColor: string;
-        avoidedColor: string;
-        location: string;
-        bio: string;
-        jobId: number;
-        items: any[];
-        job: any | null;
+        role: string;
+        jobId: number | null;
+        jobName: string | null;
+        jobDescription: string | null;
         userStyles: {
-            userId: number;
-            styleId: number;
-            style: any | null;
-            user: any | null;
             id: number;
-            createdDate: string;
-            updatedDate: string | null;
-            isDeleted: boolean;
-        };
-        posts: any[];
-        id: number;
-        createdDate: string;
-        updatedDate: string;
-        isDeleted: boolean;
+            styleId: number;
+            styleName: string;
+            styleDescription: string;
+        }[];
+        createdDate?: string;
+        updatedDate?: string;
+        isDeleted?: boolean;
     }
 }
   
